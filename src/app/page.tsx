@@ -1,4 +1,3 @@
-
 "use client"
 import React, { useState, useEffect, useMemo } from 'react';
 import { Navbar } from '@/components/Navbar';
@@ -79,8 +78,8 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Categories Bar */}
-        <section className="py-12 bg-background border-b sticky top-16 z-40">
+        {/* Categories Bar - Removed sticky behavior as requested */}
+        <section className="py-12 bg-background border-b">
           <div className="container mx-auto px-4">
             <div className="flex overflow-x-auto gap-6 pb-2 scrollbar-hide items-center justify-center">
               {CATEGORIES.map((cat, idx) => (
