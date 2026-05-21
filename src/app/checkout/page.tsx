@@ -9,7 +9,20 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { CheckCircle2, ChevronRight, ChevronLeft, CreditCard, Wallet, Smartphone, Truck, ShoppingBag, Loader2, Zap } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { 
+  CheckCircle2, 
+  ChevronRight, 
+  ChevronLeft, 
+  CreditCard, 
+  Wallet, 
+  Smartphone, 
+  Truck, 
+  ShoppingBag, 
+  Loader2, 
+  Zap,
+  Clock
+} from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import placeholderData from '@/app/lib/placeholder-images.json';
@@ -41,7 +54,11 @@ export default function CheckoutPage() {
 
   const handleSubmit = async () => {
     if (!formData.name || !formData.phone || !formData.address) {
-      toast({ variant: "destructive", title: "Missing details", description: "Please fill in all delivery information." });
+      toast({ 
+        variant: "destructive", 
+        title: "Missing details", 
+        description: "Please fill in all delivery information." 
+      });
       setStep(2);
       return;
     }
@@ -49,16 +66,14 @@ export default function CheckoutPage() {
     setLoading(true);
 
     if (formData.paymentMethod === 'razorpay') {
-      // Simulate Razorpay Bridge
       toast({ title: "Opening Secure Gateway...", description: "Connecting to Razorpay" });
       await new Promise(resolve => setTimeout(resolve, 1500));
     }
 
-    // Simulate Processing
     await new Promise(resolve => setTimeout(resolve, 2000));
     setLoading(false);
     clearCart();
-    setStep(4); // Success step
+    setStep(4);
   };
 
   const qrImage = placeholderData.placeholderImages.find(img => img.id === 'qr-code')?.imageUrl || '';
@@ -86,7 +101,6 @@ export default function CheckoutPage() {
       <Navbar />
       
       <main className="container mx-auto px-4 py-12">
-        {/* Step Progress */}
         <div className="max-w-4xl mx-auto mb-16">
           <div className="flex items-center justify-between relative px-2">
             <div className="absolute top-1/2 left-0 w-full h-1 bg-muted -translate-y-1/2 z-0" />
@@ -304,7 +318,6 @@ export default function CheckoutPage() {
             )}
           </div>
 
-          {/* Sidebar Summary */}
           {step < 4 && (
             <div className="space-y-8">
               <Card className="rounded-[32px] border-none shadow-2xl sticky top-28 overflow-hidden">
