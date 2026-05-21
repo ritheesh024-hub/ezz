@@ -26,12 +26,6 @@ import { collection, query, orderBy, limit, doc, updateDoc, deleteDoc, setDoc, s
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
-const MOCK_REVIEWS: Record<string, string[]> = {
-  '1': ["Balanced spices!", "A bit too much onion", "Best campus snack", "Fast delivery"],
-  '3': ["Authentic style", "Portion size could be better", "Amazing flavors", "Perfect spices"],
-  '5': ["Rich chocolate", "Too sweet for me", "Best presentation", "Nuts add great crunch"]
-};
-
 export const AdminSection = () => {
   const db = useFirestore();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -51,10 +45,6 @@ export const AdminSection = () => {
   const { data: dbMenu, loading: menuLoading } = useCollection<any>(menuQuery);
 
   // AI State
-  const [selectedDish, setSelectedDish] = useState('1');
-  const [summary, setSummary] = useState('');
-  const [loadingFeedback, setLoadingFeedback] = useState(false);
-  
   const [promoLoading, setPromoLoading] = useState(false);
   const [promoResult, setPromoResult] = useState<any>(null);
   const [selectedPromoDish, setSelectedPromoDish] = useState<any>(null);
@@ -62,6 +52,7 @@ export const AdminSection = () => {
   // Menu Form State
   const [isMenuDialogOpen, setIsMenuDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
+  const [saveLoading, setSaveLoading] = useState(false);
   const [menuFormData, setMenuFormData] = useState({
     name: '',
     description: '',
@@ -89,7 +80,7 @@ export const AdminSection = () => {
     const orderRef = doc(db, 'orders', id);
     updateDoc(orderRef, { status: newStatus })
       .then(() => {
-        toast({ title: `Order ${id} updated to ${newStatus}` });
+        toast({ title: `Order updated to ${newStatus}` });
       })
       .catch(async (error) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: orderRef.path, operation: 'update' }));
@@ -100,7 +91,7 @@ export const AdminSection = () => {
     const orderRef = doc(db, 'orders', id);
     deleteDoc(orderRef)
       .then(() => {
-        toast({ title: `Order ${id} deleted` });
+        toast({ title: `Order deleted` });
       })
       .catch(async (error) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: orderRef.path, operation: 'delete' }));
@@ -110,23 +101,31 @@ export const AdminSection = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 1024 * 1024) { // 1MB limit for Base64 Firestore storage
+      // Base64 encoding increases size by ~33%. 
+      // Firestore limit is 1MB. So we restrict original file to ~700KB.
+      if (file.size > 750 * 1024) { 
         toast({ 
           variant: "destructive", 
           title: "File too large", 
-          description: "Please select an image smaller than 1MB for optimal performance." 
+          description: "Please select an image smaller than 750KB." 
         });
         return;
       }
+      
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setMenuFormData({ ...menuFormData, image: reader.result as string });
+      reader.onload = (event) => {
+        if (event.target?.result) {
+          setMenuFormData(prev => ({ ...prev, image: event.target?.result as string }));
+          toast({ title: "Image ready", description: "The photo has been uploaded and previewed." });
+        }
       };
       reader.readAsDataURL(file);
     }
   };
 
   const handleSaveMenuItem = () => {
+    if (!db) return;
+    setSaveLoading(true);
     const itemId = editingItem ? editingItem.id : `ITEM-${Date.now()}`;
     const itemRef = doc(db, 'menu', itemId);
     const data = {
@@ -141,12 +140,18 @@ export const AdminSection = () => {
         toast({ title: editingItem ? "Item Updated" : "Item Added", description: `${data.name} is now live.` });
         setIsMenuDialogOpen(false);
         setEditingItem(null);
+        setSaveLoading(false);
         setMenuFormData({
           name: '', description: '', price: 0, category: 'Veg Maggie', image: '', isVeg: true, isAvailable: true, rating: 4.5
         });
       })
       .catch(async (error) => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({ path: itemRef.path, operation: 'write', requestResourceData: data }));
+        setSaveLoading(false);
+        errorEmitter.emit('permission-error', new FirestorePermissionError({ 
+          path: itemRef.path, 
+          operation: 'write', 
+          requestResourceData: data 
+        }));
       });
   };
 
@@ -307,7 +312,12 @@ export const AdminSection = () => {
               <h2 className="text-xl font-black uppercase tracking-widest">Menu Management</h2>
               <Dialog open={isMenuDialogOpen} onOpenChange={(open) => {
                 setIsMenuDialogOpen(open);
-                if (!open) { setEditingItem(null); setMenuFormData({ name: '', description: '', price: 0, category: 'Veg Maggie', image: '', isVeg: true, isAvailable: true, rating: 4.5 }); }
+                if (!open) { 
+                  setEditingItem(null); 
+                  setMenuFormData({ 
+                    name: '', description: '', price: 0, category: 'Veg Maggie', image: '', isVeg: true, isAvailable: true, rating: 4.5 
+                  }); 
+                }
               }}>
                 <DialogTrigger asChild>
                   <Button className="rounded-xl font-bold gap-2">
@@ -351,12 +361,13 @@ export const AdminSection = () => {
                     </div>
                     <div className="space-y-4">
                       <div className="space-y-2">
-                        <Label>Upload Photo</Label>
+                        <Label>Photo Upload</Label>
                         <div className="flex flex-col gap-4">
                           {menuFormData.image && (
                             <div className="relative w-full h-32 rounded-xl overflow-hidden border bg-muted">
                               <img src={menuFormData.image} alt="Preview" className="w-full h-full object-cover" />
                               <button 
+                                type="button"
                                 onClick={() => setMenuFormData({...menuFormData, image: ''})}
                                 className="absolute top-2 right-2 bg-destructive text-white p-1 rounded-full shadow-lg"
                               >
@@ -369,8 +380,8 @@ export const AdminSection = () => {
                             onClick={() => fileInputRef.current?.click()}
                           >
                             <Upload className="w-6 h-6 text-muted-foreground" />
-                            <span className="text-xs font-bold text-muted-foreground">Click to upload photo</span>
-                            <span className="text-[10px] text-muted-foreground/60">PNG, JPG up to 1MB</span>
+                            <span className="text-xs font-bold text-muted-foreground">Select image file</span>
+                            <span className="text-[10px] text-muted-foreground/60">Limit: 750KB (PNG, JPG)</span>
                           </div>
                           <input 
                             type="file" 
@@ -389,7 +400,8 @@ export const AdminSection = () => {
                   </div>
                   <DialogFooter className="gap-2">
                     <Button variant="outline" onClick={() => setIsMenuDialogOpen(false)} className="rounded-xl">Cancel</Button>
-                    <Button onClick={handleSaveMenuItem} disabled={!menuFormData.name || !menuFormData.image} className="rounded-xl">
+                    <Button onClick={handleSaveMenuItem} disabled={!menuFormData.name || !menuFormData.image || saveLoading} className="rounded-xl">
+                      {saveLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                       {editingItem ? 'Update Item' : 'Create Item'}
                     </Button>
                   </DialogFooter>
