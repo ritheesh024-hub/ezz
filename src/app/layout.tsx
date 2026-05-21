@@ -3,10 +3,12 @@ import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { FirebaseClientProvider } from '@/firebase/client-provider';
+import Script from 'next/script';
 
 export const metadata: Metadata = {
   title: 'Easy Bites | Premium Fast Food Cafe',
-  description: 'Order your favorite fast food with a premium experience. Fast delivery, delicious taste.',
+  description: 'Experience premium fast food redefined. Quality, speed, and taste unified in one perfect bite. Order now for 30-min delivery.',
+  keywords: 'Fast Food, Biryani, Maggie, Momos, Ice Cream, Hyderabad, Pocharam, Anurag University',
 };
 
 export default function RootLayout({
@@ -20,6 +22,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet" />
+        <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
       </head>
       <body className="font-body antialiased min-h-screen bg-background">
         <FirebaseClientProvider>
