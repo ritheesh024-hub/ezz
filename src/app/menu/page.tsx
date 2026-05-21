@@ -9,19 +9,19 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useFirestore, useCollection } from '@/firebase';
 import { collection, query, orderBy } from 'firebase/firestore';
+import { FoodItem } from '@/app/lib/store';
 
 export default function MenuPage() {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
   const db = useFirestore();
 
-  // Real-time Firestore query for products
   const productsQuery = useMemo(() => {
     if (!db) return null;
     return query(collection(db, 'products'), orderBy('createdAt', 'desc'));
   }, [db]);
 
-  const { data: menuItems, loading, error } = useCollection<any>(productsQuery);
+  const { data: menuItems, loading, error } = useCollection<FoodItem>(productsQuery);
 
   const filteredItems = useMemo(() => {
     if (!menuItems) return [];
@@ -44,7 +44,6 @@ export default function MenuPage() {
           </p>
         </div>
 
-        {/* Filters and Search */}
         <div className="flex flex-col md:flex-row gap-6 mb-12">
           <div className="flex-1 relative">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
@@ -69,7 +68,6 @@ export default function MenuPage() {
           </div>
         </div>
 
-        {/* Dynamic Menu Grid */}
         {loading ? (
           <div className="py-20 flex flex-col items-center gap-4">
              <Loader2 className="w-10 h-10 animate-spin text-primary" />

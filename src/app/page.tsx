@@ -21,6 +21,7 @@ import Image from 'next/image';
 import placeholderData from '@/app/lib/placeholder-images.json';
 import { useFirestore, useCollection } from '@/firebase';
 import { collection, query, limit, orderBy } from 'firebase/firestore';
+import { FoodItem } from '@/app/lib/store';
 
 export default function Home() {
   const [currentYear, setCurrentYear] = useState<number | null>(null);
@@ -35,7 +36,7 @@ export default function Home() {
     return query(collection(db, 'products'), orderBy('createdAt', 'desc'), limit(10));
   }, [db]);
 
-  const { data: trendingItems, loading } = useCollection<any>(menuQuery);
+  const { data: trendingItems, loading } = useCollection<FoodItem>(menuQuery);
 
   const getImg = (id: string) => placeholderData.placeholderImages.find(img => img.id === id)?.imageUrl || '';
 
@@ -44,7 +45,6 @@ export default function Home() {
       <Navbar />
       
       <main className="flex-1">
-        {/* Cinematic Hero Section */}
         <section className="relative min-h-[85vh] md:h-screen flex items-center overflow-hidden">
           <div className="absolute inset-0 z-0">
             <Image 
@@ -108,8 +108,7 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Categories Section */}
-        <section className="relative -mt-8 md:-mt-10 z-30">
+        <section className="relative z-30">
           <div className="container mx-auto px-4 md:px-6">
             <div className="glass rounded-3xl md:rounded-[40px] p-2 md:p-4 shadow-2xl shadow-black/10 border border-white/20">
               <div className="flex overflow-x-auto gap-2 md:gap-3 pb-2 md:pb-0 scrollbar-hide items-center lg:justify-center">
@@ -125,7 +124,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Trending Section */}
         <section className="py-16 md:py-32 overflow-hidden">
           <div className="container mx-auto px-4 md:px-6">
             <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 md:mb-16 gap-6">
@@ -171,7 +169,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Features Section */}
         <section className="py-16 md:py-32 bg-secondary/30 relative overflow-hidden">
           <div className="container mx-auto px-4 md:px-6">
             <div className="grid lg:grid-cols-4 gap-12 lg:gap-8">
@@ -225,7 +222,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Testimonials */}
         <section className="py-16 md:py-32">
           <div className="container mx-auto px-4 md:px-6">
             <div className="text-center mb-12 md:mb-20">
@@ -251,7 +247,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Location Section */}
         <section className="py-16 md:py-32 bg-card border-y relative overflow-hidden">
           <div className="container mx-auto px-4 md:px-6">
             <div className="grid lg:grid-cols-2 gap-16 lg:gap-24 items-center">
@@ -297,7 +292,6 @@ export default function Home() {
           </div>
         </section>
 
-        {/* FAQ Section */}
         <section className="py-16 md:py-32 container mx-auto px-4 md:px-6 max-w-4xl">
           <div className="text-center mb-12 md:mb-20">
             <HelpCircle className="w-12 h-12 md:w-16 md:h-16 text-primary mx-auto mb-4 md:mb-6" />
@@ -320,7 +314,6 @@ export default function Home() {
         </section>
       </main>
 
-      {/* Footer */}
       <footer className="bg-background border-t pt-20 md:pt-32 pb-12 md:pb-16">
         <div className="container mx-auto px-4 md:px-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 md:gap-16 mb-16 md:mb-24">
@@ -349,9 +342,8 @@ export default function Home() {
               <h4 className="font-black text-xl md:text-2xl uppercase tracking-widest">Explore</h4>
               <ul className="space-y-4 md:space-y-5 text-muted-foreground font-bold text-sm md:text-base">
                 <li><Link href="/menu" className="hover:text-primary transition-colors">Menu</Link></li>
-                <li><Link href="/orders/tracking" className="hover:text-primary transition-colors">Track Order</Link></li>
+                <li><Link href="/orders" className="hover:text-primary transition-colors">Track Order</Link></li>
                 <li><Link href="/offers" className="hover:text-primary transition-colors">Exclusive Offers</Link></li>
-                <li><Link href="/favorites" className="hover:text-primary transition-colors">My Favorites</Link></li>
               </ul>
             </div>
 
@@ -360,7 +352,6 @@ export default function Home() {
               <ul className="space-y-4 md:space-y-5 text-muted-foreground font-bold text-sm md:text-base">
                 <li><Link href="/faq" className="hover:text-primary transition-colors">Help Center</Link></li>
                 <li><Link href="/contact" className="hover:text-primary transition-colors">Contact Us</Link></li>
-                <li><Link href="/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link></li>
                 <li className="pt-4 md:pt-6">
                   <Link href="/admin/login" className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.2em] md:tracking-[0.3em] text-muted-foreground/30 hover:text-primary transition-colors">
                     <Lock className="w-3.5 h-3.5" />

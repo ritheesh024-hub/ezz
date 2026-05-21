@@ -1,10 +1,10 @@
 
 "use client"
 import React from 'react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger, SheetFooter } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { useStore } from '@/app/lib/store';
-import { ShoppingBag, Minus, Plus, Trash2, X, ChevronRight, Truck } from 'lucide-react';
+import { ShoppingBag, Minus, Plus, X, ChevronRight, Truck } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Separator } from './ui/separator';
@@ -50,10 +50,11 @@ export const CartDrawer = ({ children }: { children: React.ReactNode }) => {
                 <div key={item.id} className="flex gap-4">
                   <div className="relative w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 bg-secondary">
                     <Image 
-                      src={item.image} 
+                      src={item.imageUrl} 
                       alt={item.name} 
                       fill 
                       className="object-cover"
+                      unoptimized={item.imageUrl.startsWith('http')}
                     />
                   </div>
                   <div className="flex-1 min-w-0">

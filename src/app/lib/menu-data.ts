@@ -11,7 +11,7 @@ export const MENU_ITEMS: FoodItem[] = [
     description: 'Freshly prepared spicy masala maggie with garden fresh veggies.',
     price: 69,
     category: 'Veg Maggie',
-    image: getImg('food-maggie-1'),
+    imageUrl: getImg('food-maggie-1'),
     isVeg: true,
     rating: 4.5,
     isAvailable: true
@@ -22,7 +22,7 @@ export const MENU_ITEMS: FoodItem[] = [
     description: 'Maggie infused with scrambled eggs and special cafe spices.',
     price: 89,
     category: 'Egg Maggie',
-    image: getImg('food-maggie-2'),
+    imageUrl: getImg('food-maggie-2'),
     isVeg: false,
     rating: 4.2,
     isAvailable: true
@@ -33,7 +33,7 @@ export const MENU_ITEMS: FoodItem[] = [
     description: 'Stir fried maggie with chunks of spicy roasted chicken.',
     price: 109,
     category: 'Chicken Maggie',
-    image: getImg('food-maggie-3'),
+    imageUrl: getImg('food-maggie-3'),
     isVeg: false,
     rating: 4.4,
     isAvailable: true
@@ -44,7 +44,7 @@ export const MENU_ITEMS: FoodItem[] = [
     description: 'Long grain basmati rice cooked with tender chicken and authentic spices.',
     price: 249,
     category: 'Chicken Biryani',
-    image: getImg('food-biryani-1'),
+    imageUrl: getImg('food-biryani-1'),
     isVeg: false,
     rating: 4.9,
     isAvailable: true
@@ -55,7 +55,7 @@ export const MENU_ITEMS: FoodItem[] = [
     description: 'Delicate dumplings filled with spiced paneer and herbs (8 pcs).',
     price: 129,
     category: 'Momos',
-    image: getImg('food-momos-1'),
+    imageUrl: getImg('food-momos-1'),
     isVeg: true,
     rating: 4.6,
     isAvailable: true
@@ -66,7 +66,7 @@ export const MENU_ITEMS: FoodItem[] = [
     description: 'Vanilla ice cream topped with rich chocolate syrup and nuts.',
     price: 149,
     category: 'Ice creams',
-    image: getImg('food-icecream-1'),
+    imageUrl: getImg('food-icecream-1'),
     isVeg: true,
     rating: 4.8,
     isAvailable: true

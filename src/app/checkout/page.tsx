@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { 
   CheckCircle2, 
@@ -114,7 +114,6 @@ export default function CheckoutPage() {
       });
   };
 
-  // Direct QR URL for reliability
   const qrImage = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent('upi://pay?pa=8639366800@ybl&pn=Ezzy%20Bites&cu=INR')}`;
 
   if (cart.length === 0 && step < 4) {
@@ -136,7 +135,6 @@ export default function CheckoutPage() {
     <div className="min-h-screen bg-secondary/10 pb-12">
       <Navbar />
       <main className="container mx-auto px-4 pt-24 md:pt-32">
-        {/* Responsive Progress Stepper */}
         <div className="max-w-xl mx-auto mb-10 md:mb-16 px-2">
           <div className="flex items-center justify-between relative">
             <div className="absolute top-1/2 left-0 w-full h-0.5 bg-muted -translate-y-1/2 z-0" />
@@ -167,7 +165,7 @@ export default function CheckoutPage() {
                     {cart.map((item) => (
                       <div key={item.id} className="p-4 md:p-6 flex gap-4 md:gap-6 items-center">
                         <div className="relative w-16 h-16 md:w-20 md:h-20 rounded-xl md:rounded-2xl overflow-hidden bg-secondary shrink-0">
-                          <Image src={item.image} alt={item.name} fill className="object-cover" />
+                          <Image src={item.imageUrl} alt={item.name} fill className="object-cover" unoptimized={item.imageUrl.startsWith('http')} />
                         </div>
                         <div className="flex-1 min-w-0">
                           <h4 className="font-bold text-base md:text-lg truncate">{item.name}</h4>
@@ -264,7 +262,7 @@ export default function CheckoutPage() {
                 {formData.paymentMethod === 'upi' && (
                   <Card className="p-6 md:p-10 text-center animate-in zoom-in rounded-[32px] border-dashed border-2">
                     <div className="w-48 h-48 md:w-56 md:h-56 mx-auto relative bg-white border rounded-2xl overflow-hidden mb-6 p-2">
-                      <Image src={qrImage} alt="QR Code" fill className="object-contain p-2" priority />
+                      <Image src={qrImage} alt="QR Code" fill className="object-contain p-2" priority unoptimized />
                     </div>
                     <div className="bg-secondary/50 rounded-xl p-3 inline-block">
                       <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground mb-1">UPI ID</p>
