@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { 
   IndianRupee, Sparkles, Loader2, 
   Package, Clock, CheckCircle2,
-  Megaphone, LayoutDashboard, Trash2, Plus, Edit2, Upload, RefreshCw
+  Megaphone, LayoutDashboard, Trash2, Plus, Edit2, Link as LinkIcon, RefreshCw
 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -25,7 +25,6 @@ import { FirestorePermissionError } from '@/firebase/errors';
 
 export const AdminSection = () => {
   const db = useFirestore();
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const firstInputRef = useRef<HTMLInputElement>(null);
   
   const ordersQuery = useMemo(() => {
@@ -75,31 +74,15 @@ export const AdminSection = () => {
     });
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 500 * 1024) { 
-        toast({ variant: "destructive", title: "Image Too Large", description: "Please use an image under 500KB." });
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (event.target?.result) setMenuFormData(prev => ({ ...prev, image: event.target?.result as string }));
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
   const resetForm = () => {
     setEditingItem(null);
     setMenuFormData({ name: '', description: '', price: '', category: 'Veg Maggie', image: '', isVeg: true, isAvailable: true, rating: '4.5' });
-    if (fileInputRef.current) fileInputRef.current.value = '';
     setTimeout(() => firstInputRef.current?.focus(), 150);
   };
 
   const handleSaveMenuItem = async () => {
     if (!db || !menuFormData.name || !menuFormData.image) {
-      toast({ variant: "destructive", title: "Missing Data", description: "Name and Image are mandatory." });
+      toast({ variant: "destructive", title: "Missing Data", description: "Name and Image URL are mandatory." });
       return;
     }
     
@@ -113,7 +96,7 @@ export const AdminSection = () => {
       description: menuFormData.description.trim(),
       price: Number(menuFormData.price) || 0,
       category: menuFormData.category,
-      image: menuFormData.image,
+      image: menuFormData.image.trim(),
       isVeg: menuFormData.isVeg,
       isAvailable: menuFormData.isAvailable,
       rating: Number(menuFormData.rating) || 4.5,
@@ -146,7 +129,7 @@ export const AdminSection = () => {
         </div>
 
         <Tabs defaultValue="overview" className="space-y-8">
-          <TabsList className="bg-card p-1.5 rounded-2xl border w-full flex shadow-sm">
+          <TabsList className="bg-card p-1.5 rounded-2xl border w-full flex shadow-sm overflow-x-auto scrollbar-hide">
             <TabsTrigger value="overview" className="flex-1 py-3 font-black uppercase tracking-widest text-[10px]">Stats</TabsTrigger>
             <TabsTrigger value="orders" className="flex-1 py-3 font-black uppercase tracking-widest text-[10px]">Orders</TabsTrigger>
             <TabsTrigger value="inventory" className="flex-1 py-3 font-black uppercase tracking-widest text-[10px]">Inventory</TabsTrigger>
@@ -176,35 +159,39 @@ export const AdminSection = () => {
 
           <TabsContent value="orders">
             <Card className="rounded-3xl shadow-xl border-none overflow-hidden">
-              <Table>
-                <TableHeader className="bg-muted/30">
-                  <TableRow>
-                    <TableHead className="px-6 font-black uppercase text-[10px]">Order Details</TableHead>
-                    <TableHead className="px-6 font-black uppercase text-[10px]">Status</TableHead>
-                    <TableHead className="px-6 font-black uppercase text-[10px] text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {ordersLoading ? (
-                    <TableRow><TableCell colSpan={3} className="py-20 text-center"><Loader2 className="animate-spin mx-auto text-primary" /></TableCell></TableRow>
-                  ) : realOrders?.map((order: any) => (
-                    <TableRow key={order.id}>
-                      <TableCell className="px-6 font-bold">{order.customerName}<br/><span className="text-[10px] opacity-50">₹{order.total} • {order.paymentMethod}</span></TableCell>
-                      <TableCell className="px-6"><Badge variant="secondary">{order.status}</Badge></TableCell>
-                      <TableCell className="px-6 text-right space-x-2">
-                        <Button size="icon" variant="outline" onClick={() => handleUpdateStatus(order.id, 'Preparing')}><Clock className="w-4 h-4"/></Button>
-                        <Button size="icon" variant="outline" onClick={() => handleUpdateStatus(order.id, 'Delivered')}><CheckCircle2 className="w-4 h-4"/></Button>
-                        <Button size="icon" variant="ghost" onClick={() => handleDeleteOrder(order.id)} className="text-destructive"><Trash2 className="w-4 h-4"/></Button>
-                      </TableCell>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader className="bg-muted/30">
+                    <TableRow>
+                      <TableHead className="px-6 font-black uppercase text-[10px]">Order Details</TableHead>
+                      <TableHead className="px-6 font-black uppercase text-[10px]">Status</TableHead>
+                      <TableHead className="px-6 font-black uppercase text-[10px] text-right">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {ordersLoading ? (
+                      <TableRow><TableCell colSpan={3} className="py-20 text-center"><Loader2 className="animate-spin mx-auto text-primary" /></TableCell></TableRow>
+                    ) : realOrders?.length === 0 ? (
+                      <TableRow><TableCell colSpan={3} className="py-20 text-center text-muted-foreground font-medium">No orders yet.</TableCell></TableRow>
+                    ) : realOrders?.map((order: any) => (
+                      <TableRow key={order.id}>
+                        <TableCell className="px-6 font-bold">{order.customerName}<br/><span className="text-[10px] opacity-50">₹{order.total} • {order.paymentMethod}</span></TableCell>
+                        <TableCell className="px-6"><Badge variant="secondary">{order.status}</Badge></TableCell>
+                        <TableCell className="px-6 text-right space-x-2">
+                          <Button size="icon" variant="outline" onClick={() => handleUpdateStatus(order.id, 'Preparing')}><Clock className="w-4 h-4"/></Button>
+                          <Button size="icon" variant="outline" onClick={() => handleUpdateStatus(order.id, 'Delivered')}><CheckCircle2 className="w-4 h-4"/></Button>
+                          <Button size="icon" variant="ghost" onClick={() => handleDeleteOrder(order.id)} className="text-destructive"><Trash2 className="w-4 h-4"/></Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             </Card>
           </TabsContent>
 
           <TabsContent value="inventory" className="space-y-8">
-            <Button onClick={() => { resetForm(); setIsMenuDialogOpen(true); }} className="rounded-2xl h-14 px-10 font-black uppercase tracking-widest text-[11px] gap-2 shadow-xl">
+            <Button onClick={() => { resetForm(); setIsMenuDialogOpen(true); }} className="rounded-2xl h-14 px-10 font-black uppercase tracking-widest text-[11px] gap-2 shadow-xl w-full sm:w-auto">
               <Plus /> Add New Dish
             </Button>
 
@@ -223,25 +210,43 @@ export const AdminSection = () => {
                     </div>
                     <div className="space-y-2">
                       <Label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">Category</Label>
-                      <select value={menuFormData.category} onChange={e => setMenuFormData({...menuFormData, category: e.target.value})} className="w-full h-12 rounded-xl border bg-secondary/20 px-4 text-sm font-bold uppercase">
+                      <select value={menuFormData.category} onChange={e => setMenuFormData({...menuFormData, category: e.target.value})} className="w-full h-12 rounded-xl border bg-secondary/20 px-4 text-sm font-bold uppercase outline-none focus:ring-2 focus:ring-primary/20">
                         {CATEGORIES.filter(c => c !== 'All').map(c => <option key={c} value={c}>{c}</option>)}
                       </select>
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">Dish Photo</Label>
-                    <div onClick={() => fileInputRef.current?.click()} className="border-2 border-dashed rounded-3xl p-10 text-center cursor-pointer hover:bg-muted/50 transition-all">
-                      {menuFormData.image ? (
-                        <div className="relative group">
-                          <img src={menuFormData.image} className="h-48 w-full object-cover rounded-2xl shadow-xl" alt="Preview" />
-                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all rounded-2xl"><RefreshCw className="text-white w-10 h-10" /></div>
-                        </div>
-                      ) : (
-                        <div className="flex flex-col items-center gap-2 opacity-50"><Upload className="w-10 h-10" /><p className="text-[10px] font-black uppercase tracking-widest">Upload Photo (Max 500KB)</p></div>
-                      )}
-                      <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
+                  
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">Image URL</Label>
+                      <div className="relative">
+                        <LinkIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                        <Input 
+                          value={menuFormData.image} 
+                          onChange={e => setMenuFormData({...menuFormData, image: e.target.value})} 
+                          placeholder="Enter image URL (JPG, PNG, WebP)" 
+                          className="h-12 rounded-xl pl-10" 
+                        />
+                      </div>
                     </div>
+                    
+                    {menuFormData.image && (
+                      <div className="relative rounded-3xl overflow-hidden border shadow-sm h-48 bg-secondary/20 group">
+                        <img 
+                          src={menuFormData.image} 
+                          className="h-full w-full object-cover" 
+                          alt="Preview" 
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=Invalid+Image+URL';
+                          }}
+                        />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-all">
+                          <span className="text-white text-[10px] font-black uppercase tracking-widest">Image Preview</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
+
                   <div className="space-y-2">
                     <Label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">Description</Label>
                     <Textarea value={menuFormData.description} onChange={e => setMenuFormData({...menuFormData, description: e.target.value})} placeholder="Taste description..." className="rounded-xl min-h-[100px]" />
@@ -259,10 +264,21 @@ export const AdminSection = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
               {menuLoading ? (
                 <div className="col-span-full py-20 text-center"><Loader2 className="animate-spin mx-auto text-primary" /></div>
+              ) : dbMenu?.length === 0 ? (
+                <div className="col-span-full py-20 text-center bg-card rounded-3xl border border-dashed">
+                  <p className="text-muted-foreground font-medium">No dishes added yet. Click "Add New Dish" to get started.</p>
+                </div>
               ) : dbMenu?.map((item: any) => (
                 <Card key={item.id} className="rounded-[32px] border-none shadow-xl overflow-hidden group hover:shadow-2xl transition-all">
                   <div className="h-48 relative">
-                    <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                    <img 
+                      src={item.image} 
+                      alt={item.name} 
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'https://placehold.co/600x400?text=No+Image';
+                      }}
+                    />
                     <Badge className="absolute top-4 left-4 bg-white/90 backdrop-blur text-[9px] uppercase font-black">{item.category}</Badge>
                   </div>
                   <CardContent className="p-6">
@@ -288,16 +304,16 @@ export const AdminSection = () => {
           </TabsContent>
 
           <TabsContent value="marketing">
-             <Card className="rounded-[40px] border-none shadow-xl bg-card p-12">
+             <Card className="rounded-[40px] border-none shadow-xl bg-card p-6 md:p-12">
                 <div className="max-w-2xl">
-                  <h3 className="text-4xl font-black uppercase tracking-tight mb-4">AI Promotion <Sparkles className="inline text-primary" /></h3>
-                  <p className="text-muted-foreground mb-10 text-lg">Select a dish to generate a viral social media promotion instantly.</p>
+                  <h3 className="text-2xl md:text-4xl font-black uppercase tracking-tight mb-4">AI Promotion <Sparkles className="inline text-primary" /></h3>
+                  <p className="text-muted-foreground mb-10 text-base md:text-lg">Select a dish to generate a viral social media promotion instantly.</p>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-10">
                     {dbMenu?.slice(0, 8).map((item: any) => (
                       <button key={item.id} onClick={() => setSelectedPromoDish(item)} className={`p-4 rounded-2xl border-2 text-[10px] font-black uppercase transition-all ${selectedPromoDish?.id === item.id ? 'border-primary bg-primary/5 scale-105' : 'border-muted hover:border-primary/20'}`}>{item.name}</button>
                     ))}
                   </div>
-                  <Button size="lg" className="rounded-2xl h-16 px-10 font-black uppercase tracking-widest gap-3 shadow-xl shadow-primary/20" onClick={async () => {
+                  <Button size="lg" className="rounded-2xl h-16 px-10 font-black uppercase tracking-widest gap-3 shadow-xl shadow-primary/20 w-full sm:w-auto" onClick={async () => {
                     setPromoLoading(true);
                     try {
                       const res = await dailySpecialGenerator({ dishName: selectedPromoDish.name, basePrice: selectedPromoDish.price, discountPercent: 20 });
@@ -309,8 +325,8 @@ export const AdminSection = () => {
                   </Button>
                   {promoResult && (
                     <div className="mt-12 p-8 bg-primary/5 rounded-[32px] border-2 border-primary/10 space-y-6 animate-in zoom-in">
-                      <h4 className="text-3xl font-black">{promoResult.promoTitle} {promoResult.emoji}</h4>
-                      <p className="text-lg italic opacity-80 leading-relaxed">"{promoResult.promoDescription}"</p>
+                      <h4 className="text-2xl md:text-3xl font-black">{promoResult.promoTitle} {promoResult.emoji}</h4>
+                      <p className="text-base md:text-lg italic opacity-80 leading-relaxed">"{promoResult.promoDescription}"</p>
                       <Button className="w-full h-14 rounded-2xl font-black uppercase gap-2" onClick={() => { navigator.clipboard.writeText(`${promoResult.promoTitle}\n\n${promoResult.promoDescription}\n\nPrice: ₹${promoResult.finalPrice}`); toast({ title: "Copied!" }); }}>Copy Content</Button>
                     </div>
                   )}
