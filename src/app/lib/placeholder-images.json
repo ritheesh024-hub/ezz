@@ -1,0 +1,53 @@
+
+{
+  "placeholderImages": [
+    {
+      "id": "hero-food",
+      "description": "Premium gourmet burger with fresh ingredients",
+      "imageUrl": "https://picsum.photos/seed/food1/1200/800",
+      "imageHint": "gourmet burger"
+    },
+    {
+      "id": "category-burgers",
+      "description": "Juicy burgers category",
+      "imageUrl": "https://picsum.photos/seed/burger/400/400",
+      "imageHint": "burger"
+    },
+    {
+      "id": "category-biryani",
+      "description": "Spicy chicken biryani",
+      "imageUrl": "https://picsum.photos/seed/biryani/400/400",
+      "imageHint": "biryani"
+    },
+    {
+      "id": "category-momos",
+      "description": "Steamed dumplings",
+      "imageUrl": "https://picsum.photos/seed/momos/400/400",
+      "imageHint": "momos"
+    },
+    {
+      "id": "category-desserts",
+      "description": "Sweet ice creams and desserts",
+      "imageUrl": "https://picsum.photos/seed/dessert/400/400",
+      "imageHint": "dessert"
+    },
+    {
+      "id": "food-maggie",
+      "description": "Classic veg maggie",
+      "imageUrl": "https://picsum.photos/seed/maggie/600/400",
+      "imageHint": "noodles"
+    },
+    {
+      "id": "food-chicken-biryani",
+      "description": "Hyderabadi Chicken Biryani",
+      "imageUrl": "https://picsum.photos/seed/cbiryani/600/400",
+      "imageHint": "chicken biryani"
+    },
+    {
+      "id": "food-smoothie",
+      "description": "Refreshing fruit smoothie",
+      "imageUrl": "https://picsum.photos/seed/smoothie/600/400",
+      "imageHint": "smoothie"
+    }
+  ]
+}
