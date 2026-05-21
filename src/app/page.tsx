@@ -5,7 +5,7 @@ import { Navbar } from '@/components/Navbar';
 import { SavorTool } from '@/components/SavorTool';
 import { FoodCard } from '@/components/FoodCard';
 import { MENU_ITEMS, CATEGORIES } from '@/app/lib/menu-data';
-import { ShoppingBag, ArrowRight, Zap, Star, MapPin, Phone, Instagram, Twitter, Facebook } from 'lucide-react';
+import { ShoppingBag, ArrowRight, Zap, Star, MapPin, Phone, Instagram, Twitter, Facebook, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -208,6 +208,12 @@ export default function Home() {
                 <li><Link href="/contact" className="hover:text-primary transition-colors">Contact Support</Link></li>
                 <li><Link href="/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link></li>
                 <li><Link href="/terms" className="hover:text-primary transition-colors">Terms of Service</Link></li>
+                <li className="pt-2">
+                  <Link href="/admin/login" className="flex items-center gap-1.5 text-[10px] text-muted-foreground/50 hover:text-primary transition-colors group">
+                    <Lock className="w-3 h-3" />
+                    Admin Portal
+                  </Link>
+                </li>
               </ul>
             </div>
 
