@@ -1,6 +1,6 @@
 
 "use client"
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,7 +13,7 @@ import {
   BarChart3, IndianRupee, MessageSquare, Sparkles, Loader2, 
   Package, Clock, CheckCircle2, ShoppingCart,
   ArrowUpRight, Megaphone,
-  LayoutDashboard, Zap, Star, Trash2, Plus, Edit2, X, Image as ImageIcon
+  LayoutDashboard, Zap, Star, Trash2, Plus, Edit2, X, Image as ImageIcon, Upload
 } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
@@ -34,20 +34,21 @@ const MOCK_REVIEWS: Record<string, string[]> = {
 
 export const AdminSection = () => {
   const db = useFirestore();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Real-time Orders
   const ordersQuery = useMemo(() => {
     if (!db) return null;
     return query(collection(db, 'orders'), orderBy('createdAt', 'desc'), limit(50));
   }, [db]);
-  const { data: realOrders, loading: ordersLoading } = useCollection(ordersQuery);
+  const { data: realOrders, loading: ordersLoading } = useCollection<any>(ordersQuery);
 
   // Real-time Menu
   const menuQuery = useMemo(() => {
     if (!db) return null;
     return query(collection(db, 'menu'), orderBy('category'));
   }, [db]);
-  const { data: dbMenu, loading: menuLoading } = useCollection(menuQuery);
+  const { data: dbMenu, loading: menuLoading } = useCollection<any>(menuQuery);
 
   // AI State
   const [selectedDish, setSelectedDish] = useState('1');
@@ -106,11 +107,31 @@ export const AdminSection = () => {
       });
   };
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 1024 * 1024) { // 1MB limit for Base64 Firestore storage
+        toast({ 
+          variant: "destructive", 
+          title: "File too large", 
+          description: "Please select an image smaller than 1MB for optimal performance." 
+        });
+        return;
+      }
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setMenuFormData({ ...menuFormData, image: reader.result as string });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleSaveMenuItem = () => {
     const itemId = editingItem ? editingItem.id : `ITEM-${Date.now()}`;
     const itemRef = doc(db, 'menu', itemId);
     const data = {
       ...menuFormData,
+      id: itemId,
       price: Number(menuFormData.price),
       updatedAt: serverTimestamp()
     };
@@ -144,19 +165,6 @@ export const AdminSection = () => {
       .catch(async (error) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({ path: itemRef.path, operation: 'delete' }));
       });
-  };
-
-  const handleGenerateSummary = async () => {
-    setLoadingFeedback(true);
-    try {
-      const reviews = MOCK_REVIEWS[selectedDish] || ["Good food", "Nice experience"];
-      const result = await reviewSummaryGenerator({ reviews });
-      setSummary(result.summary);
-    } catch (error) {
-      setSummary("AI analysis currently unavailable.");
-    } finally {
-      setLoadingFeedback(false);
-    }
   };
 
   const handleGeneratePromo = async () => {
@@ -306,7 +314,7 @@ export const AdminSection = () => {
                     <Plus className="w-4 h-4" /> Add Item
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-2xl rounded-[32px]">
+                <DialogContent className="max-w-2xl rounded-[32px] max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>{editingItem ? 'Edit Food Item' : 'Add New Food Item'}</DialogTitle>
                   </DialogHeader>
@@ -343,53 +351,85 @@ export const AdminSection = () => {
                     </div>
                     <div className="space-y-4">
                       <div className="space-y-2">
-                        <Label>Image URL</Label>
-                        <Input value={menuFormData.image} onChange={(e) => setMenuFormData({...menuFormData, image: e.target.value})} placeholder="https://picsum.photos/..." />
+                        <Label>Upload Photo</Label>
+                        <div className="flex flex-col gap-4">
+                          {menuFormData.image && (
+                            <div className="relative w-full h-32 rounded-xl overflow-hidden border bg-muted">
+                              <img src={menuFormData.image} alt="Preview" className="w-full h-full object-cover" />
+                              <button 
+                                onClick={() => setMenuFormData({...menuFormData, image: ''})}
+                                className="absolute top-2 right-2 bg-destructive text-white p-1 rounded-full shadow-lg"
+                              >
+                                <X className="w-4 h-4" />
+                              </button>
+                            </div>
+                          )}
+                          <div 
+                            className="border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-muted/50 transition-colors"
+                            onClick={() => fileInputRef.current?.click()}
+                          >
+                            <Upload className="w-6 h-6 text-muted-foreground" />
+                            <span className="text-xs font-bold text-muted-foreground">Click to upload photo</span>
+                            <span className="text-[10px] text-muted-foreground/60">PNG, JPG up to 1MB</span>
+                          </div>
+                          <input 
+                            type="file" 
+                            ref={fileInputRef}
+                            className="hidden" 
+                            accept="image/*" 
+                            onChange={handleFileChange}
+                          />
+                        </div>
                       </div>
                       <div className="space-y-2">
                         <Label>Description</Label>
-                        <Textarea value={menuFormData.description} onChange={(e) => setMenuFormData({...menuFormData, description: e.target.value})} placeholder="Delicious spicy noodles..." />
+                        <Textarea value={menuFormData.description} onChange={(e) => setMenuFormData({...menuFormData, description: e.target.value})} placeholder="Delicious spicy noodles..." className="min-h-[100px]" />
                       </div>
                     </div>
                   </div>
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setIsMenuDialogOpen(false)}>Cancel</Button>
-                    <Button onClick={handleSaveMenuItem} disabled={!menuFormData.name || !menuFormData.image}>Save Item</Button>
+                  <DialogFooter className="gap-2">
+                    <Button variant="outline" onClick={() => setIsMenuDialogOpen(false)} className="rounded-xl">Cancel</Button>
+                    <Button onClick={handleSaveMenuItem} disabled={!menuFormData.name || !menuFormData.image} className="rounded-xl">
+                      {editingItem ? 'Update Item' : 'Create Item'}
+                    </Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
             </div>
 
             {menuLoading ? (
-              <div className="p-20 text-center"><Loader2 className="w-10 h-10 animate-spin text-primary mx-auto" /></div>
+              <div className="p-20 text-center flex flex-col items-center gap-4">
+                <Loader2 className="w-10 h-10 animate-spin text-primary" />
+                <p className="font-bold text-muted-foreground">Loading menu...</p>
+              </div>
             ) : dbMenu.length === 0 ? (
               <div className="p-20 text-center bg-card rounded-3xl border border-dashed">
                 <ImageIcon className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
-                <p className="text-muted-foreground font-bold">No menu items found in Firestore. Add your first item!</p>
+                <p className="text-muted-foreground font-bold">No menu items found. Add your first dish to get started!</p>
               </div>
             ) : (
               <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {dbMenu.map((item: any) => (
                   <Card key={item.id} className="rounded-3xl border-none shadow-md overflow-hidden group">
                     <CardContent className="p-0">
-                      <div className="relative h-32 bg-muted">
-                        <img src={item.image} alt={item.name} className="w-full h-full object-cover opacity-60" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                      <div className="relative h-40 bg-muted">
+                        <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                         <div className="absolute bottom-3 left-4 flex justify-between items-end w-[calc(100%-32px)]">
                           <div>
                             <h4 className="text-white font-bold text-sm">{item.name}</h4>
                             <span className="text-white/80 text-[10px] uppercase font-black tracking-widest">{item.category}</span>
                           </div>
                           <div className="flex gap-1">
-                            <Button size="icon" variant="secondary" className="h-7 w-7 rounded-lg" onClick={() => {
+                            <Button size="icon" variant="secondary" className="h-8 w-8 rounded-lg bg-white/20 backdrop-blur hover:bg-white/40 border-none text-white" onClick={() => {
                               setEditingItem(item);
                               setMenuFormData({...item});
                               setIsMenuDialogOpen(true);
                             }}>
-                              <Edit2 className="w-3 h-3" />
+                              <Edit2 className="w-4 h-4" />
                             </Button>
-                            <Button size="icon" variant="destructive" className="h-7 w-7 rounded-lg" onClick={() => handleDeleteItem(item.id)}>
-                              <Trash2 className="w-3 h-3" />
+                            <Button size="icon" variant="destructive" className="h-8 w-8 rounded-lg" onClick={() => handleDeleteItem(item.id)}>
+                              <Trash2 className="w-4 h-4" />
                             </Button>
                           </div>
                         </div>
@@ -397,11 +437,14 @@ export const AdminSection = () => {
                       <div className="p-5 flex items-center justify-between">
                          <div className="space-y-1">
                             <p className="text-xs font-bold text-muted-foreground">₹{item.price} • {item.isVeg ? 'Veg' : 'Non-Veg'}</p>
-                            <Badge className={item.isAvailable ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"}>
+                            <Badge variant={item.isAvailable ? "secondary" : "destructive"} className="text-[10px] h-5 rounded-md px-1.5 font-black uppercase">
                               {item.isAvailable ? "In Stock" : "Sold Out"}
                             </Badge>
                          </div>
-                         <Switch checked={item.isAvailable} onCheckedChange={() => toggleAvailability(item.id, item.isAvailable)} />
+                         <div className="flex flex-col items-center gap-1">
+                           <Switch checked={item.isAvailable} onCheckedChange={() => toggleAvailability(item.id, item.isAvailable)} />
+                           <span className="text-[9px] font-bold text-muted-foreground uppercase">Live</span>
+                         </div>
                       </div>
                     </CardContent>
                   </Card>
