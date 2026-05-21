@@ -4,13 +4,14 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
-import { useAuth, useUser } from '@/firebase';
+import { useAuth, useUser, useFirestore } from '@/firebase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { ShoppingBag, Lock, Mail, Loader2, ArrowRight } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import Link from 'next/link';
 
 export default function AdminLoginPage() {
@@ -19,6 +20,7 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const auth = useAuth();
+  const db = useFirestore();
   const { user, loading: userLoading } = useUser();
   const router = useRouter();
 
@@ -32,7 +34,7 @@ export default function AdminLoginPage() {
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!auth) return;
+    if (!auth || !db) return;
 
     if (email !== ADMIN_EMAIL) {
       toast({
@@ -46,10 +48,19 @@ export default function AdminLoginPage() {
     setLoading(true);
     try {
       if (isLogin) {
-        await signInWithEmailAndPassword(auth, email, password);
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        // Ensure admin profile exists in Firestore to satisfy security rules
+        const adminRef = doc(db, 'admins', userCredential.user.uid);
+        const adminDoc = await getDoc(adminRef);
+        if (!adminDoc.exists()) {
+          await setDoc(adminRef, { email: email, role: 'admin' });
+        }
         toast({ title: "Welcome back, Admin" });
       } else {
-        await createUserWithEmailAndPassword(auth, email, password);
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        // Create Admin Profile for the new user
+        const adminRef = doc(db, 'admins', userCredential.user.uid);
+        await setDoc(adminRef, { email: email, role: 'admin' });
         toast({ title: "Admin account created successfully" });
       }
       router.push('/admin/dashboard');
