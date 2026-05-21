@@ -101,8 +101,6 @@ export const AdminSection = () => {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      // Base64 encoding increases size by ~33%. 
-      // Firestore limit is 1MB. So we restrict original file to ~700KB.
       if (file.size > 750 * 1024) { 
         toast({ 
           variant: "destructive", 
@@ -137,7 +135,10 @@ export const AdminSection = () => {
 
     setDoc(itemRef, data, { merge: true })
       .then(() => {
-        toast({ title: editingItem ? "Item Updated" : "Item Added", description: `${data.name} is now live.` });
+        toast({ 
+          title: editingItem ? "Item Updated" : "Success!", 
+          description: `${data.name} is now live on the menu.` 
+        });
         setIsMenuDialogOpen(false);
         setEditingItem(null);
         setSaveLoading(false);
@@ -192,47 +193,49 @@ export const AdminSection = () => {
   return (
     <section className="py-8 bg-muted/20 min-h-screen">
       <div className="container mx-auto px-4">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 animate-in fade-in slide-in-from-top duration-700">
           <div>
             <h1 className="text-3xl font-headline font-black tracking-tight flex items-center gap-2">
-              <LayoutDashboard className="w-8 h-8 text-primary" />
+              <div className="p-2 bg-primary rounded-xl shadow-lg shadow-primary/20 transform rotate-3">
+                 <LayoutDashboard className="w-6 h-6 text-white" />
+              </div>
               Easy<span className="text-primary">Bites</span> Command Center
             </h1>
-            <p className="text-muted-foreground text-sm font-medium">Real-time operations & dynamic menu control</p>
+            <p className="text-muted-foreground text-sm font-medium ml-12">Real-time operations & dynamic menu control</p>
           </div>
           <div className="flex gap-2">
-             <Badge variant="outline" className="bg-green-100 text-green-700 border-green-200 px-3 py-1 font-bold">Kitchen: LIVE</Badge>
-             <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-200 px-3 py-1 font-bold">Delivery: {stats.count > 0 ? 'BUSY' : 'IDLE'}</Badge>
+             <Badge variant="outline" className="bg-green-100 text-green-700 border-green-200 px-4 py-1.5 font-black uppercase tracking-widest text-[10px] rounded-full">Kitchen: LIVE</Badge>
+             <Badge variant="outline" className="bg-blue-100 text-blue-700 border-blue-200 px-4 py-1.5 font-black uppercase tracking-widest text-[10px] rounded-full">Delivery: {stats.count > 0 ? 'BUSY' : 'IDLE'}</Badge>
           </div>
         </div>
 
         <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList className="bg-card p-1 rounded-2xl border w-full md:w-auto shadow-sm">
-            <TabsTrigger value="overview" className="rounded-xl px-6 py-2.5 font-bold data-[state=active]:bg-primary data-[state=active]:text-white">Overview</TabsTrigger>
-            <TabsTrigger value="orders" className="rounded-xl px-6 py-2.5 font-bold data-[state=active]:bg-primary data-[state=active]:text-white flex items-center gap-2">
+          <TabsList className="bg-card p-1.5 rounded-[20px] border w-full md:w-auto shadow-sm">
+            <TabsTrigger value="overview" className="rounded-xl px-8 py-2.5 font-bold data-[state=active]:bg-primary data-[state=active]:text-white transition-all">Overview</TabsTrigger>
+            <TabsTrigger value="orders" className="rounded-xl px-8 py-2.5 font-bold data-[state=active]:bg-primary data-[state=active]:text-white transition-all flex items-center gap-2">
               Orders {stats.count > 0 && <Badge className="ml-1 bg-white text-primary h-5 w-5 p-0 flex items-center justify-center rounded-full text-[10px]">{stats.count}</Badge>}
             </TabsTrigger>
-            <TabsTrigger value="inventory" className="rounded-xl px-6 py-2.5 font-bold data-[state=active]:bg-primary data-[state=active]:text-white">Menu & Stock</TabsTrigger>
-            <TabsTrigger value="marketing" className="rounded-xl px-6 py-2.5 font-bold data-[state=active]:bg-primary data-[state=active]:text-white flex items-center gap-2">
+            <TabsTrigger value="inventory" className="rounded-xl px-8 py-2.5 font-bold data-[state=active]:bg-primary data-[state=active]:text-white transition-all">Menu & Stock</TabsTrigger>
+            <TabsTrigger value="marketing" className="rounded-xl px-8 py-2.5 font-bold data-[state=active]:bg-primary data-[state=active]:text-white transition-all flex items-center gap-2">
               <Sparkles className="w-4 h-4" /> Marketing
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="overview" className="space-y-8 animate-in fade-in duration-500">
-             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+             <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
                {[
-                 { label: "Total Revenue", value: `₹${stats.revenue.toLocaleString()}`, icon: IndianRupee, color: "text-green-600" },
-                 { label: "Total Orders", value: stats.count.toString(), icon: Package, color: "text-blue-600" },
-                 { label: "Success Rate", value: stats.count > 0 ? `${Math.round((stats.delivered / stats.count) * 100)}%` : "0%", icon: CheckCircle2, color: "text-orange-600" },
-                 { label: "AI Rating", value: "4.8", icon: Star, color: "text-yellow-600" }
+                 { label: "Total Revenue", value: `₹${stats.revenue.toLocaleString()}`, icon: IndianRupee, color: "text-green-600", bg: "bg-green-50" },
+                 { label: "Total Orders", value: stats.count.toString(), icon: Package, color: "text-blue-600", bg: "bg-blue-50" },
+                 { label: "Success Rate", value: stats.count > 0 ? `${Math.round((stats.delivered / stats.count) * 100)}%` : "0%", icon: CheckCircle2, color: "text-orange-600", bg: "bg-orange-50" },
+                 { label: "AI Rating", value: "4.8", icon: Star, color: "text-yellow-600", bg: "bg-yellow-50" }
                ].map((s, i) => (
-                 <Card key={i} className="rounded-3xl border-none shadow-md overflow-hidden bg-card">
-                    <CardContent className="p-5">
-                       <div className={`w-10 h-10 rounded-2xl bg-muted flex items-center justify-center mb-3 ${s.color}`}>
-                          <s.icon className="w-5 h-5" />
+                 <Card key={i} className="rounded-[32px] border-none shadow-xl overflow-hidden bg-card hover:scale-[1.02] transition-transform duration-300">
+                    <CardContent className="p-8">
+                       <div className={`w-12 h-12 rounded-2xl ${s.bg} flex items-center justify-center mb-4 ${s.color}`}>
+                          <s.icon className="w-6 h-6" />
                        </div>
-                       <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{s.label}</p>
-                       <h3 className="text-2xl font-black">{s.value}</h3>
+                       <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mb-1">{s.label}</p>
+                       <h3 className="text-3xl font-black">{s.value}</h3>
                     </CardContent>
                  </Card>
                ))}
@@ -240,62 +243,67 @@ export const AdminSection = () => {
           </TabsContent>
 
           <TabsContent value="orders" className="animate-in fade-in slide-in-from-bottom duration-500">
-            <Card className="rounded-3xl shadow-md border-none overflow-hidden">
+            <Card className="rounded-[32px] shadow-xl border-none overflow-hidden">
               {ordersLoading ? (
                 <div className="p-20 text-center flex flex-col items-center gap-4">
-                  <Loader2 className="w-10 h-10 animate-spin text-primary" />
-                  <p className="font-bold text-muted-foreground">Fetching real-time orders...</p>
+                  <Loader2 className="w-12 h-12 animate-spin text-primary" />
+                  <p className="font-black text-muted-foreground uppercase tracking-widest text-xs">Syncing real-time orders...</p>
                 </div>
               ) : realOrders.length === 0 ? (
-                <div className="p-20 text-center flex flex-col items-center gap-4">
-                  <Package className="w-16 h-16 text-muted-foreground/20" />
-                  <p className="font-bold text-muted-foreground">No orders received yet.</p>
+                <div className="p-24 text-center flex flex-col items-center gap-6">
+                  <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center">
+                    <Package className="w-10 h-10 text-muted-foreground opacity-30" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold">No orders found</h3>
+                    <p className="text-muted-foreground text-sm font-medium">Orders will appear here as customers place them.</p>
+                  </div>
                 </div>
               ) : (
                 <Table>
                   <TableHeader className="bg-muted/30">
-                    <TableRow>
-                      <TableHead className="font-bold">Order ID</TableHead>
-                      <TableHead className="font-bold">Customer</TableHead>
-                      <TableHead className="font-bold">Items</TableHead>
-                      <TableHead className="font-bold">Total</TableHead>
-                      <TableHead className="font-bold">Status</TableHead>
-                      <TableHead className="font-bold text-right">Actions</TableHead>
+                    <TableRow className="border-none">
+                      <TableHead className="font-black uppercase tracking-widest text-[10px] py-6 px-8">Order ID</TableHead>
+                      <TableHead className="font-black uppercase tracking-widest text-[10px] py-6">Customer</TableHead>
+                      <TableHead className="font-black uppercase tracking-widest text-[10px] py-6">Items</TableHead>
+                      <TableHead className="font-black uppercase tracking-widest text-[10px] py-6">Total</TableHead>
+                      <TableHead className="font-black uppercase tracking-widest text-[10px] py-6">Status</TableHead>
+                      <TableHead className="font-black uppercase tracking-widest text-[10px] py-6 text-right px-8">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {realOrders.map((order: any) => (
-                      <TableRow key={order.id}>
-                        <TableCell className="font-mono text-xs font-bold">{order.orderId}</TableCell>
+                    {realOrders.map((order: any, idx: number) => (
+                      <TableRow key={order.id} className="group hover:bg-muted/20 border-muted/50 transition-colors">
+                        <TableCell className="font-mono text-xs font-bold px-8">{order.orderId}</TableCell>
                         <TableCell>
                           <div className="flex flex-col">
                             <span className="font-bold text-sm">{order.customerName}</span>
-                            <span className="text-[10px] text-muted-foreground">{order.customerPhone}</span>
+                            <span className="text-[10px] text-muted-foreground uppercase font-black tracking-widest">{order.customerPhone}</span>
                           </div>
                         </TableCell>
-                        <TableCell className="text-xs text-muted-foreground">
+                        <TableCell className="text-xs text-muted-foreground max-w-[200px] truncate">
                           {order.items.map((i: any) => `${i.name} (x${i.quantity})`).join(', ')}
                         </TableCell>
                         <TableCell className="font-black text-primary">₹{order.total}</TableCell>
                         <TableCell>
-                          <Badge variant="outline" className={`rounded-lg font-black uppercase text-[10px] ${
-                            order.status === 'Delivered' ? 'bg-green-50 text-green-700' :
-                            order.status === 'Preparing' ? 'bg-blue-50 text-blue-700' :
-                            order.status === 'Pending' ? 'bg-orange-50 text-orange-700' : 'bg-red-50 text-red-700'
+                          <Badge variant="outline" className={`rounded-lg font-black uppercase text-[9px] px-2.5 py-1 ${
+                            order.status === 'Delivered' ? 'bg-green-50 text-green-700 border-green-100' :
+                            order.status === 'Preparing' ? 'bg-blue-50 text-blue-700 border-blue-100' :
+                            order.status === 'Pending' ? 'bg-orange-50 text-orange-700 border-orange-100' : 'bg-red-50 text-red-700 border-red-100'
                           }`}>
                             {order.status}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-1">
-                            <Button size="icon" variant="ghost" className="h-8 w-8 rounded-lg" onClick={() => handleUpdateStatus(order.id, 'Preparing')}>
-                              <Clock className="w-3.5 h-3.5" />
+                        <TableCell className="text-right px-8">
+                          <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button size="icon" variant="outline" className="h-9 w-9 rounded-xl hover:bg-primary hover:text-white transition-all" onClick={() => handleUpdateStatus(order.id, 'Preparing')}>
+                              <Clock className="w-4 h-4" />
                             </Button>
-                            <Button size="icon" variant="ghost" className="h-8 w-8 rounded-lg text-green-600" onClick={() => handleUpdateStatus(order.id, 'Delivered')}>
-                              <CheckCircle2 className="w-3.5 h-3.5" />
+                            <Button size="icon" variant="outline" className="h-9 w-9 rounded-xl hover:bg-green-600 hover:text-white transition-all text-green-600" onClick={() => handleUpdateStatus(order.id, 'Delivered')}>
+                              <CheckCircle2 className="w-4 h-4" />
                             </Button>
-                            <Button size="icon" variant="ghost" className="h-8 w-8 rounded-lg text-destructive" onClick={() => handleDeleteOrder(order.id)}>
-                              <Trash2 className="w-3.5 h-3.5" />
+                            <Button size="icon" variant="ghost" className="h-9 w-9 rounded-xl text-destructive hover:bg-destructive/10" onClick={() => handleDeleteOrder(order.id)}>
+                              <Trash2 className="w-4 h-4" />
                             </Button>
                           </div>
                         </TableCell>
@@ -308,8 +316,11 @@ export const AdminSection = () => {
           </TabsContent>
 
           <TabsContent value="inventory" className="animate-in fade-in slide-in-from-bottom duration-500">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-black uppercase tracking-widest">Menu Management</h2>
+            <div className="flex justify-between items-center mb-8">
+              <div>
+                <h2 className="text-2xl font-black uppercase tracking-widest">Menu Management</h2>
+                <p className="text-muted-foreground text-sm font-medium mt-1">Add or update dishes live on the storefront</p>
+              </div>
               <Dialog open={isMenuDialogOpen} onOpenChange={(open) => {
                 setIsMenuDialogOpen(open);
                 if (!open) { 
@@ -320,142 +331,165 @@ export const AdminSection = () => {
                 }
               }}>
                 <DialogTrigger asChild>
-                  <Button className="rounded-xl font-bold gap-2">
-                    <Plus className="w-4 h-4" /> Add Item
+                  <Button className="rounded-2xl h-12 px-8 font-black uppercase tracking-widest gap-2 shadow-xl shadow-primary/20 hover:scale-105 transition-all">
+                    <Plus className="w-5 h-5" /> Add New Dish
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="max-w-2xl rounded-[32px] max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>{editingItem ? 'Edit Food Item' : 'Add New Food Item'}</DialogTitle>
-                  </DialogHeader>
-                  <div className="grid md:grid-cols-2 gap-6 py-4">
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label>Dish Name</Label>
-                        <Input value={menuFormData.name} onChange={(e) => setMenuFormData({...menuFormData, name: e.target.value})} placeholder="e.g. Peri Peri Maggie" />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Price (₹)</Label>
-                        <Input type="number" value={menuFormData.price} onChange={(e) => setMenuFormData({...menuFormData, price: Number(e.target.value)})} />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Category</Label>
-                        <select 
-                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                          value={menuFormData.category}
-                          onChange={(e) => setMenuFormData({...menuFormData, category: e.target.value})}
-                        >
-                          {CATEGORIES.filter(c => c !== 'All').map(c => <option key={c} value={c}>{c}</option>)}
-                        </select>
-                      </div>
-                      <div className="flex items-center gap-6 pt-2">
-                        <div className="flex items-center gap-2">
-                          <Switch checked={menuFormData.isVeg} onCheckedChange={(v) => setMenuFormData({...menuFormData, isVeg: v})} />
-                          <Label>Veg</Label>
+                <DialogContent className="max-w-2xl rounded-[40px] max-h-[90vh] overflow-y-auto border-none shadow-3xl p-0 overflow-hidden">
+                  <div className="bg-primary p-8 text-white relative">
+                    <div className="absolute -right-10 -top-10 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
+                    <DialogHeader>
+                      <DialogTitle className="text-3xl font-black tracking-tight">{editingItem ? 'Edit Dish' : 'Craft New Dish'}</DialogTitle>
+                      <CardDescription className="text-white/70 font-medium">Configure item details for the digital menu.</CardDescription>
+                    </DialogHeader>
+                  </div>
+                  <div className="p-8 space-y-8">
+                    <div className="grid md:grid-cols-2 gap-8">
+                      <div className="space-y-6">
+                        <div className="space-y-2">
+                          <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Dish Identity</Label>
+                          <Input value={menuFormData.name} onChange={(e) => setMenuFormData({...menuFormData, name: e.target.value})} placeholder="e.g. Peri Peri Maggie" className="rounded-xl h-12 border-muted bg-muted/20" />
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Switch checked={menuFormData.isAvailable} onCheckedChange={(v) => setMenuFormData({...menuFormData, isAvailable: v})} />
-                          <Label>Available</Label>
+                        <div className="grid grid-cols-2 gap-4">
+                           <div className="space-y-2">
+                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Price (₹)</Label>
+                             <Input type="number" value={menuFormData.price} onChange={(e) => setMenuFormData({...menuFormData, price: Number(e.target.value)})} className="rounded-xl h-12 border-muted bg-muted/20" />
+                           </div>
+                           <div className="space-y-2">
+                             <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Type</Label>
+                             <div className="h-12 flex items-center gap-3 px-3 bg-muted/20 rounded-xl border border-muted">
+                               <Switch checked={menuFormData.isVeg} onCheckedChange={(v) => setMenuFormData({...menuFormData, isVeg: v})} />
+                               <span className="text-xs font-bold">{menuFormData.isVeg ? 'Veg' : 'Non-Veg'}</span>
+                             </div>
+                           </div>
                         </div>
-                      </div>
-                    </div>
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label>Photo Upload</Label>
-                        <div className="flex flex-col gap-4">
-                          {menuFormData.image && (
-                            <div className="relative w-full h-32 rounded-xl overflow-hidden border bg-muted">
-                              <img src={menuFormData.image} alt="Preview" className="w-full h-full object-cover" />
-                              <button 
-                                type="button"
-                                onClick={() => setMenuFormData({...menuFormData, image: ''})}
-                                className="absolute top-2 right-2 bg-destructive text-white p-1 rounded-full shadow-lg"
-                              >
-                                <X className="w-4 h-4" />
-                              </button>
-                            </div>
-                          )}
-                          <div 
-                            className="border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center gap-2 cursor-pointer hover:bg-muted/50 transition-colors"
-                            onClick={() => fileInputRef.current?.click()}
+                        <div className="space-y-2">
+                          <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Category</Label>
+                          <select 
+                            className="flex h-12 w-full rounded-xl border border-muted bg-muted/20 px-4 py-2 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary/20"
+                            value={menuFormData.category}
+                            onChange={(e) => setMenuFormData({...menuFormData, category: e.target.value})}
                           >
-                            <Upload className="w-6 h-6 text-muted-foreground" />
-                            <span className="text-xs font-bold text-muted-foreground">Select image file</span>
-                            <span className="text-[10px] text-muted-foreground/60">Limit: 750KB (PNG, JPG)</span>
-                          </div>
-                          <input 
-                            type="file" 
-                            ref={fileInputRef}
-                            className="hidden" 
-                            accept="image/*" 
-                            onChange={handleFileChange}
-                          />
+                            {CATEGORIES.filter(c => c !== 'All').map(c => <option key={c} value={c}>{c}</option>)}
+                          </select>
                         </div>
                       </div>
-                      <div className="space-y-2">
-                        <Label>Description</Label>
-                        <Textarea value={menuFormData.description} onChange={(e) => setMenuFormData({...menuFormData, description: e.target.value})} placeholder="Delicious spicy noodles..." className="min-h-[100px]" />
+                      <div className="space-y-6">
+                        <div className="space-y-2">
+                          <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Visual Branding</Label>
+                          <div className="flex flex-col gap-4">
+                            {menuFormData.image ? (
+                              <div className="relative w-full h-40 rounded-2xl overflow-hidden border-4 border-white shadow-xl bg-muted group/img">
+                                <img src={menuFormData.image} alt="Preview" className="w-full h-full object-cover" />
+                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity flex items-center justify-center">
+                                  <Button 
+                                    type="button"
+                                    variant="destructive"
+                                    size="sm"
+                                    onClick={() => setMenuFormData({...menuFormData, image: ''})}
+                                    className="rounded-full h-10 w-10 p-0"
+                                  >
+                                    <X className="w-5 h-5" />
+                                  </Button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div 
+                                className="border-2 border-dashed border-muted-foreground/30 rounded-2xl p-8 flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-muted/50 hover:border-primary/50 transition-all duration-300 group"
+                                onClick={() => fileInputRef.current?.click()}
+                              >
+                                <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center group-hover:scale-110 transition-transform">
+                                  <Upload className="w-6 h-6 text-muted-foreground" />
+                                </div>
+                                <div className="text-center">
+                                  <p className="text-xs font-black uppercase tracking-widest">Select Image</p>
+                                  <p className="text-[9px] text-muted-foreground font-bold mt-1">PNG, JPG up to 750KB</p>
+                                </div>
+                              </div>
+                            )}
+                            <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-[10px] font-black uppercase tracking-widest text-muted-foreground ml-1">Dish Description</Label>
+                          <Textarea value={menuFormData.description} onChange={(e) => setMenuFormData({...menuFormData, description: e.target.value})} placeholder="Delicious spicy noodles with..." className="min-h-[100px] rounded-xl border-muted bg-muted/20" />
+                        </div>
                       </div>
                     </div>
                   </div>
-                  <DialogFooter className="gap-2">
-                    <Button variant="outline" onClick={() => setIsMenuDialogOpen(false)} className="rounded-xl">Cancel</Button>
-                    <Button onClick={handleSaveMenuItem} disabled={!menuFormData.name || !menuFormData.image || saveLoading} className="rounded-xl">
+                  <div className="bg-muted/30 p-8 flex justify-end gap-4 border-t">
+                    <Button variant="ghost" onClick={() => setIsMenuDialogOpen(false)} className="rounded-xl font-bold uppercase tracking-widest text-xs px-8">Discard</Button>
+                    <Button onClick={handleSaveMenuItem} disabled={!menuFormData.name || !menuFormData.image || saveLoading} className="rounded-xl h-12 px-10 font-black uppercase tracking-widest shadow-xl">
                       {saveLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                      {editingItem ? 'Update Item' : 'Create Item'}
+                      {editingItem ? 'Save Changes' : 'Publish Dish'}
                     </Button>
-                  </DialogFooter>
+                  </div>
                 </DialogContent>
               </Dialog>
             </div>
 
             {menuLoading ? (
               <div className="p-20 text-center flex flex-col items-center gap-4">
-                <Loader2 className="w-10 h-10 animate-spin text-primary" />
-                <p className="font-bold text-muted-foreground">Loading menu...</p>
+                <Loader2 className="w-12 h-12 animate-spin text-primary" />
+                <p className="font-black text-muted-foreground uppercase tracking-widest text-xs">Loading digital menu...</p>
               </div>
             ) : dbMenu.length === 0 ? (
-              <div className="p-20 text-center bg-card rounded-3xl border border-dashed">
-                <ImageIcon className="w-12 h-12 text-muted-foreground/20 mx-auto mb-4" />
-                <p className="text-muted-foreground font-bold">No menu items found. Add your first dish to get started!</p>
+              <div className="p-24 text-center bg-card rounded-[40px] border-2 border-dashed border-muted/50">
+                <div className="w-20 h-20 bg-muted rounded-full flex items-center justify-center mx-auto mb-6">
+                  <ImageIcon className="w-10 h-10 text-muted-foreground opacity-20" />
+                </div>
+                <h3 className="text-2xl font-bold mb-2">The menu is empty</h3>
+                <p className="text-muted-foreground font-medium mb-8">Ready to serve something delicious? Add your first dish to get started.</p>
+                <Button variant="outline" className="rounded-full px-10 h-12 font-black uppercase tracking-widest" onClick={() => setIsMenuDialogOpen(true)}>Start Crafting</Button>
               </div>
             ) : (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {dbMenu.map((item: any) => (
-                  <Card key={item.id} className="rounded-3xl border-none shadow-md overflow-hidden group">
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                {dbMenu.map((item: any, idx: number) => (
+                  <Card key={item.id} className="rounded-[32px] border-none shadow-xl overflow-hidden group hover:shadow-2xl transition-all duration-500 animate-in fade-in slide-in-from-bottom duration-700" style={{ animationDelay: `${idx * 100}ms` }}>
                     <CardContent className="p-0">
-                      <div className="relative h-40 bg-muted">
-                        <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                        <div className="absolute bottom-3 left-4 flex justify-between items-end w-[calc(100%-32px)]">
-                          <div>
-                            <h4 className="text-white font-bold text-sm">{item.name}</h4>
-                            <span className="text-white/80 text-[10px] uppercase font-black tracking-widest">{item.category}</span>
+                      <div className="relative h-48 bg-muted overflow-hidden">
+                        <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
+                        <div className="absolute top-4 left-4">
+                           {item.isVeg ? (
+                             <div className="w-6 h-6 bg-white rounded-md border border-green-500 flex items-center justify-center">
+                               <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
+                             </div>
+                           ) : (
+                             <div className="w-6 h-6 bg-white rounded-md border border-red-500 flex items-center justify-center">
+                               <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
+                             </div>
+                           )}
+                        </div>
+                        <div className="absolute bottom-4 left-4 right-4 flex justify-between items-end">
+                          <div className="max-w-[150px]">
+                            <h4 className="text-white font-bold text-lg truncate leading-tight">{item.name}</h4>
+                            <span className="text-white/60 text-[9px] uppercase font-black tracking-[0.2em]">{item.category}</span>
                           </div>
-                          <div className="flex gap-1">
-                            <Button size="icon" variant="secondary" className="h-8 w-8 rounded-lg bg-white/20 backdrop-blur hover:bg-white/40 border-none text-white" onClick={() => {
+                          <div className="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Button size="icon" variant="secondary" className="h-9 w-9 rounded-xl bg-white/20 backdrop-blur hover:bg-white/40 border-none text-white shadow-xl" onClick={() => {
                               setEditingItem(item);
                               setMenuFormData({...item});
                               setIsMenuDialogOpen(true);
                             }}>
                               <Edit2 className="w-4 h-4" />
                             </Button>
-                            <Button size="icon" variant="destructive" className="h-8 w-8 rounded-lg" onClick={() => handleDeleteItem(item.id)}>
+                            <Button size="icon" variant="destructive" className="h-9 w-9 rounded-xl shadow-xl" onClick={() => handleDeleteItem(item.id)}>
                               <Trash2 className="w-4 h-4" />
                             </Button>
                           </div>
                         </div>
                       </div>
-                      <div className="p-5 flex items-center justify-between">
+                      <div className="p-6 flex items-center justify-between">
                          <div className="space-y-1">
-                            <p className="text-xs font-bold text-muted-foreground">₹{item.price} • {item.isVeg ? 'Veg' : 'Non-Veg'}</p>
-                            <Badge variant={item.isAvailable ? "secondary" : "destructive"} className="text-[10px] h-5 rounded-md px-1.5 font-black uppercase">
+                            <p className="text-xl font-black text-primary">₹{item.price}</p>
+                            <Badge variant={item.isAvailable ? "outline" : "destructive"} className={`text-[9px] h-5 rounded-md px-2 font-black uppercase tracking-widest ${item.isAvailable ? 'bg-green-50 text-green-700 border-green-200' : ''}`}>
                               {item.isAvailable ? "In Stock" : "Sold Out"}
                             </Badge>
                          </div>
-                         <div className="flex flex-col items-center gap-1">
-                           <Switch checked={item.isAvailable} onCheckedChange={() => toggleAvailability(item.id, item.isAvailable)} />
-                           <span className="text-[9px] font-bold text-muted-foreground uppercase">Live</span>
+                         <div className="flex flex-col items-center gap-1.5">
+                           <Switch checked={item.isAvailable} onCheckedChange={() => toggleAvailability(item.id, item.isAvailable)} className="scale-90" />
+                           <span className="text-[8px] font-black text-muted-foreground uppercase tracking-widest">Active</span>
                          </div>
                       </div>
                     </CardContent>
@@ -466,67 +500,72 @@ export const AdminSection = () => {
           </TabsContent>
 
           <TabsContent value="marketing" className="space-y-6 animate-in fade-in duration-500">
-             <div className="grid lg:grid-cols-3 gap-6">
-                <Card className="rounded-3xl border-none shadow-md">
-                   <CardHeader>
-                     <CardTitle className="text-lg">Promotional AI</CardTitle>
-                     <CardDescription>Generate daily specials and social copy.</CardDescription>
+             <div className="grid lg:grid-cols-3 gap-10">
+                <Card className="rounded-[40px] border-none shadow-xl bg-card">
+                   <CardHeader className="p-8">
+                     <CardTitle className="text-xl font-black uppercase tracking-widest">AI Content Engine</CardTitle>
+                     <CardDescription className="font-medium">Let Genkit craft your daily specials and social copy.</CardDescription>
                    </CardHeader>
-                   <CardContent className="space-y-4">
-                      <div className="space-y-2">
-                         <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Select Dish</Label>
-                         <div className="grid grid-cols-2 gap-2">
+                   <CardContent className="px-8 pb-8 space-y-6">
+                      <div className="space-y-3">
+                         <Label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground ml-1">Select Featured Dish</Label>
+                         <div className="grid grid-cols-2 gap-3">
                            {(dbMenu.length > 0 ? dbMenu : []).slice(0, 4).map((item: any) => (
                              <button
                                key={item.id}
                                onClick={() => setSelectedPromoDish(item)}
-                               className={`p-3 rounded-xl border-2 text-left transition-all ${
-                                 selectedPromoDish?.id === item.id ? 'border-primary bg-primary/5' : 'border-transparent bg-muted/50'
+                               className={`p-4 rounded-2xl border-2 text-left transition-all group ${
+                                 selectedPromoDish?.id === item.id ? 'border-primary bg-primary/5' : 'border-transparent bg-muted/50 hover:bg-muted'
                                }`}
                              >
-                               <span className="text-[10px] block font-black truncate">{item.name}</span>
+                               <span className={`text-[10px] block font-black truncate ${selectedPromoDish?.id === item.id ? 'text-primary' : 'text-muted-foreground'}`}>{item.name}</span>
+                               <span className="text-[8px] font-bold opacity-50">₹{item.price}</span>
                              </button>
                            ))}
                          </div>
                       </div>
                       <Button 
-                        className="w-full h-12 rounded-xl font-bold gap-2 shadow-lg shadow-primary/20"
+                        className="w-full h-14 rounded-2xl font-black uppercase tracking-widest gap-2 shadow-2xl shadow-primary/20"
                         onClick={handleGeneratePromo}
                         disabled={promoLoading || !selectedPromoDish}
                       >
-                        {promoLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Megaphone className="w-4 h-4" />}
-                        Generate Special
+                        {promoLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Megaphone className="w-5 h-5" />}
+                        Generate Campaign
                       </Button>
                    </CardContent>
                 </Card>
 
-                <Card className="lg:col-span-2 rounded-3xl border-none shadow-md bg-muted/30 relative flex items-center justify-center p-8 overflow-hidden">
+                <Card className="lg:col-span-2 rounded-[40px] border-none shadow-2xl bg-muted/20 relative flex items-center justify-center p-12 overflow-hidden min-h-[400px]">
                    {promoResult ? (
-                     <div className="max-w-md w-full space-y-6 animate-in zoom-in duration-500">
-                        <div className="p-6 bg-card rounded-[32px] shadow-2xl border border-primary/10 relative">
-                           <div className="absolute -top-3 -right-3 w-12 h-12 bg-primary rounded-full flex items-center justify-center text-white text-2xl animate-bounce">
+                     <div className="max-w-md w-full space-y-8 animate-in zoom-in duration-500">
+                        <div className="p-10 bg-card rounded-[48px] shadow-3xl border border-primary/10 relative">
+                           <div className="absolute -top-4 -right-4 w-16 h-16 bg-primary rounded-2xl flex items-center justify-center text-white text-3xl shadow-2xl shadow-primary/40 animate-bounce">
                              {promoResult.emoji}
                            </div>
-                           <h4 className="text-2xl font-black mb-2 text-primary">{promoResult.promoTitle}</h4>
-                           <p className="text-sm text-muted-foreground leading-relaxed mb-6 italic">{promoResult.promoDescription}</p>
-                           <div className="flex items-center justify-between p-4 bg-primary/5 rounded-2xl">
+                           <Badge className="bg-primary/10 text-primary border-primary/20 mb-6 font-black uppercase tracking-[0.3em] text-[10px] px-4 py-1.5 rounded-full">AI Generated Promo</Badge>
+                           <h4 className="text-3xl font-black mb-4 text-foreground leading-tight">{promoResult.promoTitle}</h4>
+                           <p className="text-sm text-muted-foreground leading-relaxed mb-10 font-medium italic">"{promoResult.promoDescription}"</p>
+                           <div className="flex items-center justify-between p-6 bg-primary/5 rounded-[32px] border border-primary/10">
                               <div>
-                                 <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Special Price</p>
-                                 <p className="text-2xl font-black">₹{promoResult.finalPrice}</p>
+                                 <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mb-1">Campaign Price</p>
+                                 <p className="text-3xl font-black text-primary">₹{promoResult.finalPrice}</p>
                               </div>
-                              <Button variant="outline" className="rounded-xl border-primary text-primary font-bold text-xs h-9" onClick={() => {
+                              <Button className="rounded-2xl h-12 px-8 font-black uppercase tracking-widest text-[10px] gap-2" onClick={() => {
                                 navigator.clipboard.writeText(`${promoResult.promoTitle}\n${promoResult.promoDescription}\nOnly for ₹${promoResult.finalPrice}!`);
-                                toast({ title: "Copied to clipboard" });
+                                toast({ title: "Campaign Copied!" });
                               }}>
-                                 Copy to Post
+                                 Copy Assets
                               </Button>
                            </div>
                         </div>
                      </div>
                    ) : (
-                     <div className="text-center space-y-3 opacity-30">
-                        <Sparkles className="w-12 h-12 mx-auto" />
-                        <p className="font-bold">Select a dish to generate a promotion</p>
+                     <div className="text-center space-y-4 opacity-30">
+                        <Sparkles className="w-16 h-16 mx-auto text-primary animate-pulse" />
+                        <div>
+                          <p className="text-xl font-black uppercase tracking-[0.2em]">Ready to Launch?</p>
+                          <p className="text-sm font-bold">Select a dish and click "Generate Campaign" to start.</p>
+                        </div>
                      </div>
                    )}
                 </Card>
