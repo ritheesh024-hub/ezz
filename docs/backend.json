@@ -46,6 +46,7 @@
         "total": { "type": "number" },
         "status": { "type": "string", "enum": ["Pending", "Preparing", "Out for Delivery", "Delivered", "Cancelled"] },
         "paymentMethod": { "type": "string" },
+        "userId": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["customerName", "customerPhone", "address", "items", "total", "status", "createdAt"]
@@ -69,7 +70,7 @@
     }
   },
   "auth": {
-    "providers": ["password"]
+    "providers": ["password", "phone"]
   },
   "firestore": {
     "/admins/{userId}": {

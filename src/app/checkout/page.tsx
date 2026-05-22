@@ -1,6 +1,6 @@
 
 "use client"
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { useStore } from '@/app/lib/store';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { OTPInput } from '@/components/OTPInput';
 import { 
   CheckCircle2, 
   ChevronRight, 
@@ -18,13 +19,18 @@ import {
   Truck, 
   ShoppingBag, 
   Loader2, 
-  Trash2
+  Trash2,
+  MessageSquare,
+  ShieldCheck,
+  Lock,
+  ArrowRight
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { toast } from '@/hooks/use-toast';
-import { useFirestore, useUser } from '@/firebase';
+import { useFirestore, useUser, useAuth } from '@/firebase';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { signInWithCustomToken } from 'firebase/auth'; // Simulated for prototype
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { cn } from '@/lib/utils';
@@ -34,10 +40,20 @@ export default function CheckoutPage() {
   const { cart, getTotal, clearCart, removeFromCart } = useStore();
   const db = useFirestore();
   const { user } = useUser();
+  const auth = useAuth();
   const router = useRouter();
+  
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [orderId, setOrderId] = useState<string>('');
+  
+  // Auth State
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [showOtp, setShowOtp] = useState(false);
+  const [otpLoading, setOtpLoading] = useState(false);
+  const [resendTimer, setResendTimer] = useState(0);
+
+  // Delivery Data
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -50,6 +66,21 @@ export default function CheckoutPage() {
     setOrderId(`EB-${Math.floor(Math.random() * 90000) + 10000}`);
   }, []);
 
+  // Sync formData phone when user logs in
+  useEffect(() => {
+    if (user?.phoneNumber) {
+      setFormData(prev => ({ ...prev, phone: user.phoneNumber || '' }));
+    }
+  }, [user]);
+
+  // Resend Timer Logic
+  useEffect(() => {
+    if (resendTimer > 0) {
+      const timer = setTimeout(() => setResendTimer(resendTimer - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendTimer]);
+
   const subtotal = getTotal();
   const deliveryFee = subtotal >= 149 ? 0 : 40;
   const total = subtotal + deliveryFee;
@@ -57,16 +88,43 @@ export default function CheckoutPage() {
   const handleNext = () => setStep(step + 1);
   const handleBack = () => setStep(step - 1);
 
+  const startPhoneAuth = async () => {
+    if (phoneNumber.length < 10) {
+      toast({ variant: "destructive", title: "Invalid Number", description: "Please enter a valid 10-digit number." });
+      return;
+    }
+    setOtpLoading(true);
+    // Simulation of sending WhatsApp OTP
+    setTimeout(() => {
+      setOtpLoading(false);
+      setShowOtp(true);
+      setResendTimer(30);
+      toast({ title: "Verification Sent", description: "OTP sent to your WhatsApp number." });
+    }, 1500);
+  };
+
+  const verifyOtp = async (otp: string) => {
+    setOtpLoading(true);
+    // Simulation of silent background login
+    setTimeout(() => {
+      setOtpLoading(false);
+      setFormData(prev => ({ ...prev, phone: phoneNumber }));
+      setStep(3); // Move to Details
+      toast({ title: "Verified Successfully!", description: "Account linked to " + phoneNumber });
+    }, 1000);
+  };
+
+  const handleResendOtp = () => {
+    if (resendTimer > 0) return;
+    startPhoneAuth();
+  };
+
   const handleSubmit = async () => {
     if (!db) return;
 
-    if (!formData.name || !formData.phone || !formData.address) {
-      toast({ 
-        variant: "destructive", 
-        title: "Missing details", 
-        description: "Please fill in delivery info." 
-      });
-      setStep(2);
+    if (!formData.name || !formData.address) {
+      toast({ variant: "destructive", title: "Missing details", description: "Please fill in delivery info." });
+      setStep(3);
       return;
     }
 
@@ -76,7 +134,7 @@ export default function CheckoutPage() {
     const orderData = {
       orderId: currentOrderId,
       customerName: formData.name,
-      customerPhone: formData.phone,
+      customerPhone: formData.phone || phoneNumber,
       address: formData.address,
       instructions: formData.instructions || '',
       items: cart.map(item => ({
@@ -109,14 +167,14 @@ export default function CheckoutPage() {
     setTimeout(() => {
       setLoading(false);
       clearCart();
-      setStep(4);
+      setStep(5);
       toast({ title: "Order Placed Successfully! 🚀" });
     }, 800);
   };
 
   const qrImage = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent('upi://pay?pa=8639366800@ybl&pn=Ezzy%20Bites&cu=INR')}`;
 
-  if (cart.length === 0 && step < 4) {
+  if (cart.length === 0 && step < 5) {
     return (
       <div className="min-h-screen bg-background flex flex-col">
         <Navbar />
@@ -135,14 +193,15 @@ export default function CheckoutPage() {
     <div className="min-h-screen bg-secondary/10 pb-12">
       <Navbar />
       <main className="container mx-auto px-4 pt-24 md:pt-32">
+        {/* Progress Tracker */}
         <div className="max-w-xl mx-auto mb-10 md:mb-16 px-2">
           <div className="flex items-center justify-between relative">
             <div className="absolute top-1/2 left-0 w-full h-0.5 bg-muted -translate-y-1/2 z-0" />
             <div 
               className="absolute top-1/2 left-0 h-0.5 bg-primary -translate-y-1/2 z-0 transition-all duration-700" 
-              style={{ width: `${(step - 1) * 33.33}%` }} 
+              style={{ width: `${(step - 1) * 25}%` }} 
             />
-            {[1, 2, 3, 4].map((s) => (
+            {[1, 2, 3, 4, 5].map((s) => (
               <div key={s} className="relative z-10 flex flex-col items-center">
                 <div className={cn(
                   "w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center border-2 md:border-4 border-background transition-all",
@@ -157,10 +216,12 @@ export default function CheckoutPage() {
 
         <div className="max-w-5xl mx-auto grid lg:grid-cols-3 gap-6 md:gap-10">
           <div className="lg:col-span-2 space-y-6 md:space-y-8">
+            
+            {/* Step 1: Review Items */}
             {step === 1 && (
               <div className="space-y-6 animate-in fade-in slide-in-from-left duration-500">
                 <h2 className="text-2xl md:text-4xl font-headline font-black">Review Order</h2>
-                <Card className="rounded-[24px] md:rounded-[40px] border-none shadow-xl overflow-hidden">
+                <Card className="rounded-[24px] md:rounded-[40px] border-none shadow-xl overflow-hidden bg-card">
                   <div className="divide-y">
                     {cart.map((item) => (
                       <div key={item.id} className="p-4 md:p-6 flex gap-4 md:gap-6 items-center">
@@ -173,10 +234,7 @@ export default function CheckoutPage() {
                         </div>
                         <div className="text-right">
                           <p className="font-black text-lg md:text-xl text-primary">₹{item.price * item.quantity}</p>
-                          <button 
-                            onClick={() => removeFromCart(item.id)} 
-                            className="text-muted-foreground hover:text-destructive mt-2 transition-colors"
-                          >
+                          <button onClick={() => removeFromCart(item.id)} className="text-muted-foreground hover:text-destructive mt-2 transition-colors">
                             <Trash2 className="w-4 h-4 ml-auto" />
                           </button>
                         </div>
@@ -184,43 +242,97 @@ export default function CheckoutPage() {
                     ))}
                   </div>
                 </Card>
-                <Button onClick={handleNext} className="w-full h-14 md:h-16 rounded-2xl text-lg font-bold shadow-xl">Proceed to Details</Button>
+                <Button onClick={handleNext} className="w-full h-14 md:h-16 rounded-2xl text-lg font-bold shadow-xl">Confirm & Continue</Button>
               </div>
             )}
 
+            {/* Step 2: WhatsApp Frictionless Auth */}
             {step === 2 && (
+              <div className="space-y-6 animate-in fade-in slide-in-from-left duration-500 max-w-md mx-auto">
+                <div className="text-center space-y-2">
+                  <div className="w-16 h-16 bg-primary/10 rounded-3xl flex items-center justify-center mx-auto mb-4">
+                    <Smartphone className="w-8 h-8 text-primary" />
+                  </div>
+                  <h2 className="text-2xl md:text-3xl font-black">Quick Verification</h2>
+                  <p className="text-muted-foreground text-sm font-medium">Verify your number to track your delicious meal.</p>
+                </div>
+
+                <Card className="rounded-[32px] border-none shadow-xl bg-card overflow-hidden">
+                  <CardContent className="p-8 space-y-6">
+                    {!showOtp ? (
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label className="text-[10px] font-black uppercase tracking-widest opacity-60 ml-1">WhatsApp Number</Label>
+                          <div className="relative">
+                            <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2 border-r pr-3">
+                              <span className="text-sm font-black">+91</span>
+                            </div>
+                            <Input 
+                              type="tel" 
+                              value={phoneNumber} 
+                              onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                              placeholder="00000 00000"
+                              className="h-14 md:h-16 pl-20 rounded-2xl text-lg font-bold border-muted focus:ring-primary/10"
+                            />
+                          </div>
+                        </div>
+                        <Button 
+                          onClick={startPhoneAuth} 
+                          disabled={otpLoading} 
+                          className="w-full h-14 md:h-16 rounded-2xl font-black text-base md:text-lg gap-2 shadow-xl shadow-primary/20"
+                        >
+                          {otpLoading ? <Loader2 className="animate-spin" /> : <>Send OTP <MessageSquare className="w-5 h-5" /></>}
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-8 text-center animate-in zoom-in duration-500">
+                        <div className="space-y-2">
+                          <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">Enter 6-Digit Code</Label>
+                          <p className="text-xs text-muted-foreground">Sent to <span className="text-primary font-bold">+91 {phoneNumber}</span></p>
+                        </div>
+                        
+                        <OTPInput onComplete={verifyOtp} disabled={otpLoading} />
+
+                        <div className="pt-4 space-y-4">
+                          <Button 
+                            variant="link" 
+                            disabled={resendTimer > 0} 
+                            onClick={handleResendOtp}
+                            className={cn("text-xs font-black uppercase tracking-widest", resendTimer > 0 ? "text-muted-foreground" : "text-primary")}
+                          >
+                            {resendTimer > 0 ? `Resend OTP in ${resendTimer}s` : "Resend OTP on WhatsApp"}
+                          </Button>
+                          <Button variant="ghost" className="w-full text-xs font-bold" onClick={() => setShowOtp(false)}>Change Number</Button>
+                        </div>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+                <div className="flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-40">
+                  <ShieldCheck className="w-3 h-3" /> Secure & Frictionless Auth
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: Delivery Details */}
+            {step === 3 && (
               <div className="space-y-6 animate-in fade-in slide-in-from-left duration-500">
                 <h2 className="text-2xl md:text-4xl font-headline font-black">Delivery Details</h2>
-                <Card className="rounded-[24px] md:rounded-[40px] border-none shadow-xl">
+                <Card className="rounded-[24px] md:rounded-[40px] border-none shadow-xl bg-card">
                   <CardContent className="p-6 md:p-10 space-y-6">
                     <div className="grid md:grid-cols-2 gap-4 md:gap-6">
                       <div className="space-y-2">
                         <Label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">Full Name</Label>
-                        <Input 
-                          value={formData.name} 
-                          onChange={(e) => setFormData({...formData, name: e.target.value})} 
-                          className="h-12 md:h-14 rounded-xl" 
-                          placeholder="Your Name"
-                        />
+                        <Input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="h-12 md:h-14 rounded-xl" placeholder="Your Name" />
                       </div>
-                      <div className="space-y-2">
-                        <Label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">Phone Number</Label>
-                        <Input 
-                          value={formData.phone} 
-                          onChange={(e) => setFormData({...formData, phone: e.target.value})} 
-                          className="h-12 md:h-14 rounded-xl" 
-                          placeholder="Mobile Number"
-                        />
+                      <div className="space-y-2 opacity-60">
+                        <Label className="text-[10px] font-black uppercase tracking-widest ml-1">Verified Number</Label>
+                        <Input value={formData.phone} disabled className="h-12 md:h-14 rounded-xl bg-muted font-bold" />
                       </div>
                     </div>
                     <div className="space-y-2">
                       <Label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">Delivery Address</Label>
-                      <Textarea 
-                        value={formData.address} 
-                        onChange={(e) => setFormData({...formData, address: e.target.value})} 
-                        className="rounded-xl min-h-[100px] md:min-h-[140px]" 
-                        placeholder="Complete address (Building, Street, Area)"
-                      />
+                      <Textarea value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} className="rounded-xl min-h-[100px] md:min-h-[140px]" placeholder="Complete address (Building, Street, Area)" />
                     </div>
                   </CardContent>
                 </Card>
@@ -231,7 +343,8 @@ export default function CheckoutPage() {
               </div>
             )}
 
-            {step === 3 && (
+            {/* Step 4: Payment */}
+            {step === 4 && (
               <div className="space-y-6 animate-in fade-in slide-in-from-left duration-500">
                 <h2 className="text-2xl md:text-4xl font-headline font-black">Payment</h2>
                 <RadioGroup defaultValue={formData.paymentMethod} onValueChange={(v) => setFormData({...formData, paymentMethod: v})} className="space-y-3 md:space-y-4">
@@ -260,7 +373,7 @@ export default function CheckoutPage() {
                 </RadioGroup>
 
                 {formData.paymentMethod === 'upi' && (
-                  <Card className="p-6 md:p-10 text-center animate-in zoom-in rounded-[32px] border-dashed border-2">
+                  <Card className="p-6 md:p-10 text-center animate-in zoom-in rounded-[32px] border-dashed border-2 bg-card">
                     <div className="w-48 h-48 md:w-56 md:h-56 mx-auto relative bg-white border rounded-2xl overflow-hidden mb-6 p-2 shadow-inner">
                       <Image src={qrImage} alt="QR Code" fill className="object-contain p-2" priority unoptimized />
                     </div>
@@ -273,15 +386,16 @@ export default function CheckoutPage() {
 
                 <div className="flex gap-3 md:gap-4">
                   <Button variant="outline" onClick={handleBack} className="h-14 md:h-16 rounded-xl px-4 md:px-8 font-bold border-2"><ChevronLeft className="w-5 h-5" /></Button>
-                  <Button onClick={handleSubmit} disabled={loading} className="flex-1 h-14 md:h-16 rounded-xl text-base md:text-lg font-bold shadow-2xl shadow-primary/20">
+                  <Button onClick={handleSubmit} disabled={loading} className="flex-1 h-14 md:h-16 rounded-xl text-base md:text-lg font-bold shadow-2xl shadow-primary/20 bg-primary text-white">
                     {loading ? <Loader2 className="animate-spin" /> : 'Confirm Order'}
                   </Button>
                 </div>
               </div>
             )}
 
-            {step === 4 && (
-              <Card className="p-8 md:p-16 text-center space-y-8 rounded-[32px] md:rounded-[60px] shadow-2xl animate-in zoom-in border-none">
+            {/* Step 5: Success */}
+            {step === 5 && (
+              <Card className="p-8 md:p-16 text-center space-y-8 rounded-[32px] md:rounded-[60px] shadow-2xl animate-in zoom-in border-none bg-card">
                 <div className="w-16 h-16 md:w-24 md:h-24 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto">
                   <CheckCircle2 className="w-8 h-8 md:w-12 md:h-12" />
                 </div>
@@ -305,8 +419,9 @@ export default function CheckoutPage() {
             )}
           </div>
 
-          {step < 4 && (
-            <Card className="rounded-[24px] md:rounded-[40px] border-none shadow-xl h-fit sticky top-24 lg:top-28">
+          {/* Sticky Summary */}
+          {step < 5 && (
+            <Card className="rounded-[24px] md:rounded-[40px] border-none shadow-xl h-fit sticky top-24 lg:top-28 bg-card">
               <CardHeader className="p-6 md:p-8 border-b bg-muted/5">
                 <p className="text-[10px] font-black uppercase tracking-widest text-primary">Order Summary</p>
               </CardHeader>
@@ -322,6 +437,9 @@ export default function CheckoutPage() {
                 <div className="border-t border-dashed pt-6 flex justify-between items-center">
                   <span className="text-sm md:text-lg font-black uppercase tracking-widest">Total</span>
                   <span className="text-2xl md:text-4xl font-headline font-black text-primary">₹{total}</span>
+                </div>
+                <div className="pt-2 flex items-center gap-2 text-[8px] font-black uppercase text-muted-foreground opacity-50">
+                  <Lock className="w-3 h-3" /> SSL Secure Payment
                 </div>
               </CardContent>
             </Card>
