@@ -80,6 +80,17 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["name", "price", "category", "imageUrl", "isAvailable"]
+    },
+    "OTPCode": {
+      "title": "OTP Code",
+      "description": "Temporary 4-digit verification code for phone authentication",
+      "type": "object",
+      "properties": {
+        "otp": { "type": "string" },
+        "expiresAt": { "type": "number" },
+        "createdAt": { "type": "object" }
+      },
+      "required": ["otp", "expiresAt"]
     }
   },
   "auth": {
@@ -101,6 +112,10 @@
     "/products/{productId}": {
       "schema": "#/entities/FoodItem",
       "description": "Collection of dynamic menu items (products)"
+    },
+    "/otp_codes/{phone}": {
+      "schema": "#/entities/OTPCode",
+      "description": "Temporary storage for 4-digit OTP codes keyed by phone number"
     }
   }
 }

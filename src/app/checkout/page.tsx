@@ -1,3 +1,4 @@
+
 "use client"
 import React, { useState, useEffect } from 'react';
 import { Navbar } from '@/components/Navbar';
@@ -93,10 +94,11 @@ export default function CheckoutPage() {
         setResendTimer(30);
         toast({ title: "OTP Sent", description: "Check your mobile for the 4-digit code." });
       } else {
-        toast({ variant: "destructive", title: "Failed to send OTP", description: result.message });
+        toast({ variant: "destructive", title: "Send Failed", description: result.message || "Could not send code." });
       }
     } catch (e: any) {
-      toast({ variant: "destructive", title: "Error", description: "Something went wrong. Please try again." });
+      console.error(e);
+      toast({ variant: "destructive", title: "System Error", description: e.message || "An unexpected error occurred." });
     } finally {
       setOtpLoading(false);
     }
