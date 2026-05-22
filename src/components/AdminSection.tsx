@@ -8,11 +8,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { 
   IndianRupee, Sparkles, Loader2, 
   Package, Clock, CheckCircle2,
   Megaphone, LayoutDashboard, Trash2, Plus, Edit2, Link as LinkIcon,
-  ChevronRight, MapPin, Phone, ShoppingBag, Database
+  ChevronRight, MapPin, Phone, ShoppingBag, Database, Info
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { CATEGORIES, MENU_ITEMS } from '@/app/lib/menu-data';
@@ -298,6 +299,7 @@ export const AdminSection = () => {
                       className="h-12 md:h-14 rounded-xl md:rounded-2xl focus:ring-primary/20 font-bold border-muted" 
                     />
                   </div>
+                  
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
                     <div className="space-y-2">
                       <Label className="text-[9px] font-black uppercase tracking-widest ml-1 opacity-60">Price (₹)</Label>
@@ -317,6 +319,28 @@ export const AdminSection = () => {
                       >
                         {CATEGORIES.filter(c => c !== 'All').map(c => <option key={c} value={c}>{c}</option>)}
                       </select>
+                    </div>
+                  </div>
+
+                  {/* Dietary Switch */}
+                  <div className="p-4 md:p-6 rounded-2xl bg-secondary/30 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center transition-all", menuFormData.isVeg ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600")}>
+                        <Info className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">Dietary Preference</Label>
+                        <p className="text-sm font-black">{menuFormData.isVeg ? 'Vegetarian' : 'Non-Vegetarian'}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <span className={cn("text-[9px] font-black uppercase", !menuFormData.isVeg ? "text-red-500" : "text-muted-foreground")}>Non-Veg</span>
+                      <Switch 
+                        checked={menuFormData.isVeg} 
+                        onCheckedChange={(checked) => setMenuFormData({...menuFormData, isVeg: checked})} 
+                        className="data-[state=checked]:bg-green-500"
+                      />
+                      <span className={cn("text-[9px] font-black uppercase", menuFormData.isVeg ? "text-green-500" : "text-muted-foreground")}>Veg</span>
                     </div>
                   </div>
                   
@@ -354,7 +378,7 @@ export const AdminSection = () => {
               </DialogContent>
             </Dialog>
 
-            <div className="grid grid-cols-1 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-10">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-10">
               {menuLoading ? (
                 <div className="col-span-full py-20 text-center">
                   <Loader2 className="w-10 h-10 animate-spin mx-auto text-primary" />
@@ -380,7 +404,12 @@ export const AdminSection = () => {
                     <div className="flex justify-between items-start mb-6">
                       <div className="flex-1 min-w-0 mr-4">
                         <h4 className="font-black text-lg truncate tracking-tight">{item.name}</h4>
-                        <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mt-1">{item.isVeg ? 'Vegetarian' : 'Non-Veg'}</p>
+                        <p className={cn(
+                          "text-[9px] font-black uppercase tracking-widest mt-1",
+                          item.isVeg ? "text-green-600" : "text-red-600"
+                        )}>
+                          {item.isVeg ? 'Vegetarian' : 'Non-Vegetarian'}
+                        </p>
                       </div>
                       <p className="text-xl md:text-2xl font-black text-primary italic shrink-0">₹{item.price}</p>
                     </div>
