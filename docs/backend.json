@@ -19,6 +19,19 @@
       },
       "required": ["email", "role"]
     },
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Customer profile linked to their mobile number",
+      "type": "object",
+      "properties": {
+        "phone": { "type": "string", "description": "The verified mobile number" },
+        "name": { "type": "string" },
+        "address": { "type": "string" },
+        "lastOrderAt": { "type": "string", "format": "date-time" },
+        "orderCount": { "type": "number" }
+      },
+      "required": ["phone"]
+    },
     "Order": {
       "title": "Order",
       "description": "A customer order for Ezzy Bites food items",
@@ -76,6 +89,10 @@
     "/admins/{userId}": {
       "schema": "#/entities/AdminProfile",
       "description": "Restricted collection for admin user metadata"
+    },
+    "/users/{phone}": {
+      "schema": "#/entities/UserProfile",
+      "description": "Customer profiles keyed by phone number"
     },
     "/orders/{orderId}": {
       "schema": "#/entities/Order",

@@ -23,14 +23,14 @@ import {
   MessageSquare,
   ShieldCheck,
   Lock,
-  ArrowRight
+  ArrowRight,
+  UserCheck
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { toast } from '@/hooks/use-toast';
-import { useFirestore, useUser, useAuth } from '@/firebase';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { signInWithCustomToken } from 'firebase/auth'; // Simulated for prototype
+import { useFirestore } from '@/firebase';
+import { doc, setDoc, getDoc, serverTimestamp, increment } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { cn } from '@/lib/utils';
@@ -39,13 +39,12 @@ import { useRouter } from 'next/navigation';
 export default function CheckoutPage() {
   const { cart, getTotal, clearCart, removeFromCart } = useStore();
   const db = useFirestore();
-  const { user } = useUser();
-  const auth = useAuth();
   const router = useRouter();
   
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [orderId, setOrderId] = useState<string>('');
+  const [isReturningUser, setIsReturningUser] = useState(false);
   
   // Auth State
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -65,13 +64,6 @@ export default function CheckoutPage() {
   useEffect(() => {
     setOrderId(`EB-${Math.floor(Math.random() * 90000) + 10000}`);
   }, []);
-
-  // Sync formData phone when user logs in
-  useEffect(() => {
-    if (user?.phoneNumber) {
-      setFormData(prev => ({ ...prev, phone: user.phoneNumber || '' }));
-    }
-  }, [user]);
 
   // Resend Timer Logic
   useEffect(() => {
@@ -100,18 +92,42 @@ export default function CheckoutPage() {
       setShowOtp(true);
       setResendTimer(30);
       toast({ title: "Verification Sent", description: "OTP sent to your WhatsApp number." });
-    }, 1500);
+    }, 1200);
   };
 
   const verifyOtp = async (otp: string) => {
+    if (!db) return;
     setOtpLoading(true);
-    // Simulation of silent background login
-    setTimeout(() => {
+    
+    // Check for existing user profile by phone
+    try {
+      const userRef = doc(db, 'users', phoneNumber);
+      const userSnap = await getDoc(userRef);
+
+      if (userSnap.exists()) {
+        const userData = userSnap.data();
+        setFormData(prev => ({
+          ...prev,
+          name: userData.name || '',
+          phone: phoneNumber,
+          address: userData.address || ''
+        }));
+        setIsReturningUser(true);
+        toast({ title: "Welcome back!", description: `Recognized +91 ${phoneNumber}` });
+      } else {
+        setFormData(prev => ({ ...prev, phone: phoneNumber }));
+        setIsReturningUser(false);
+      }
+
+      setTimeout(() => {
+        setOtpLoading(false);
+        setStep(3); // Move to Details
+      }, 800);
+    } catch (e) {
       setOtpLoading(false);
       setFormData(prev => ({ ...prev, phone: phoneNumber }));
-      setStep(3); // Move to Details
-      toast({ title: "Verified Successfully!", description: "Account linked to " + phoneNumber });
-    }, 1000);
+      setStep(3);
+    }
   };
 
   const handleResendOtp = () => {
@@ -134,7 +150,7 @@ export default function CheckoutPage() {
     const orderData = {
       orderId: currentOrderId,
       customerName: formData.name,
-      customerPhone: formData.phone || phoneNumber,
+      customerPhone: phoneNumber,
       address: formData.address,
       instructions: formData.instructions || '',
       items: cart.map(item => ({
@@ -148,20 +164,29 @@ export default function CheckoutPage() {
       total: Number(total),
       status: 'Pending',
       paymentMethod: formData.paymentMethod,
-      userId: user?.uid || 'guest',
+      userId: phoneNumber, // Phone is the ID
       createdAt: serverTimestamp()
     };
 
+    // 1. Create Order
     const orderRef = doc(db, 'orders', currentOrderId);
-    
-    setDoc(orderRef, orderData)
-      .catch(async (error) => {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({
-          path: orderRef.path,
-          operation: 'create',
-          requestResourceData: orderData,
-        }));
-      });
+    setDoc(orderRef, orderData).catch(async (error) => {
+      errorEmitter.emit('permission-error', new FirestorePermissionError({
+        path: orderRef.path,
+        operation: 'create',
+        requestResourceData: orderData,
+      }));
+    });
+
+    // 2. Update/Create User Profile
+    const userRef = doc(db, 'users', phoneNumber);
+    setDoc(userRef, {
+      phone: phoneNumber,
+      name: formData.name,
+      address: formData.address,
+      lastOrderAt: serverTimestamp(),
+      orderCount: increment(1)
+    }, { merge: true });
 
     // Optimistic completion
     setTimeout(() => {
@@ -317,28 +342,38 @@ export default function CheckoutPage() {
             {/* Step 3: Delivery Details */}
             {step === 3 && (
               <div className="space-y-6 animate-in fade-in slide-in-from-left duration-500">
-                <h2 className="text-2xl md:text-4xl font-headline font-black">Delivery Details</h2>
+                <div className="flex justify-between items-end">
+                  <h2 className="text-2xl md:text-4xl font-headline font-black">Delivery Details</h2>
+                  {isReturningUser && (
+                    <Badge variant="outline" className="mb-2 bg-green-50 text-green-700 border-green-200 flex items-center gap-1 font-black text-[10px] py-1">
+                      <UserCheck className="w-3 h-3" /> Returning User
+                    </Badge>
+                  )}
+                </div>
                 <Card className="rounded-[24px] md:rounded-[40px] border-none shadow-xl bg-card">
                   <CardContent className="p-6 md:p-10 space-y-6">
                     <div className="grid md:grid-cols-2 gap-4 md:gap-6">
                       <div className="space-y-2">
                         <Label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">Full Name</Label>
-                        <Input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="h-12 md:h-14 rounded-xl" placeholder="Your Name" />
+                        <Input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="h-12 md:h-14 rounded-xl font-bold" placeholder="Your Name" />
                       </div>
                       <div className="space-y-2 opacity-60">
                         <Label className="text-[10px] font-black uppercase tracking-widest ml-1">Verified Number</Label>
-                        <Input value={formData.phone} disabled className="h-12 md:h-14 rounded-xl bg-muted font-bold" />
+                        <Input value={`+91 ${phoneNumber}`} disabled className="h-12 md:h-14 rounded-xl bg-muted font-black" />
                       </div>
                     </div>
                     <div className="space-y-2">
                       <Label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">Delivery Address</Label>
-                      <Textarea value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} className="rounded-xl min-h-[100px] md:min-h-[140px]" placeholder="Complete address (Building, Street, Area)" />
+                      <Textarea value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} className="rounded-xl min-h-[100px] md:min-h-[140px] font-medium" placeholder="Complete address (Building, Street, Area)" />
                     </div>
+                    {isReturningUser && (
+                      <p className="text-[9px] font-black text-muted-foreground italic opacity-50">* We've auto-filled your details from your last order.</p>
+                    )}
                   </CardContent>
                 </Card>
                 <div className="flex gap-3 md:gap-4">
                   <Button variant="outline" onClick={handleBack} className="h-14 md:h-16 rounded-xl px-4 md:px-8 font-bold border-2"><ChevronLeft className="w-5 h-5" /></Button>
-                  <Button onClick={handleNext} className="flex-1 h-14 md:h-16 rounded-xl text-base md:text-lg font-bold">Select Payment</Button>
+                  <Button onClick={handleNext} className="flex-1 h-14 md:h-16 rounded-xl text-base md:text-lg font-bold shadow-xl shadow-primary/20">Select Payment</Button>
                 </div>
               </div>
             )}
@@ -449,3 +484,6 @@ export default function CheckoutPage() {
     </div>
   );
 }
+
+import { cn } from '@/lib/utils';
+
