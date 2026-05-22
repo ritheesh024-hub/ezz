@@ -9,21 +9,23 @@ import { Badge } from '@/components/ui/badge';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { BeverageCustomizer } from './BeverageCustomizer';
+import { useSound } from '@/hooks/use-sound';
 
 export const FoodCard = ({ item }: { item: FoodItem }) => {
   const { cart, addToCart, updateQuantity } = useStore();
   const [isCustomizing, setIsCustomizing] = useState(false);
+  const { playSound } = useSound();
   
-  // Categories that don't need a Veg/Non-Veg indicator
   const hideVegIndicator = ['Tea', 'Coffee', 'Ice creams'].includes(item.category);
-  
   const cartItemCount = cart.filter(i => i.id === item.id).reduce((acc, i) => acc + i.quantity, 0);
 
   const handleAddClick = () => {
     if (item.isBeverage) {
+      playSound('click');
       setIsCustomizing(true);
     } else {
       addToCart(item);
+      playSound('pop');
       toast({
         title: "Added to cart",
         description: `${item.name} is ready for checkout.`,
@@ -33,6 +35,7 @@ export const FoodCard = ({ item }: { item: FoodItem }) => {
 
   const handleCustomizationConfirm = (options: BeverageOptions) => {
     addToCart(item, options);
+    playSound('pop');
     setIsCustomizing(false);
     toast({
       title: "Beverage Added",
@@ -40,10 +43,17 @@ export const FoodCard = ({ item }: { item: FoodItem }) => {
     });
   };
 
+  const handleQtyChange = (delta: number) => {
+    const targetItem = cart.find(i => i.id === item.id);
+    if (targetItem) {
+      updateQuantity(targetItem.cartId, delta);
+      playSound('update');
+    }
+  };
+
   return (
     <>
       <div className="group bg-card rounded-[32px] border border-border/50 overflow-hidden hover:shadow-[0_40px_80px_rgba(0,0,0,0.1)] transition-all duration-700 flex flex-col h-full shadow-sm relative">
-        {/* Badges */}
         {(item.rating >= 4.7 || item.isBestSeller) && (
           <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 bg-primary text-white px-4 py-1 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1 shadow-lg shadow-primary/30">
             <Star className="w-3 h-3 fill-current" /> Best Seller
@@ -55,7 +65,6 @@ export const FoodCard = ({ item }: { item: FoodItem }) => {
           </div>
         )}
 
-        {/* Image Container */}
         <div className="relative aspect-[4/3] overflow-hidden bg-secondary">
           <Image 
             src={item.imageUrl} 
@@ -78,7 +87,10 @@ export const FoodCard = ({ item }: { item: FoodItem }) => {
             </div>
           )}
           
-          <button className="absolute bottom-4 right-4 w-10 h-10 rounded-2xl bg-white/90 backdrop-blur flex items-center justify-center text-muted-foreground hover:text-primary hover:scale-110 active:scale-95 transition-all z-10 shadow-lg shadow-black/5">
+          <button 
+            onClick={() => playSound('click')}
+            className="absolute bottom-4 right-4 w-10 h-10 rounded-2xl bg-white/90 backdrop-blur flex items-center justify-center text-muted-foreground hover:text-primary hover:scale-110 active:scale-95 transition-all z-10 shadow-lg shadow-black/5"
+          >
             <Heart className="w-5 h-5" />
           </button>
 
@@ -90,7 +102,6 @@ export const FoodCard = ({ item }: { item: FoodItem }) => {
           </div>
         </div>
 
-        {/* Content */}
         <div className="p-6 md:p-8 flex flex-col flex-1">
           <div className="mb-4">
             <div className="flex items-center gap-2 mb-2">
@@ -124,9 +135,9 @@ export const FoodCard = ({ item }: { item: FoodItem }) => {
             >
               {cartItemCount > 0 && !item.isBeverage ? (
                 <div className="flex items-center gap-4">
-                  <Minus className="w-4 h-4" onClick={(e) => { e.stopPropagation(); updateQuantity(item.id, -1); }} />
+                  <Minus className="w-4 h-4" onClick={(e) => { e.stopPropagation(); handleQtyChange(-1); }} />
                   <span className="text-lg">{cartItemCount}</span>
-                  <Plus className="w-4 h-4" onClick={(e) => { e.stopPropagation(); updateQuantity(item.id, 1); }} />
+                  <Plus className="w-4 h-4" onClick={(e) => { e.stopPropagation(); handleQtyChange(1); }} />
                 </div>
               ) : (
                 <>
