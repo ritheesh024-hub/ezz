@@ -6,6 +6,7 @@ import { CATEGORIES } from '@/app/lib/menu-data';
 import { Search, Loader2, PackageX, AlertCircle, Filter } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { useFirestore, useCollection } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
 import { FoodItem } from '@/app/lib/store';
