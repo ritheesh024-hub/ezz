@@ -1,15 +1,15 @@
-
 "use client"
 import React, { useState, useMemo } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { FoodCard } from '@/components/FoodCard';
 import { CATEGORIES } from '@/app/lib/menu-data';
-import { Search, Loader2, PackageX, AlertCircle } from 'lucide-react';
+import { Search, Loader2, PackageX, AlertCircle, Filter } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useFirestore, useCollection } from '@/firebase';
 import { collection, query } from 'firebase/firestore';
 import { FoodItem } from '@/app/lib/store';
+import { cn } from '@/lib/utils';
 
 export default function MenuPage() {
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -18,7 +18,6 @@ export default function MenuPage() {
 
   const productsQuery = useMemo(() => {
     if (!db) return null;
-    // Simple query to avoid index requirements initially
     return query(collection(db, 'products'));
   }, [db]);
 
@@ -37,68 +36,78 @@ export default function MenuPage() {
     <div className="min-h-screen bg-background">
       <Navbar />
       
-      <main className="container mx-auto px-4 py-8 pt-24 md:pt-32">
-        <div className="mb-12">
-          <h1 className="text-4xl md:text-5xl font-headline font-black mb-4">Our <span className="text-primary">Delicious</span> Menu</h1>
-          <p className="text-muted-foreground max-w-2xl">
-            From our signature Maggie recipes to authentic Hyderabadi Biryani, explore our chef-crafted menu.
+      <main className="container mx-auto px-4 py-12 pt-28 md:pt-40">
+        <div className="mb-16 space-y-4">
+          <Badge variant="outline" className="px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest text-primary border-primary/20">The Selection</Badge>
+          <h1 className="text-5xl md:text-8xl font-headline font-black leading-none">Fresh <span className="text-primary">Bites</span> Only.</h1>
+          <p className="text-muted-foreground max-w-2xl text-lg font-medium">
+            From our legendary Maggie variations to premium Hydrabadi specialties, explore our chef-curated menu.
           </p>
         </div>
 
-        <div className="flex flex-col md:flex-row gap-6 mb-12">
-          <div className="flex-1 relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-            <Input 
-              placeholder="Search dishes..." 
-              className="h-14 pl-12 rounded-2xl border-muted bg-secondary/50 text-lg"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
-          <div className="flex overflow-x-auto gap-3 pb-2 scrollbar-hide">
-            {CATEGORIES.map((cat) => (
-              <Button
-                key={cat}
-                onClick={() => setSelectedCategory(cat)}
-                variant={selectedCategory === cat ? "default" : "outline"}
-                className={`rounded-full px-8 h-12 font-bold transition-all ${selectedCategory === cat ? 'shadow-lg shadow-primary/20' : 'hover:border-primary hover:text-primary'}`}
-              >
-                {cat}
-              </Button>
-            ))}
+        {/* SEARCH & FILTER BAR */}
+        <div className="sticky top-20 z-40 mb-16 space-y-6">
+          <div className="glass p-3 md:p-5 rounded-[2.5rem] shadow-2xl flex flex-col lg:flex-row gap-4 items-center border border-white/20">
+            <div className="relative flex-1 w-full">
+              <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <Input 
+                placeholder="What are you craving?" 
+                className="h-16 pl-14 rounded-full border-none bg-secondary/40 text-lg font-bold placeholder:text-muted-foreground/50 focus:ring-2 focus:ring-primary/20"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <div className="flex overflow-x-auto gap-3 pb-2 w-full lg:w-auto scrollbar-hide">
+              {CATEGORIES.map((cat) => (
+                <Button
+                  key={cat}
+                  onClick={() => setSelectedCategory(cat)}
+                  variant={selectedCategory === cat ? "default" : "outline"}
+                  className={cn(
+                    "rounded-full px-8 h-14 font-black uppercase text-[10px] tracking-widest transition-all",
+                    selectedCategory === cat ? "shadow-xl shadow-primary/20" : "bg-transparent border-muted hover:border-primary hover:text-primary"
+                  )}
+                >
+                  {cat}
+                </Button>
+              ))}
+            </div>
           </div>
         </div>
 
         {loading ? (
-          <div className="py-20 flex flex-col items-center gap-4">
-             <Loader2 className="w-10 h-10 animate-spin text-primary" />
-             <p className="font-bold text-muted-foreground">Fetching fresh bites...</p>
+          <div className="py-40 flex flex-col items-center gap-6">
+             <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center animate-pulse">
+               <Loader2 className="w-8 h-8 animate-spin text-primary" />
+             </div>
+             <p className="font-black uppercase tracking-widest text-xs text-muted-foreground">Kitchen is firing up...</p>
           </div>
         ) : error ? (
-           <div className="py-20 text-center bg-destructive/5 rounded-[40px] border border-destructive/20 border-dashed">
-             <AlertCircle className="w-10 h-10 text-destructive mx-auto mb-4" />
-             <p className="text-destructive font-bold">Failed to load menu. Please refresh.</p>
-             <p className="text-xs text-muted-foreground mt-2">Error: {error.message}</p>
+           <div className="py-40 text-center bg-destructive/5 rounded-[3rem] border-2 border-destructive/20 border-dashed">
+             <AlertCircle className="w-12 h-12 text-destructive mx-auto mb-6" />
+             <p className="text-destructive font-black text-xl uppercase tracking-tighter">Inventory Sync Failed</p>
+             <p className="text-sm text-muted-foreground mt-2 font-medium">Check your connection or refresh the page.</p>
            </div>
         ) : filteredItems.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-10">
             {filteredItems.map((item) => (
-              <div key={item.id} className="animate-in fade-in slide-in-from-bottom duration-500">
+              <div key={item.id} className="animate-in fade-in slide-in-from-bottom duration-700">
                 <FoodCard item={item} />
               </div>
             ))}
           </div>
         ) : (
-          <div className="py-20 text-center">
-            <div className="w-20 h-20 bg-secondary rounded-full flex items-center justify-center mx-auto mb-6">
-              {menuItems?.length === 0 ? <PackageX className="w-10 h-10 text-muted-foreground opacity-30" /> : <Search className="w-10 h-10 text-muted-foreground opacity-30" />}
+          <div className="py-40 text-center space-y-8">
+            <div className="w-24 h-24 bg-secondary/50 rounded-full flex items-center justify-center mx-auto">
+              <PackageX className="w-12 h-12 text-muted-foreground opacity-30" />
             </div>
-            <h3 className="text-2xl font-headline font-bold mb-2">
-              {menuItems?.length === 0 ? "No items in menu" : "No dishes found"}
-            </h3>
-            <p className="text-muted-foreground">
-              {menuItems?.length === 0 ? "The admin hasn't added any items yet." : "Try searching for something else or explore a different category."}
-            </p>
+            <div className="space-y-2">
+              <h3 className="text-4xl font-headline font-black">No matches found</h3>
+              <p className="text-muted-foreground font-medium text-lg">Try a different category or clear your search.</p>
+            </div>
+            <Button variant="outline" onClick={() => { setSearchQuery(''); setSelectedCategory('All'); }} className="rounded-full h-14 px-10 font-black uppercase text-[10px] tracking-widest">
+              Show All Dishes
+            </Button>
           </div>
         )}
       </main>

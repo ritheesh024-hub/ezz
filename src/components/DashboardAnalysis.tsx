@@ -11,16 +11,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  TrendingUp,
-  TrendingDown,
-  ShoppingBag,
   IndianRupee,
+  ShoppingBag,
   Clock,
-  Download,
-  Sparkles,
   Star,
   ChevronDown,
-  Loader2
+  Download,
+  Zap
 } from 'lucide-react';
 import {
   XAxis,
@@ -35,17 +32,7 @@ import {
   Cell
 } from 'recharts';
 import { cn } from '@/lib/utils';
-import { toast } from '@/hooks/use-toast';
-import { 
-  format, 
-  isWithinInterval, 
-  startOfDay, 
-  endOfDay, 
-  subDays, 
-  startOfMonth, 
-  endOfMonth, 
-  subMonths 
-} from 'date-fns';
+import { isWithinInterval, startOfDay, endOfDay, subDays, startOfMonth, endOfMonth, subMonths } from 'date-fns';
 
 interface DashboardAnalysisProps {
   orders: any[];
@@ -62,146 +49,96 @@ export const DashboardAnalysis = ({ orders, products }: DashboardAnalysisProps) 
     setIsMounted(true);
   }, []);
 
-  // Intelligent Date Range Calculation - Defer until mount to prevent hydration mismatch
   const dateRange = useMemo(() => {
     if (!isMounted) return { start: new Date(), end: new Date() };
     const now = new Date();
     switch (filterType) {
-      case 'today':
-        return { start: startOfDay(now), end: endOfDay(now) };
-      case 'yesterday':
-        const yesterday = subDays(now, 1);
-        return { start: startOfDay(yesterday), end: endOfDay(yesterday) };
-      case 'currentMonth':
-        return { start: startOfMonth(now), end: endOfMonth(now) };
-      case 'lastMonth':
-        const lastMonth = subMonths(now, 1);
-        return { start: startOfMonth(lastMonth), end: endOfMonth(lastMonth) };
-      default:
-        return { start: startOfDay(now), end: endOfDay(now) };
+      case 'today': return { start: startOfDay(now), end: endOfDay(now) };
+      case 'yesterday': { const d = subDays(now, 1); return { start: startOfDay(d), end: endOfDay(d) }; }
+      case 'currentMonth': return { start: startOfMonth(now), end: endOfMonth(now) };
+      case 'lastMonth': { const d = subMonths(now, 1); return { start: startOfMonth(d), end: endOfMonth(d) }; }
+      default: return { start: startOfDay(now), end: endOfDay(now) };
     }
   }, [filterType, isMounted]);
 
   const filteredOrders = useMemo(() => {
     if (!orders || !isMounted) return [];
-    
     return orders.filter(o => {
       if (!o.createdAt?.toDate) return false;
-      const orderDate = o.createdAt.toDate();
-      return isWithinInterval(orderDate, { start: dateRange.start, end: dateRange.end });
+      return isWithinInterval(o.createdAt.toDate(), { start: dateRange.start, end: dateRange.end });
     });
   }, [orders, dateRange, isMounted]);
 
   const metrics = useMemo(() => {
     const completed = filteredOrders.filter(o => o.status === 'Delivered');
     const revenue = completed.reduce((acc, curr) => acc + (Number(curr.total) || 0), 0);
-    const pending = filteredOrders.filter(o => ['Pending', 'Preparing', 'Out for Delivery'].includes(o.status)).length;
-    const cancelled = filteredOrders.filter(o => o.status === 'Cancelled').length;
+    const pending = filteredOrders.filter(o => ['Pending', 'Preparing'].includes(o.status)).length;
 
-    return {
-      total: filteredOrders.length,
-      revenue,
-      pending,
-      completed: completed.length,
-      cancelled,
-      growth: filterType === 'today' ? 14.2 : 8.5
-    };
-  }, [filteredOrders, filterType]);
+    return { total: filteredOrders.length, revenue, pending, completed: completed.length };
+  }, [filteredOrders]);
 
   const chartData = useMemo(() => {
-    const isSingleDay = filterType === 'today' || filterType === 'yesterday';
-    
-    if (isSingleDay) {
-      return [
-        { name: '06:00', sales: metrics.revenue * 0.1 },
-        { name: '10:00', sales: metrics.revenue * 0.2 },
-        { name: '14:00', sales: metrics.revenue * 0.35 },
-        { name: '18:00', sales: metrics.revenue * 0.25 },
-        { name: '22:00', sales: metrics.revenue * 0.1 },
-      ];
-    }
-
     return [
-      { name: 'Week 1', sales: metrics.revenue * 0.2 },
-      { name: 'Week 2', sales: metrics.revenue * 0.3 },
-      { name: 'Week 3', sales: metrics.revenue * 0.25 },
-      { name: 'Week 4', sales: metrics.revenue * 0.25 },
+      { name: '08:00', sales: metrics.revenue * 0.1 },
+      { name: '12:00', sales: metrics.revenue * 0.3 },
+      { name: '16:00', sales: metrics.revenue * 0.25 },
+      { name: '20:00', sales: metrics.revenue * 0.35 },
     ];
-  }, [metrics, filterType]);
+  }, [metrics]);
 
-  const statusDistribution = [
-    { name: 'Completed', value: metrics.completed, color: '#ef4444' },
-    { name: 'Pending', value: metrics.pending, color: '#f59e0b' },
-    { name: 'Cancelled', value: metrics.cancelled, color: '#94a3b8' },
-  ].filter(i => i.value > 0);
-
-  if (!isMounted) {
-    return (
-      <div className="h-[400px] flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
-  }
+  if (!isMounted) return null;
 
   return (
-    <div className="space-y-6 md:space-y-10 animate-in fade-in duration-700">
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 bg-white/90 backdrop-blur-xl p-6 rounded-[2rem] border shadow-sm sticky top-0 z-[40]">
-        <div className="flex flex-wrap gap-2 p-1.5 bg-secondary/40 rounded-2xl w-full lg:w-auto">
+    <div className="space-y-10 animate-in fade-in duration-700">
+      {/* FILTER BAR */}
+      <div className="flex flex-col lg:flex-row justify-between items-center gap-6 bg-white p-4 rounded-[2.5rem] shadow-sm border">
+        <div className="flex bg-secondary/40 p-1.5 rounded-full w-full lg:w-auto">
           {['today', 'yesterday'].map((type) => (
             <button
               key={type}
               onClick={() => setFilterType(type as FilterType)}
               className={cn(
-                "flex-1 md:flex-none px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
+                "px-8 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all",
                 filterType === type ? "bg-white text-primary shadow-sm" : "text-muted-foreground hover:bg-white/40"
               )}
             >
               {type}
             </button>
           ))}
-          
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button
-                className={cn(
-                  "flex-1 md:flex-none px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2",
-                  (filterType === 'currentMonth' || filterType === 'lastMonth') ? "bg-white text-primary shadow-sm" : "text-muted-foreground hover:bg-white/40"
-                )}
-              >
-                Month <ChevronDown className="w-3.5 h-3.5" />
+              <button className={cn(
+                "px-8 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-2",
+                (filterType.includes('Month')) ? "bg-white text-primary shadow-sm" : "text-muted-foreground"
+              )}>
+                History <ChevronDown className="w-4 h-4" />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="rounded-2xl p-2 min-w-[180px] z-[50] shadow-2xl">
-              <DropdownMenuItem onClick={() => setFilterType('currentMonth')} className="rounded-xl font-bold text-[10px] uppercase py-3 px-4">
-                Current Month
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setFilterType('lastMonth')} className="rounded-xl font-bold text-[10px] uppercase py-3 px-4">
-                Last Month
-              </DropdownMenuItem>
+            <DropdownMenuContent className="rounded-2xl p-2 min-w-[200px] shadow-2xl">
+              <DropdownMenuItem onClick={() => setFilterType('currentMonth')} className="rounded-xl font-bold uppercase text-[9px] py-3">This Month</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setFilterType('lastMonth')} className="rounded-xl font-bold uppercase text-[9px] py-3">Last Month</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-
-        <div className="flex items-center gap-3 w-full lg:w-auto">
-          <Button onClick={() => toast({ title: "Compiling Report..." })} className="flex-1 lg:flex-none h-12 px-8 rounded-xl gap-3 font-black text-[10px] uppercase bg-primary shadow-xl shadow-primary/20">
-            <Download className="w-4 h-4" /> Export Report
-          </Button>
-        </div>
+        <Button className="w-full lg:w-auto h-12 px-10 rounded-full font-black text-[10px] uppercase bg-primary gap-3 shadow-xl shadow-primary/20">
+          <Download className="w-4 h-4" /> Generate Report
+        </Button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard label="Revenue" value={`₹${metrics.revenue.toLocaleString()}`} icon={IndianRupee} color="bg-red-50 text-primary" />
-        <StatCard label="Orders" value={metrics.total.toString()} icon={ShoppingBag} color="bg-blue-50 text-blue-600" />
-        <StatCard label="Live Load" value={metrics.pending.toString()} icon={Clock} color="bg-orange-50 text-orange-600" />
-        <StatCard label="Rating" value="4.9" icon={Star} color="bg-yellow-50 text-yellow-600" />
+      {/* METRIC CARDS */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        <MetricCard label="Net Revenue" value={`₹${metrics.revenue}`} icon={IndianRupee} color="text-primary bg-primary/10" />
+        <MetricCard label="Total Orders" value={metrics.total} icon={ShoppingBag} color="text-blue-600 bg-blue-50" />
+        <MetricCard label="Kitchen Load" value={metrics.pending} icon={Clock} color="text-orange-500 bg-orange-50" />
+        <MetricCard label="Performance" value="4.9" icon={Zap} color="text-yellow-600 bg-yellow-50" />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-2 rounded-[2.5rem] border-none shadow-xl bg-white overflow-hidden">
-          <CardHeader className="pb-8">
-            <CardTitle className="text-xl font-black font-headline tracking-tight">Revenue Velocity</CardTitle>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <Card className="lg:col-span-2 rounded-[3rem] border-none shadow-xl bg-white p-8">
+          <CardHeader className="px-0 pb-10">
+            <CardTitle className="text-2xl font-black font-headline uppercase tracking-tighter">Revenue Velocity</CardTitle>
           </CardHeader>
-          <CardContent className="h-[350px] w-full px-8">
+          <div className="h-[350px]">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData}>
                 <defs>
@@ -211,54 +148,63 @@ export const DashboardAnalysis = ({ orders, products }: DashboardAnalysisProps) 
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 9, fontWeight: 800, fill: '#94a3b8'}} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 9, fontWeight: 800, fill: '#94a3b8'}} />
-                <Tooltip contentStyle={{borderRadius: '24px', border: 'none', boxShadow: '0 25px 50px -12px rgb(0 0 0 / 0.15)'}} />
-                <Area type="monotone" dataKey="sales" stroke="#ef4444" strokeWidth={4} fillOpacity={1} fill="url(#colorSales)" />
+                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 900, fill: '#94a3b8'}} />
+                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 10, fontWeight: 900, fill: '#94a3b8'}} />
+                <Tooltip contentStyle={{borderRadius: '24px', border: 'none', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)'}} />
+                <Area type="monotone" dataKey="sales" stroke="#ef4444" strokeWidth={5} fill="url(#colorSales)" />
               </AreaChart>
             </ResponsiveContainer>
-          </CardContent>
+          </div>
         </Card>
 
-        <Card className="rounded-[2.5rem] border-none shadow-xl bg-white overflow-hidden">
-          <CardHeader>
-            <CardTitle className="text-xl font-black font-headline tracking-tight">Order Distribution</CardTitle>
+        <Card className="rounded-[3rem] border-none shadow-xl bg-white p-8">
+          <CardHeader className="px-0 pb-10">
+            <CardTitle className="text-2xl font-black font-headline uppercase tracking-tighter">Status Mix</CardTitle>
           </CardHeader>
-          <CardContent className="h-[300px] flex flex-col items-center justify-center p-6">
+          <div className="h-[300px] flex flex-col items-center">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={statusDistribution} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={10} dataKey="value">
-                  {statusDistribution.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} stroke="none" />)}
+                <Pie 
+                  data={[
+                    { name: 'Done', value: metrics.completed, color: '#ef4444' },
+                    { name: 'Active', value: metrics.pending, color: '#f59e0b' }
+                  ].filter(i => i.value > 0)} 
+                  innerRadius={65} 
+                  outerRadius={90} 
+                  dataKey="value"
+                >
+                  <Cell fill="#ef4444" />
+                  <Cell fill="#f59e0b" />
                 </Pie>
-                <Tooltip />
               </PieChart>
             </ResponsiveContainer>
-            <div className="w-full space-y-3 mt-6">
-              {statusDistribution.map((item) => (
-                <div key={item.name} className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-                    <span className="text-muted-foreground">{item.name}</span>
-                  </div>
-                  <span className="text-foreground">{item.value} Orders</span>
-                </div>
-              ))}
+            <div className="w-full space-y-4 mt-8">
+              <StatusRow label="Fulfilled" val={metrics.completed} color="bg-primary" />
+              <StatusRow label="Active" val={metrics.pending} color="bg-orange-500" />
             </div>
-          </CardContent>
+          </div>
         </Card>
       </div>
     </div>
   );
 };
 
-const StatCard = ({ label, value, icon: Icon, color }: any) => (
-  <Card className="rounded-[2rem] border-none shadow-lg bg-white/90 backdrop-blur-xl">
-    <CardContent className="p-8">
-      <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center mb-6 shadow-sm", color)}>
-        <Icon className="w-6 h-6" />
-      </div>
-      <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest mb-2">{label}</p>
-      <h3 className="text-3xl font-black tracking-tighter truncate">{value}</h3>
-    </CardContent>
+const MetricCard = ({ label, value, icon: Icon, color }: any) => (
+  <Card className="rounded-[2.5rem] border-none shadow-xl bg-white p-8 hover:scale-[1.02] transition-transform">
+    <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center mb-6", color)}>
+      <Icon className="w-7 h-7" />
+    </div>
+    <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest mb-2">{label}</p>
+    <h3 className="text-4xl font-black tracking-tighter">{value}</h3>
   </Card>
+);
+
+const StatusRow = ({ label, val, color }: any) => (
+  <div className="flex items-center justify-between text-[11px] font-black uppercase tracking-widest">
+    <div className="flex items-center gap-3">
+      <div className={cn("w-3 h-3 rounded-full", color)} />
+      <span className="opacity-60">{label}</span>
+    </div>
+    <span>{val} Units</span>
+  </div>
 );
