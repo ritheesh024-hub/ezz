@@ -35,7 +35,7 @@ export async function sendSMSOTP(phoneNumber: string) {
     const TWILIO_PHONE = process.env.TWILIO_PHONE_NUMBER;
     const FAST2SMS_KEY = process.env.FAST2SMS_API_KEY;
 
-    // --- TWILIO INTEGRATION (Recommended for Free Trials) ---
+    // --- TWILIO INTEGRATION ---
     if (TWILIO_SID && TWILIO_AUTH_TOKEN && TWILIO_PHONE) {
       const auth = Buffer.from(`${TWILIO_SID}:${TWILIO_AUTH_TOKEN}`).toString('base64');
       const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${TWILIO_SID}/Messages.json`, {
@@ -68,16 +68,16 @@ export async function sendSMSOTP(phoneNumber: string) {
     }
 
     // --- DEVELOPMENT SIMULATOR (Fallback) ---
-    // If no keys are set, we log to the server console.
+    // Log to server console for testing
     console.log('\n--- EZZY BITES OTP SIMULATOR ---');
     console.log(`📱 TO: +91 ${phoneNumber}`);
     console.log(`🔐 CODE: ${otp}`);
-    console.log(`💡 NOTE: Add TWILIO or FAST2SMS keys to .env for real SMS.`);
+    console.log(`💡 NOTE: Check this terminal for codes during testing.`);
     console.log('--------------------------------\n');
 
     return { 
       success: true, 
-      message: 'SIMULATOR MODE: Check your server terminal/logs for the 4-digit code.' 
+      message: 'SIMULATOR MODE: Check your server terminal logs for the 4-digit code.' 
     };
 
   } catch (error: any) {
