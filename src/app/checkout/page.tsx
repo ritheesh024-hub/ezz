@@ -1,4 +1,3 @@
-
 "use client"
 import React, { useState, useEffect } from 'react';
 import { Navbar } from '@/components/Navbar';
@@ -20,10 +19,9 @@ import {
   ShoppingBag, 
   Loader2, 
   Trash2,
-  MessageSquare,
-  ShieldCheck,
   Lock,
-  UserCheck
+  UserCheck,
+  ShieldCheck
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -81,17 +79,17 @@ export default function CheckoutPage() {
 
   const startPhoneAuth = async () => {
     if (phoneNumber.length < 10) {
-      toast({ variant: "destructive", title: "Invalid Number", description: "Please enter a valid 10-digit number." });
+      toast({ variant: "destructive", title: "Invalid Number", description: "Please enter a 10-digit mobile number." });
       return;
     }
     setOtpLoading(true);
-    // Simulation of sending WhatsApp OTP
+    // Standard SMS OTP Simulation
     setTimeout(() => {
       setOtpLoading(false);
       setShowOtp(true);
       setResendTimer(30);
-      toast({ title: "Verification Sent", description: "OTP sent to your WhatsApp number." });
-    }, 1200);
+      toast({ title: "Verification Sent", description: "A 4-digit code has been sent to your mobile." });
+    }, 1000);
   };
 
   const verifyOtp = async (otp: string) => {
@@ -111,10 +109,11 @@ export default function CheckoutPage() {
           address: userData.address || ''
         }));
         setIsReturningUser(true);
-        toast({ title: "Welcome back!", description: `Recognized +91 ${phoneNumber}` });
+        toast({ title: "Welcome back!", description: `Recognized user +91 ${phoneNumber}` });
       } else {
         setFormData(prev => ({ ...prev, phone: phoneNumber }));
         setIsReturningUser(false);
+        toast({ title: "Number Verified", description: "Complete your details to finish ordering." });
       }
 
       setTimeout(() => {
@@ -137,7 +136,7 @@ export default function CheckoutPage() {
     if (!db) return;
 
     if (!formData.name || !formData.address) {
-      toast({ variant: "destructive", title: "Missing details", description: "Please fill in delivery info." });
+      toast({ variant: "destructive", title: "Details Required", description: "Please fill in delivery info." });
       setStep(3);
       return;
     }
@@ -175,6 +174,7 @@ export default function CheckoutPage() {
       }));
     });
 
+    // Silently create/update user profile keyed by phone
     const userRef = doc(db, 'users', phoneNumber);
     setDoc(userRef, {
       phone: phoneNumber,
@@ -271,38 +271,42 @@ export default function CheckoutPage() {
                     <Smartphone className="w-8 h-8 text-primary" />
                   </div>
                   <h2 className="text-2xl md:text-3xl font-black">Quick Verification</h2>
-                  <p className="text-muted-foreground text-sm font-medium">Verify your number to track your delicious meal.</p>
+                  <p className="text-muted-foreground text-sm font-medium">Verify your mobile number to track your delicious meal.</p>
                 </div>
                 <Card className="rounded-[32px] border-none shadow-xl bg-card overflow-hidden">
                   <CardContent className="p-6 md:p-8 space-y-6">
                     {!showOtp ? (
                       <div className="space-y-4">
                         <div className="space-y-2">
-                          <Label className="text-[10px] font-black uppercase tracking-widest opacity-60 ml-1">WhatsApp Number</Label>
+                          <Label className="text-[10px] font-black uppercase tracking-widest opacity-60 ml-1">Mobile Number</Label>
                           <div className="relative">
                             <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2 border-r pr-3">
                               <span className="text-sm font-black">+91</span>
                             </div>
-                            <Input 
+                            <input 
                               type="tel" 
                               value={phoneNumber} 
                               onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, '').slice(0, 10))}
                               placeholder="00000 00000"
-                              className="h-14 md:h-16 pl-20 rounded-2xl text-lg font-bold border-muted focus:ring-primary/10"
+                              className="w-full h-14 md:h-16 pl-20 rounded-2xl text-lg font-bold border-2 border-muted focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all"
                             />
                           </div>
                         </div>
                         <Button onClick={startPhoneAuth} disabled={otpLoading} className="w-full h-14 md:h-16 rounded-2xl font-black text-base md:text-lg gap-2 shadow-xl shadow-primary/20">
-                          {otpLoading ? <Loader2 className="animate-spin" /> : <>Send OTP <MessageSquare className="w-5 h-5" /></>}
+                          {otpLoading ? <Loader2 className="animate-spin" /> : <>Send 4-Digit OTP <ChevronRight className="w-5 h-5" /></>}
                         </Button>
+                        <div className="flex items-center gap-2 justify-center text-muted-foreground">
+                          <ShieldCheck className="w-4 h-4" />
+                          <span className="text-[10px] font-bold uppercase tracking-widest">Secure Verification</span>
+                        </div>
                       </div>
                     ) : (
                       <div className="space-y-6 text-center animate-in zoom-in duration-500">
                         <div className="space-y-1">
-                          <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">Enter 6-Digit Code</Label>
+                          <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">Enter 4-Digit Code</Label>
                           <p className="text-xs text-muted-foreground">Sent to <span className="text-primary font-bold">+91 {phoneNumber}</span></p>
                         </div>
-                        <OTPInput onComplete={verifyOtp} disabled={otpLoading} />
+                        <OTPInput length={4} onComplete={verifyOtp} disabled={otpLoading} />
                         <div className="pt-2 space-y-2">
                           <Button 
                             variant="link" 
@@ -310,7 +314,7 @@ export default function CheckoutPage() {
                             onClick={handleResendOtp}
                             className={cn("text-xs font-black uppercase tracking-widest", resendTimer > 0 ? "text-muted-foreground" : "text-primary")}
                           >
-                            {resendTimer > 0 ? `Resend OTP in ${resendTimer}s` : "Resend OTP on WhatsApp"}
+                            {resendTimer > 0 ? `Resend code in ${resendTimer}s` : "Resend OTP Code"}
                           </Button>
                           <Button variant="ghost" className="w-full text-xs font-bold" onClick={() => setShowOtp(false)}>Change Number</Button>
                         </div>

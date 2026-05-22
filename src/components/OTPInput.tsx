@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -10,7 +9,7 @@ interface OTPInputProps {
   disabled?: boolean;
 }
 
-export const OTPInput = ({ length = 6, onComplete, disabled }: OTPInputProps) => {
+export const OTPInput = ({ length = 4, onComplete, disabled }: OTPInputProps) => {
   const [otp, setOtp] = useState<string[]>(new Array(length).fill(''));
   const inputs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -71,7 +70,7 @@ export const OTPInput = ({ length = 6, onComplete, disabled }: OTPInputProps) =>
   };
 
   return (
-    <div className="flex gap-2 md:gap-3 justify-center">
+    <div className="flex gap-3 md:gap-5 justify-center">
       {otp.map((data, index) => (
         <input
           key={index}
@@ -84,9 +83,9 @@ export const OTPInput = ({ length = 6, onComplete, disabled }: OTPInputProps) =>
           onKeyDown={(e) => handleKeyDown(e, index)}
           onPaste={handlePaste}
           className={cn(
-            "w-10 h-12 md:w-12 md:h-16 text-center text-xl md:text-2xl font-black rounded-xl border-2 transition-all outline-none",
+            "w-12 h-14 md:w-16 md:h-20 text-center text-2xl md:text-4xl font-black rounded-2xl border-2 transition-all outline-none",
             data ? "border-primary bg-primary/5" : "border-muted bg-card",
-            "focus:border-primary focus:ring-4 focus:ring-primary/10",
+            "focus:border-primary focus:ring-8 focus:ring-primary/10",
             disabled && "opacity-50 cursor-not-allowed"
           )}
         />
