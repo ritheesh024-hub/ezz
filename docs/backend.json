@@ -83,23 +83,23 @@
     }
   },
   "auth": {
-    "providers": ["password", "phone"]
+    "providers": ["password", "phone", "anonymous"]
   },
   "firestore": {
     "/admins/{userId}": {
-      "schema": "#/entities/AdminProfile",
+      "schema": "#/backend/entities/AdminProfile",
       "description": "Restricted collection for admin user metadata"
     },
     "/users/{phone}": {
-      "schema": "#/entities/UserProfile",
+      "schema": "#/backend/entities/UserProfile",
       "description": "Customer profiles keyed by phone number"
     },
     "/orders/{orderId}": {
-      "schema": "#/entities/Order",
+      "schema": "#/backend/entities/Order",
       "description": "Collection of customer orders"
     },
     "/products/{productId}": {
-      "schema": "#/entities/FoodItem",
+      "schema": "#/backend/entities/FoodItem",
       "description": "Collection of dynamic menu items (products)"
     }
   }

@@ -3,7 +3,6 @@
 
 /**
  * @fileOverview Firebase configuration using environment variables.
- * Values are populated from the .env file.
  */
 
 export const firebaseConfig = {
