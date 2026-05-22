@@ -10,7 +10,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { OTPInput } from '@/components/OTPInput';
 import { 
   CheckCircle2, 
   ChevronRight, 
@@ -20,10 +19,10 @@ import {
   ShoppingBag, 
   Loader2, 
   Trash2,
-  Lock,
   UserCheck,
   ShieldCheck,
-  AlertCircle
+  MapPin,
+  Phone
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -34,7 +33,6 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
-import { sendSMSOTP, verifySMSOTP } from '@/app/actions/otp-actions';
 
 export default function CheckoutPage() {
   const { cart, getTotal, clearCart, removeFromCart } = useStore();
@@ -46,12 +44,6 @@ export default function CheckoutPage() {
   const [orderId, setOrderId] = useState<string>('');
   const [isReturningUser, setIsReturningUser] = useState(false);
   
-  // Auth State
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [showOtp, setShowOtp] = useState(false);
-  const [otpLoading, setOtpLoading] = useState(false);
-  const [resendTimer, setResendTimer] = useState(0);
-
   // Delivery Data
   const [formData, setFormData] = useState({
     name: '',
@@ -65,14 +57,6 @@ export default function CheckoutPage() {
     setOrderId(`EB-${Math.floor(Math.random() * 90000) + 10000}`);
   }, []);
 
-  // Resend Timer Logic
-  useEffect(() => {
-    if (resendTimer > 0) {
-      const timer = setTimeout(() => setResendTimer(resendTimer - 1), 1000);
-      return () => clearTimeout(timer);
-    }
-  }, [resendTimer]);
-
   const subtotal = getTotal();
   const deliveryFee = subtotal >= 149 ? 0 : 40;
   const total = subtotal + deliveryFee;
@@ -80,81 +64,39 @@ export default function CheckoutPage() {
   const handleNext = () => setStep(step + 1);
   const handleBack = () => setStep(step - 1);
 
-  const startPhoneAuth = async () => {
-    if (phoneNumber.length < 10) {
-      toast({ variant: "destructive", title: "Invalid Number", description: "Please enter a 10-digit mobile number." });
-      return;
-    }
-    setOtpLoading(true);
-    
-    try {
-      const result = await sendSMSOTP(phoneNumber);
-      if (result.success) {
-        setShowOtp(true);
-        setResendTimer(30);
-        toast({ title: "OTP Sent", description: "Check your mobile for the 4-digit code." });
-      } else {
-        toast({ variant: "destructive", title: "Send Failed", description: result.message || "Could not send code." });
+  // Auto-fill logic when phone number is entered (optional/frictionless)
+  const checkReturningUser = async (phoneNumber: string) => {
+    if (phoneNumber.length === 10 && db) {
+      try {
+        const userRef = doc(db, 'users', phoneNumber);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+          const userData = userSnap.data();
+          setFormData(prev => ({
+            ...prev,
+            name: prev.name || userData.name || '',
+            address: prev.address || userData.address || ''
+          }));
+          setIsReturningUser(true);
+        } else {
+          setIsReturningUser(false);
+        }
+      } catch (e) {
+        console.error("User lookup failed", e);
       }
-    } catch (e: any) {
-      console.error(e);
-      toast({ variant: "destructive", title: "System Error", description: e.message || "An unexpected error occurred." });
-    } finally {
-      setOtpLoading(false);
     }
-  };
-
-  const verifyOtp = async (otp: string) => {
-    if (!db) return;
-    setOtpLoading(true);
-    
-    try {
-      const result = await verifySMSOTP(phoneNumber, otp);
-      
-      if (!result.success) {
-        toast({ variant: "destructive", title: "Verification Failed", description: result.message });
-        setOtpLoading(false);
-        return;
-      }
-
-      const userRef = doc(db, 'users', phoneNumber);
-      const userSnap = await getDoc(userRef);
-
-      if (userSnap.exists()) {
-        const userData = userSnap.data();
-        setFormData(prev => ({
-          ...prev,
-          name: userData.name || '',
-          phone: phoneNumber,
-          address: userData.address || ''
-        }));
-        setIsReturningUser(true);
-        toast({ title: "Welcome back!", description: `Recognized user +91 ${phoneNumber}` });
-      } else {
-        setFormData(prev => ({ ...prev, phone: phoneNumber }));
-        setIsReturningUser(false);
-        toast({ title: "Number Verified", description: "Complete your details to finish ordering." });
-      }
-
-      setStep(3); // Move to Details
-    } catch (e) {
-      toast({ variant: "destructive", title: "Error", description: "Could not verify code." });
-    } finally {
-      setOtpLoading(false);
-    }
-  };
-
-  const handleResendOtp = () => {
-    if (resendTimer > 0) return;
-    startPhoneAuth();
   };
 
   const handleSubmit = async () => {
     if (!db) return;
 
-    if (!formData.name || !formData.address) {
-      toast({ variant: "destructive", title: "Details Required", description: "Please fill in delivery info." });
-      setStep(3);
+    if (!formData.name || !formData.phone || !formData.address) {
+      toast({ variant: "destructive", title: "Details Required", description: "Please fill in all delivery info." });
+      return;
+    }
+
+    if (formData.phone.length < 10) {
+      toast({ variant: "destructive", title: "Invalid Phone", description: "Please enter a valid 10-digit number." });
       return;
     }
 
@@ -164,7 +106,7 @@ export default function CheckoutPage() {
     const orderData = {
       orderId: currentOrderId,
       customerName: formData.name,
-      customerPhone: phoneNumber,
+      customerPhone: formData.phone,
       address: formData.address,
       instructions: formData.instructions || '',
       items: cart.map(item => ({
@@ -178,40 +120,41 @@ export default function CheckoutPage() {
       total: Number(total),
       status: 'Pending',
       paymentMethod: formData.paymentMethod,
-      userId: phoneNumber,
+      userId: formData.phone,
       createdAt: serverTimestamp()
     };
 
     const orderRef = doc(db, 'orders', currentOrderId);
-    setDoc(orderRef, orderData).catch(async (error) => {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({
-        path: orderRef.path,
-        operation: 'create',
-        requestResourceData: orderData,
-      }));
-    });
+    setDoc(orderRef, orderData)
+      .then(() => {
+        // Silently create/update user profile keyed by phone
+        const userRef = doc(db, 'users', formData.phone);
+        setDoc(userRef, {
+          phone: formData.phone,
+          name: formData.name,
+          address: formData.address,
+          lastOrderAt: serverTimestamp(),
+          orderCount: increment(1)
+        }, { merge: true });
 
-    // Silently create/update user profile keyed by phone
-    const userRef = doc(db, 'users', phoneNumber);
-    setDoc(userRef, {
-      phone: phoneNumber,
-      name: formData.name,
-      address: formData.address,
-      lastOrderAt: serverTimestamp(),
-      orderCount: increment(1)
-    }, { merge: true });
-
-    setTimeout(() => {
-      setLoading(false);
-      clearCart();
-      setStep(5);
-      toast({ title: "Order Placed Successfully! 🚀" });
-    }, 800);
+        setLoading(false);
+        clearCart();
+        setStep(4);
+        toast({ title: "Order Placed Successfully! 🚀" });
+      })
+      .catch(async (error) => {
+        setLoading(false);
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+          path: orderRef.path,
+          operation: 'create',
+          requestResourceData: orderData,
+        }));
+      });
   };
 
   const qrImage = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent('upi://pay?pa=8639366800@ybl&pn=Ezzy%20Bites&cu=INR')}`;
 
-  if (cart.length === 0 && step < 5) {
+  if (cart.length === 0 && step < 4) {
     return (
       <div className="min-h-screen bg-background flex flex-col">
         <Navbar />
@@ -236,9 +179,9 @@ export default function CheckoutPage() {
             <div className="absolute top-1/2 left-0 w-full h-0.5 bg-muted -translate-y-1/2 z-0" />
             <div 
               className="absolute top-1/2 left-0 h-0.5 bg-primary -translate-y-1/2 z-0 transition-all duration-700" 
-              style={{ width: `${(step - 1) * 25}%` }} 
+              style={{ width: `${(step - 1) * 33.33}%` }} 
             />
-            {[1, 2, 3, 4, 5].map((s) => (
+            {[1, 2, 3, 4].map((s) => (
               <div key={s} className="relative z-10 flex flex-col items-center">
                 <div className={cn(
                   "w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center border-2 md:border-4 border-background transition-all",
@@ -282,73 +225,12 @@ export default function CheckoutPage() {
             )}
 
             {step === 2 && (
-              <div className="space-y-6 animate-in fade-in slide-in-from-left duration-500 max-w-md mx-auto">
-                <div className="text-center space-y-2">
-                  <div className="w-16 h-16 bg-primary/10 rounded-3xl flex items-center justify-center mx-auto mb-4">
-                    <Smartphone className="w-8 h-8 text-primary" />
-                  </div>
-                  <h2 className="text-2xl md:text-3xl font-black">Secure Login</h2>
-                  <p className="text-muted-foreground text-sm font-medium">Verification code will be sent to your mobile.</p>
-                </div>
-                <Card className="rounded-[32px] border-none shadow-xl bg-card overflow-hidden">
-                  <CardContent className="p-6 md:p-8 space-y-6">
-                    {!showOtp ? (
-                      <div className="space-y-4">
-                        <div className="space-y-2">
-                          <Label className="text-[10px] font-black uppercase tracking-widest opacity-60 ml-1">Mobile Number</Label>
-                          <div className="relative">
-                            <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2 border-r pr-3">
-                              <span className="text-sm font-black">+91</span>
-                            </div>
-                            <input 
-                              type="tel" 
-                              value={phoneNumber} 
-                              onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                              placeholder="00000 00000"
-                              className="w-full h-14 md:h-16 pl-20 rounded-2xl text-lg font-bold border-2 border-muted focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all"
-                            />
-                          </div>
-                        </div>
-                        <Button onClick={startPhoneAuth} disabled={otpLoading} className="w-full h-14 md:h-16 rounded-2xl font-black text-base md:text-lg gap-2 shadow-xl shadow-primary/20">
-                          {otpLoading ? <Loader2 className="animate-spin" /> : <>Send 4-Digit OTP <ChevronRight className="w-5 h-5" /></>}
-                        </Button>
-                        <div className="flex items-center gap-2 justify-center text-muted-foreground">
-                          <ShieldCheck className="w-4 h-4" />
-                          <span className="text-[10px] font-bold uppercase tracking-widest">Secure SMS Verification</span>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="space-y-6 text-center animate-in zoom-in duration-500">
-                        <div className="space-y-1">
-                          <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">Enter 4-Digit Code</Label>
-                          <p className="text-xs text-muted-foreground">Sent to <span className="text-primary font-bold">+91 {phoneNumber}</span></p>
-                        </div>
-                        <OTPInput length={4} onComplete={verifyOtp} disabled={otpLoading} />
-                        <div className="pt-2 space-y-2">
-                          <Button 
-                            variant="link" 
-                            disabled={resendTimer > 0} 
-                            onClick={handleResendOtp}
-                            className={cn("text-xs font-black uppercase tracking-widest", resendTimer > 0 ? "text-muted-foreground" : "text-primary")}
-                          >
-                            {resendTimer > 0 ? `Resend code in ${resendTimer}s` : "Resend OTP Code"}
-                          </Button>
-                          <Button variant="ghost" className="w-full text-xs font-bold" onClick={() => setShowOtp(false)}>Change Number</Button>
-                        </div>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-
-            {step === 3 && (
               <div className="space-y-6 animate-in fade-in slide-in-from-left duration-500">
                 <div className="flex justify-between items-end">
                   <h2 className="text-2xl md:text-4xl font-headline font-black">Delivery Details</h2>
                   {isReturningUser && (
                     <Badge variant="outline" className="mb-2 bg-green-50 text-green-700 border-green-200 flex items-center gap-1 font-black text-[10px] py-1">
-                      <UserCheck className="w-3 h-3" /> Returning User
+                      <UserCheck className="w-3 h-3" /> Welcome Back!
                     </Badge>
                   )}
                 </div>
@@ -357,16 +239,50 @@ export default function CheckoutPage() {
                     <div className="grid md:grid-cols-2 gap-4 md:gap-6">
                       <div className="space-y-2">
                         <Label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">Full Name</Label>
-                        <Input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="h-12 md:h-14 rounded-xl font-bold" placeholder="Your Name" />
+                        <Input 
+                          value={formData.name} 
+                          onChange={(e) => setFormData({...formData, name: e.target.value})} 
+                          className="h-12 md:h-14 rounded-xl font-bold" 
+                          placeholder="Your Name" 
+                        />
                       </div>
-                      <div className="space-y-2 opacity-60">
-                        <Label className="text-[10px] font-black uppercase tracking-widest ml-1">Verified Number</Label>
-                        <Input value={`+91 ${phoneNumber}`} disabled className="h-12 md:h-14 rounded-xl bg-muted font-black" />
+                      <div className="space-y-2">
+                        <Label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">Mobile Number</Label>
+                        <div className="relative">
+                          <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2 border-r pr-3">
+                            <span className="text-xs font-black">+91</span>
+                          </div>
+                          <Input 
+                            type="tel"
+                            value={formData.phone} 
+                            onChange={(e) => {
+                              const val = e.target.value.replace(/\D/g, '').slice(0, 10);
+                              setFormData({...formData, phone: val});
+                              checkReturningUser(val);
+                            }} 
+                            className="h-12 md:h-14 pl-20 rounded-xl font-black" 
+                            placeholder="00000 00000"
+                          />
+                        </div>
                       </div>
                     </div>
                     <div className="space-y-2">
                       <Label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">Delivery Address</Label>
-                      <Textarea value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} className="rounded-xl min-h-[100px] md:min-h-[140px] font-medium" placeholder="Complete address (Building, Street, Area)" />
+                      <Textarea 
+                        value={formData.address} 
+                        onChange={(e) => setFormData({...formData, address: e.target.value})} 
+                        className="rounded-xl min-h-[100px] md:min-h-[140px] font-medium" 
+                        placeholder="Complete address (Building, Street, Area)" 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">Special Instructions (Optional)</Label>
+                      <Input 
+                        value={formData.instructions} 
+                        onChange={(e) => setFormData({...formData, instructions: e.target.value})} 
+                        className="h-12 rounded-xl" 
+                        placeholder="e.g. Leave at the gate" 
+                      />
                     </div>
                   </CardContent>
                 </Card>
@@ -377,7 +293,7 @@ export default function CheckoutPage() {
               </div>
             )}
 
-            {step === 4 && (
+            {step === 3 && (
               <div className="space-y-6 animate-in fade-in slide-in-from-left duration-500">
                 <h2 className="text-2xl md:text-4xl font-headline font-black">Payment</h2>
                 <RadioGroup defaultValue={formData.paymentMethod} onValueChange={(v) => setFormData({...formData, paymentMethod: v})} className="space-y-3">
@@ -418,7 +334,7 @@ export default function CheckoutPage() {
               </div>
             )}
 
-            {step === 5 && (
+            {step === 4 && (
               <Card className="p-8 md:p-16 text-center space-y-8 rounded-[32px] md:rounded-[60px] shadow-2xl animate-in zoom-in border-none bg-card">
                 <div className="w-16 h-16 md:w-24 md:h-24 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto">
                   <CheckCircle2 className="w-8 h-8 md:w-12 md:h-12" />
@@ -443,7 +359,7 @@ export default function CheckoutPage() {
             )}
           </div>
 
-          {step < 5 && (
+          {step < 4 && (
             <Card className="rounded-[24px] md:rounded-[40px] border-none shadow-xl h-fit sticky top-24 lg:top-28 bg-card">
               <CardHeader className="p-6 border-b bg-muted/5">
                 <p className="text-[10px] font-black uppercase tracking-widest text-primary">Order Summary</p>
