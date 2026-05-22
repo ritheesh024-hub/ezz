@@ -334,6 +334,7 @@ export const AdminSection = () => {
       {/* Order Details Modal */}
       <Dialog open={!!selectedOrderForView} onOpenChange={(open) => !open && setSelectedOrderForView(null)}>
         <DialogContent className="max-w-2xl rounded-[2.5rem] p-0 overflow-hidden border-none shadow-3xl bg-white focus:outline-none">
+          <DialogTitle className="sr-only">Order Details for #{selectedOrderForView?.orderId}</DialogTitle>
           {selectedOrderForView && (
             <>
               <div className={cn(
@@ -343,7 +344,7 @@ export const AdminSection = () => {
                 <div className="flex justify-between items-center relative z-10">
                   <div className="space-y-1">
                     <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-70">Order Management</p>
-                    <DialogTitle className="text-3xl font-black font-headline tracking-tighter">#{selectedOrderForView.orderId}</DialogTitle>
+                    <h2 className="text-3xl font-black font-headline tracking-tighter">#{selectedOrderForView.orderId}</h2>
                   </div>
                   <div className="text-right">
                     <p className="text-[10px] font-black uppercase opacity-70 mb-1">Total Bill</p>

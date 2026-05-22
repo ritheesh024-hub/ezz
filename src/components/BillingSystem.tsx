@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { 
   Calculator, Receipt, History, 
   Search, Plus, Minus, Trash2, Printer, 
@@ -248,6 +248,7 @@ export const BillingSystem = ({ products, orders }: BillingSystemProps) => {
 
       <Dialog open={!!viewingInvoice} onOpenChange={() => setViewingInvoice(null)}>
         <DialogContent className="max-w-md p-0 rounded-[2.5rem] overflow-hidden border-none shadow-3xl bg-white">
+          <DialogTitle className="sr-only">Invoice Preview for #{viewingInvoice?.orderId}</DialogTitle>
           <div id="print-area" className="p-10 text-black">
             <div className="text-center mb-8 pb-8 border-b-2 border-dashed">
               <h2 className="text-2xl font-black font-headline tracking-tighter uppercase">EZZY BITES</h2>
