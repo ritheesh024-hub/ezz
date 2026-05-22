@@ -25,6 +25,7 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { DashboardAnalysis } from './DashboardAnalysis';
 import { BillingSystem } from './BillingSystem';
+import { NewOrderPopups } from './NewOrderPopups';
 import { cn } from '@/lib/utils';
 import { useSound } from '@/hooks/use-sound';
 
@@ -59,7 +60,6 @@ export const AdminSection = () => {
   }, [realOrders]);
 
   // PERSISTENT RINGING LOGIC
-  // Ring every 5 seconds if there are pending orders and not muted
   useEffect(() => {
     if (isAdminMuted || orderGroups.pending.length === 0) return;
 
@@ -168,7 +168,9 @@ export const AdminSection = () => {
   const hideVegOption = ['Tea', 'Coffee', 'Ice creams'].includes(menuFormData.category);
 
   return (
-    <section className="py-6 md:py-12 bg-secondary/5 min-h-screen">
+    <section className="py-6 md:py-12 bg-secondary/5 min-h-screen relative">
+      <NewOrderPopups pendingOrders={orderGroups.pending} />
+      
       <div className="container mx-auto px-4 max-w-7xl">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-10">
           <div className="flex items-center gap-4">
