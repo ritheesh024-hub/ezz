@@ -53,35 +53,35 @@ export default function AdminDashboardPage() {
   if (userLoading || !isAuthorized) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-background p-6">
-        <div className="w-16 h-16 bg-primary/10 rounded-[2rem] flex items-center justify-center mb-6">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <div className="w-20 h-20 bg-primary/10 rounded-[2.5rem] flex items-center justify-center mb-8">
+          <Loader2 className="w-10 h-10 animate-spin text-primary" />
         </div>
-        <p className="text-xs font-black uppercase tracking-[0.2em] text-muted-foreground animate-pulse">Establishing Secure Uplink...</p>
+        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground animate-pulse">Establishing Secure Connection...</p>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen bg-background">
-      <nav className="border-b bg-card sticky top-0 z-50">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-9 h-9 bg-primary rounded-xl flex items-center justify-center transform group-hover:rotate-12 transition-all">
+      <nav className="border-b bg-white sticky top-0 z-[60]">
+        <div className="container mx-auto px-4 h-20 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center transform group-hover:rotate-12 transition-all shadow-lg shadow-primary/20">
               <ShoppingBag className="w-5 h-5 text-primary-foreground" />
             </div>
-            <span className="text-xl font-headline font-black">
-              Ezzy<span className="text-primary">Bites</span> <span className="text-muted-foreground font-black text-[10px] ml-2 tracking-widest uppercase">Admin</span>
+            <span className="text-2xl font-headline font-black tracking-tight">
+              Ezzy<span className="text-primary">Bites</span> <span className="text-muted-foreground font-black text-[9px] ml-2 tracking-[0.2em] uppercase opacity-50">Admin</span>
             </span>
           </Link>
-          <div className="flex items-center gap-4">
-            <div className="hidden md:flex flex-col items-end mr-2">
-              <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground opacity-50 leading-none mb-1">Authenticated As</span>
+          <div className="flex items-center gap-6">
+            <div className="hidden lg:flex flex-col items-end mr-2">
+              <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-40 leading-none mb-1">Session Authorized</span>
               <span className="text-xs font-bold text-foreground">{user?.email}</span>
             </div>
             <Button 
               variant="outline" 
               size="sm" 
-              className="rounded-xl gap-2 font-black uppercase text-[10px] tracking-widest hover:bg-destructive hover:text-white hover:border-destructive transition-all" 
+              className="rounded-xl h-12 px-6 gap-2 font-black uppercase text-[10px] tracking-widest hover:bg-destructive hover:text-white hover:border-destructive transition-all border-2" 
               onClick={handleLogout}
             >
               <LogOut className="w-4 h-4" />

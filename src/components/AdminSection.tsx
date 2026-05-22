@@ -1,3 +1,4 @@
+
 "use client"
 import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -59,6 +60,7 @@ export const AdminSection = () => {
     return groups;
   }, [realOrders]);
 
+  // Persistent Ringing for Pending Orders
   useEffect(() => {
     if (isAdminMuted || orderGroups.pending.length === 0) return;
     const ringInterval = setInterval(() => playSound('ping'), 5000);
@@ -82,7 +84,7 @@ export const AdminSection = () => {
     const orderRef = doc(db, 'orders', id);
     updateDoc(orderRef, { status: newStatus }).then(() => {
       playSound('success');
-      toast({ title: `Status updated to ${newStatus}` });
+      toast({ title: `Order ${newStatus}` });
       if (selectedOrderForView?.id === id) {
         setSelectedOrderForView(null);
       }
@@ -212,8 +214,12 @@ export const AdminSection = () => {
                     {orderGroups[group.id as keyof typeof orderGroups].map((order) => (
                       <Card 
                         key={order.id} 
-                        className="rounded-[1.5rem] border-none shadow-md bg-white overflow-hidden group hover:shadow-xl transition-all cursor-pointer"
-                        onClick={() => setSelectedOrderForView(order)}
+                        className="rounded-[1.5rem] border-none shadow-md bg-white overflow-hidden group hover:shadow-xl transition-all cursor-pointer select-none"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setSelectedOrderForView(order);
+                        }}
                       >
                         <CardContent className="p-0">
                           <div className={cn(
@@ -259,7 +265,7 @@ export const AdminSection = () => {
 
           <TabsContent value="inventory" className="space-y-10">
             <div className="flex flex-wrap gap-4 justify-center">
-              <Button onClick={() => { setIsMenuDialogOpen(true); }} className="rounded-2xl h-16 px-10 font-black uppercase tracking-widest text-[11px] gap-3 bg-primary shadow-xl shadow-primary/20">
+              <Button onClick={() => { setEditingItem(null); setMenuFormData({ name: '', description: '', price: '', category: 'Veg Maggie', imageUrl: '', isVeg: true, isAvailable: true, rating: '4.5', isBeverage: false }); setIsMenuDialogOpen(true); }} className="rounded-2xl h-16 px-10 font-black uppercase tracking-widest text-[11px] gap-3 bg-primary shadow-xl shadow-primary/20">
                 <Plus className="w-6 h-6" /> Add Product
               </Button>
             </div>
@@ -326,139 +332,143 @@ export const AdminSection = () => {
       </div>
 
       {/* Order Details Modal */}
-      <Dialog open={!!selectedOrderForView} onOpenChange={() => setSelectedOrderForView(null)}>
-        <DialogContent className="max-w-2xl rounded-[2.5rem] p-0 overflow-hidden border-none shadow-3xl bg-white">
-          <div className={cn(
-            "p-8 text-white relative",
-            selectedOrderForView?.status === 'Cancelled' ? 'bg-destructive' : 'bg-primary'
-          )}>
-            <div className="flex justify-between items-center relative z-10">
-              <div className="space-y-1">
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-70">Order Management</p>
-                <DialogTitle className="text-3xl font-black font-headline tracking-tighter">#{selectedOrderForView?.orderId}</DialogTitle>
-              </div>
-              <div className="text-right">
-                <p className="text-[10px] font-black uppercase opacity-70 mb-1">Total Bill</p>
-                <p className="text-3xl font-black font-headline">₹{selectedOrderForView?.total}</p>
-              </div>
-            </div>
-            <div className="mt-6 flex gap-3 relative z-10">
-              {getStatusBadge(selectedOrderForView?.status)}
-              {getTypeBadge(selectedOrderForView)}
-            </div>
-          </div>
-
-          <div className="p-8 grid md:grid-cols-2 gap-8 max-h-[60vh] overflow-y-auto">
-            <div className="space-y-6">
-              <div className="space-y-3">
-                <h5 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Order Items</h5>
-                <div className="space-y-2">
-                  {selectedOrderForView?.items?.map((item: any, i: number) => (
-                    <div key={i} className="flex justify-between items-center p-3 bg-secondary/30 rounded-xl">
-                      <div className="flex-1">
-                        <p className="font-bold text-sm">{item.name}</p>
-                        <p className="text-[10px] font-bold text-primary">₹{item.price} x {item.quantity}</p>
-                      </div>
-                      <span className="font-black text-primary">₹{item.price * item.quantity}</span>
-                    </div>
-                  ))}
+      <Dialog open={!!selectedOrderForView} onOpenChange={(open) => !open && setSelectedOrderForView(null)}>
+        <DialogContent className="max-w-2xl rounded-[2.5rem] p-0 overflow-hidden border-none shadow-3xl bg-white focus:outline-none">
+          {selectedOrderForView && (
+            <>
+              <div className={cn(
+                "p-8 text-white relative",
+                selectedOrderForView.status === 'Cancelled' ? 'bg-destructive' : 'bg-primary'
+              )}>
+                <div className="flex justify-between items-center relative z-10">
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-70">Order Management</p>
+                    <DialogTitle className="text-3xl font-black font-headline tracking-tighter">#{selectedOrderForView.orderId}</DialogTitle>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[10px] font-black uppercase opacity-70 mb-1">Total Bill</p>
+                    <p className="text-3xl font-black font-headline">₹{selectedOrderForView.total}</p>
+                  </div>
+                </div>
+                <div className="mt-6 flex gap-3 relative z-10">
+                  {getStatusBadge(selectedOrderForView.status)}
+                  {getTypeBadge(selectedOrderForView)}
                 </div>
               </div>
 
-              {selectedOrderForView?.instructions && (
-                <div className="space-y-2">
-                  <h5 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Kitchen Instructions</h5>
-                  <div className="p-4 bg-orange-50 border border-orange-100 rounded-xl flex gap-3 items-start">
-                    <FileText className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
-                    <p className="text-xs font-medium text-orange-800 italic">{selectedOrderForView.instructions}</p>
+              <div className="p-8 grid md:grid-cols-2 gap-8 max-h-[60vh] overflow-y-auto scrollbar-hide">
+                <div className="space-y-6">
+                  <div className="space-y-3">
+                    <h5 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Order Items</h5>
+                    <div className="space-y-2">
+                      {selectedOrderForView.items?.map((item: any, i: number) => (
+                        <div key={i} className="flex justify-between items-center p-3 bg-secondary/30 rounded-xl">
+                          <div className="flex-1">
+                            <p className="font-bold text-sm">{item.name}</p>
+                            <p className="text-[10px] font-bold text-primary">₹{item.price} x {item.quantity}</p>
+                          </div>
+                          <span className="font-black text-primary">₹{item.price * item.quantity}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
 
-            <div className="space-y-6">
-              <div className="space-y-4">
-                <h5 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Customer Details</h5>
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center">
-                      <User className="w-4 h-4 text-muted-foreground" />
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-black uppercase opacity-40">Name</p>
-                      <p className="text-xs font-bold">{selectedOrderForView?.customerName}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center">
-                      <BellRing className="w-4 h-4 text-muted-foreground" />
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-black uppercase opacity-40">Phone</p>
-                      <p className="text-xs font-bold">{selectedOrderForView?.customerPhone}</p>
-                    </div>
-                  </div>
-                  {selectedOrderForView?.address && (
-                    <div className="flex items-start gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center shrink-0">
-                        <MapPin className="w-4 h-4 text-muted-foreground" />
-                      </div>
-                      <div>
-                        <p className="text-[10px] font-black uppercase opacity-40">Delivery Location</p>
-                        <p className="text-[11px] font-bold leading-relaxed">{selectedOrderForView.address}</p>
+                  {selectedOrderForView.instructions && (
+                    <div className="space-y-2">
+                      <h5 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Kitchen Instructions</h5>
+                      <div className="p-4 bg-orange-50 border border-orange-100 rounded-xl flex gap-3 items-start text-orange-800 italic text-xs font-medium">
+                        <FileText className="w-4 h-4 shrink-0 mt-0.5" />
+                        {selectedOrderForView.instructions}
                       </div>
                     </div>
                   )}
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center">
-                      <Calendar className="w-4 h-4 text-muted-foreground" />
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-black uppercase opacity-40">Placed At</p>
-                      <p className="text-xs font-bold">
-                        {selectedOrderForView?.createdAt?.toDate ? selectedOrderForView.createdAt.toDate().toLocaleString() : 'N/A'}
-                      </p>
+                </div>
+
+                <div className="space-y-6">
+                  <div className="space-y-4">
+                    <h5 className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">Customer Details</h5>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center">
+                          <User className="w-4 h-4 text-muted-foreground" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-black uppercase opacity-40">Name</p>
+                          <p className="text-xs font-bold">{selectedOrderForView.customerName}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center">
+                          <BellRing className="w-4 h-4 text-muted-foreground" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-black uppercase opacity-40">Phone</p>
+                          <p className="text-xs font-bold">{selectedOrderForView.customerPhone}</p>
+                        </div>
+                      </div>
+                      {selectedOrderForView.address && (
+                        <div className="flex items-start gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center shrink-0">
+                            <MapPin className="w-4 h-4 text-muted-foreground" />
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-black uppercase opacity-40">Delivery Location</p>
+                            <p className="text-[11px] font-bold leading-relaxed">{selectedOrderForView.address}</p>
+                          </div>
+                        </div>
+                      )}
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center">
+                          <Calendar className="w-4 h-4 text-muted-foreground" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-black uppercase opacity-40">Placed At</p>
+                          <p className="text-xs font-bold">
+                            {selectedOrderForView.createdAt?.toDate ? selectedOrderForView.createdAt.toDate().toLocaleString() : 'N/A'}
+                          </p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
 
-          <DialogFooter className="p-8 bg-secondary/30 flex flex-wrap gap-3 sm:justify-center">
-            {selectedOrderForView?.status === 'Pending' && (
-              <Button 
-                className="flex-1 min-w-[140px] rounded-xl h-14 bg-primary font-black uppercase text-[10px] tracking-widest"
-                onClick={() => handleUpdateStatus(selectedOrderForView.id, 'Preparing')}
-              >
-                Accept & Start Cooking
-              </Button>
-            )}
-            {selectedOrderForView?.status === 'Preparing' && (
-              <Button 
-                className="flex-1 min-w-[140px] rounded-xl h-14 bg-orange-500 font-black uppercase text-[10px] tracking-widest"
-                onClick={() => handleUpdateStatus(selectedOrderForView.id, 'Delivered')}
-              >
-                Mark as Ready/Delivered
-              </Button>
-            )}
-            {['Pending', 'Preparing'].includes(selectedOrderForView?.status) && (
-              <Button 
-                variant="outline" 
-                className="flex-1 min-w-[140px] rounded-xl h-14 border-2 border-destructive text-destructive font-black uppercase text-[10px] tracking-widest hover:bg-destructive hover:text-white"
-                onClick={() => handleUpdateStatus(selectedOrderForView.id, 'Cancelled')}
-              >
-                Deny Order
-              </Button>
-            )}
-            <Button 
-              variant="ghost" 
-              className="w-full h-12 rounded-xl font-black uppercase text-[10px] opacity-50"
-              onClick={() => setSelectedOrderForView(null)}
-            >
-              Close Details
-            </Button>
-          </DialogFooter>
+              <DialogFooter className="p-8 bg-secondary/30 flex flex-wrap gap-3 sm:justify-center">
+                {selectedOrderForView.status === 'Pending' && (
+                  <Button 
+                    className="flex-1 min-w-[140px] rounded-xl h-14 bg-primary font-black uppercase text-[10px] tracking-widest shadow-lg shadow-primary/20"
+                    onClick={() => handleUpdateStatus(selectedOrderForView.id, 'Preparing')}
+                  >
+                    Accept & Start Cooking
+                  </Button>
+                )}
+                {selectedOrderForView.status === 'Preparing' && (
+                  <Button 
+                    className="flex-1 min-w-[140px] rounded-xl h-14 bg-orange-500 font-black uppercase text-[10px] tracking-widest shadow-lg shadow-orange-500/20"
+                    onClick={() => handleUpdateStatus(selectedOrderForView.id, 'Delivered')}
+                  >
+                    Mark as Delivered
+                  </Button>
+                )}
+                {['Pending', 'Preparing'].includes(selectedOrderForView.status) && (
+                  <Button 
+                    variant="outline" 
+                    className="flex-1 min-w-[140px] rounded-xl h-14 border-2 border-destructive text-destructive font-black uppercase text-[10px] tracking-widest hover:bg-destructive hover:text-white"
+                    onClick={() => handleUpdateStatus(selectedOrderForView.id, 'Cancelled')}
+                  >
+                    Deny Order
+                  </Button>
+                )}
+                <Button 
+                  variant="ghost" 
+                  className="w-full h-12 rounded-xl font-black uppercase text-[10px] opacity-50"
+                  onClick={() => setSelectedOrderForView(null)}
+                >
+                  Close Details
+                </Button>
+              </DialogFooter>
+            </>
+          )}
         </DialogContent>
       </Dialog>
 
