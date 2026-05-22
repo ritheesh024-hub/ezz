@@ -12,14 +12,14 @@ import {
   IndianRupee, Sparkles, Loader2, 
   Package, Clock, CheckCircle2,
   Megaphone, LayoutDashboard, Trash2, Plus, Edit2, Link as LinkIcon,
-  ChevronRight, MapPin, Phone, ShoppingBag
+  ChevronRight, MapPin, Phone, ShoppingBag, Database
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { CATEGORIES } from '@/app/lib/menu-data';
+import { CATEGORIES, MENU_ITEMS } from '@/app/lib/menu-data';
 import { dailySpecialGenerator } from '@/ai/flows/daily-special-generator';
 import { toast } from '@/hooks/use-toast';
 import { useFirestore, useCollection } from '@/firebase';
-import { collection, query, limit, doc, updateDoc, deleteDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { collection, query, limit, doc, updateDoc, deleteDoc, setDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { DashboardAnalysis } from './DashboardAnalysis';
@@ -44,6 +44,7 @@ export const AdminSection = () => {
   const [promoLoading, setPromoLoading] = useState(false);
   const [promoResult, setPromoResult] = useState<any>(null);
   const [selectedPromoDish, setSelectedPromoDish] = useState<any>(null);
+  const [isSeeding, setIsSeeding] = useState(false);
 
   const [isMenuDialogOpen, setIsMenuDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
@@ -79,6 +80,28 @@ export const AdminSection = () => {
   const resetForm = () => {
     setEditingItem(null);
     setMenuFormData({ name: '', description: '', price: '', category: 'Veg Maggie', imageUrl: '', isVeg: true, isAvailable: true, rating: '4.5' });
+  };
+
+  const handleSeedMenu = async () => {
+    if (!db) return;
+    setIsSeeding(true);
+    try {
+      const batch = writeBatch(db);
+      MENU_ITEMS.forEach((item) => {
+        const itemRef = doc(db, 'products', `PROD-${item.id}`);
+        batch.set(itemRef, {
+          ...item,
+          id: `PROD-${item.id}`,
+          createdAt: serverTimestamp()
+        }, { merge: true });
+      });
+      await batch.commit();
+      toast({ title: "Sample Menu Seeded!", description: "Initial products are now live." });
+    } catch (error) {
+      toast({ variant: "destructive", title: "Seeding Failed", description: "Could not seed sample data." });
+    } finally {
+      setIsSeeding(false);
+    }
   };
 
   const handleSaveMenuItem = () => {
@@ -246,9 +269,15 @@ export const AdminSection = () => {
           </TabsContent>
 
           <TabsContent value="inventory" className="space-y-8 md:space-y-10">
-            <Button onClick={() => { resetForm(); setIsMenuDialogOpen(true); }} className="rounded-2xl h-14 md:h-16 px-8 md:px-12 font-black uppercase tracking-widest text-[10px] gap-3 shadow-xl shadow-primary/20 w-full sm:w-auto transition-all active:scale-95 bg-primary text-white">
-              <Plus className="w-5 h-5" /> Add New Entry
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Button onClick={() => { resetForm(); setIsMenuDialogOpen(true); }} className="rounded-2xl h-14 md:h-16 px-8 md:px-12 font-black uppercase tracking-widest text-[10px] gap-3 shadow-xl shadow-primary/20 w-full sm:w-auto transition-all active:scale-95 bg-primary text-white">
+                <Plus className="w-5 h-5" /> Add New Entry
+              </Button>
+              <Button onClick={handleSeedMenu} disabled={isSeeding} variant="outline" className="rounded-2xl h-14 md:h-16 px-8 md:px-12 font-black uppercase tracking-widest text-[10px] gap-3 w-full sm:w-auto transition-all border-2">
+                {isSeeding ? <Loader2 className="w-5 h-5 animate-spin" /> : <Database className="w-5 h-5" />}
+                Seed Sample Menu
+              </Button>
+            </div>
 
             <Dialog open={isMenuDialogOpen} onOpenChange={setIsMenuDialogOpen}>
               <DialogContent className="max-w-2xl p-0 rounded-[2rem] md:rounded-[3rem] overflow-hidden border-none shadow-3xl bg-card mx-4">
@@ -325,7 +354,7 @@ export const AdminSection = () => {
               </DialogContent>
             </Dialog>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-10">
+            <div className="grid grid-cols-1 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-10">
               {menuLoading ? (
                 <div className="col-span-full py-20 text-center">
                   <Loader2 className="w-10 h-10 animate-spin mx-auto text-primary" />
