@@ -1,15 +1,29 @@
-
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getFirestore, Firestore } from 'firebase/firestore';
 import { getAuth, Auth } from 'firebase/auth';
 import { firebaseConfig } from './config';
 
-export function initializeFirebase(): { app: FirebaseApp; db: Firestore; auth: Auth } {
-  const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
-  const db = getFirestore(app);
-  const auth = getAuth(app);
+/**
+ * Initializes Firebase services safely.
+ * Returns null for services if the config is invalid to prevent runtime crashes.
+ */
+export function initializeFirebase(): { app: FirebaseApp | null; db: Firestore | null; auth: Auth | null } {
+  // Check if we have at least the basic config
+  if (!firebaseConfig.apiKey || firebaseConfig.apiKey === '') {
+    console.warn('Firebase API Key is missing. Check your .env file.');
+    return { app: null, db: null, auth: null };
+  }
 
-  return { app, db, auth };
+  try {
+    const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    return { app, db, auth };
+  } catch (error) {
+    console.error('Failed to initialize Firebase:', error);
+    return { app: null, db: null, auth: null };
+  }
 }
 
 export * from './provider';

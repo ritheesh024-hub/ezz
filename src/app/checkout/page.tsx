@@ -1,4 +1,3 @@
-
 "use client"
 import React, { useState, useEffect } from 'react';
 import { Navbar } from '@/components/Navbar';
@@ -21,7 +20,7 @@ import {
   Trash2,
   UserCheck,
   MapPin,
-  Phone
+  AlertCircle
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -43,7 +42,6 @@ export default function CheckoutPage() {
   const [orderId, setOrderId] = useState<string>('');
   const [isReturningUser, setIsReturningUser] = useState(false);
   
-  // Delivery Data
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -99,7 +97,10 @@ export default function CheckoutPage() {
   };
 
   const handleSubmit = async () => {
-    if (!db) return;
+    if (!db) {
+      toast({ variant: "destructive", title: "System Error", description: "Database not connected. Check Firebase configuration." });
+      return;
+    }
 
     setLoading(true);
 
@@ -128,7 +129,6 @@ export default function CheckoutPage() {
     const orderRef = doc(db, 'orders', currentOrderId);
     setDoc(orderRef, orderData)
       .then(() => {
-        // Silently create/update user profile keyed by phone
         const userRef = doc(db, 'users', formData.phone);
         setDoc(userRef, {
           phone: formData.phone,
@@ -174,7 +174,6 @@ export default function CheckoutPage() {
     <div className="min-h-screen bg-secondary/10 pb-12 overflow-x-hidden">
       <Navbar />
       <main className="container mx-auto px-4 pt-24 md:pt-32">
-        {/* Progress Tracker */}
         <div className="max-w-xl mx-auto mb-10 md:mb-16 px-2">
           <div className="flex items-center justify-between relative">
             <div className="absolute top-1/2 left-0 w-full h-0.5 bg-muted -translate-y-1/2 z-0" />
@@ -197,6 +196,13 @@ export default function CheckoutPage() {
 
         <div className="max-w-5xl mx-auto grid lg:grid-cols-3 gap-6 md:gap-10">
           <div className="lg:col-span-2 space-y-6 md:space-y-8">
+            {!db && (
+              <Card className="bg-destructive/10 border-destructive text-destructive p-4 rounded-2xl flex items-center gap-3">
+                <AlertCircle className="w-5 h-5 shrink-0" />
+                <p className="text-sm font-bold">Database connection lost. Please refresh or check Firebase settings.</p>
+              </Card>
+            )}
+
             {step === 1 && (
               <div className="space-y-6 animate-in fade-in slide-in-from-left duration-500">
                 <h2 className="text-2xl md:text-4xl font-headline font-black">Review Order</h2>
