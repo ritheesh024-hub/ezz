@@ -143,6 +143,8 @@ export const AdminSection = () => {
       });
   };
 
+  const hideVegOption = ['Tea', 'Coffee', 'Ice creams'].includes(menuFormData.category);
+
   return (
     <section className="py-6 md:py-12 bg-secondary/5 min-h-screen overflow-x-hidden">
       <div className="container mx-auto px-4 max-w-7xl">
@@ -334,22 +336,24 @@ export const AdminSection = () => {
 
                   {/* Dietary & Beverage Switches */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="p-4 md:p-6 rounded-2xl bg-secondary/30 flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center transition-all", menuFormData.isVeg ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600")}>
-                          <Info className="w-5 h-5" />
+                    {!hideVegOption && (
+                      <div className="p-4 md:p-6 rounded-2xl bg-secondary/30 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center transition-all", menuFormData.isVeg ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600")}>
+                            <Info className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">Dietary</Label>
+                            <p className="text-sm font-black">{menuFormData.isVeg ? 'Veg' : 'Non-Veg'}</p>
+                          </div>
                         </div>
-                        <div>
-                          <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">Dietary</Label>
-                          <p className="text-sm font-black">{menuFormData.isVeg ? 'Veg' : 'Non-Veg'}</p>
-                        </div>
+                        <Switch 
+                          checked={menuFormData.isVeg} 
+                          onCheckedChange={(checked) => setMenuFormData({...menuFormData, isVeg: checked})} 
+                          className="data-[state=checked]:bg-green-500"
+                        />
                       </div>
-                      <Switch 
-                        checked={menuFormData.isVeg} 
-                        onCheckedChange={(checked) => setMenuFormData({...menuFormData, isVeg: checked})} 
-                        className="data-[state=checked]:bg-green-500"
-                      />
-                    </div>
+                    )}
                     
                     <div className="p-4 md:p-6 rounded-2xl bg-secondary/30 flex items-center justify-between">
                       <div className="flex items-center gap-3">
@@ -430,12 +434,14 @@ export const AdminSection = () => {
                       <div className="flex-1 min-w-0 mr-4">
                         <h4 className="font-black text-lg truncate tracking-tight">{item.name}</h4>
                         <div className="flex gap-2 mt-1">
-                          <p className={cn(
-                            "text-[8px] font-black uppercase tracking-widest",
-                            item.isVeg ? "text-green-600" : "text-red-600"
-                          )}>
-                            {item.isVeg ? 'Veg' : 'Non-Veg'}
-                          </p>
+                          {!['Tea', 'Coffee', 'Ice creams'].includes(item.category) && (
+                            <p className={cn(
+                              "text-[8px] font-black uppercase tracking-widest",
+                              item.isVeg ? "text-green-600" : "text-red-600"
+                            )}>
+                              {item.isVeg ? 'Veg' : 'Non-Veg'}
+                            </p>
+                          )}
                           {item.isBeverage && (
                             <p className="text-[8px] font-black uppercase tracking-widest text-amber-600">Beverage</p>
                           )}

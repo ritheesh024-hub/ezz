@@ -14,8 +14,9 @@ export const FoodCard = ({ item }: { item: FoodItem }) => {
   const { cart, addToCart, updateQuantity } = useStore();
   const [isCustomizing, setIsCustomizing] = useState(false);
   
-  // For beverages, we don't show the quick quantity buttons on the card
-  // because each beverage might have different customizations
+  // Categories that don't need a Veg/Non-Veg indicator
+  const hideVegIndicator = ['Tea', 'Coffee', 'Ice creams'].includes(item.category);
+  
   const cartItemCount = cart.filter(i => i.id === item.id).reduce((acc, i) => acc + i.quantity, 0);
 
   const handleAddClick = () => {
@@ -45,12 +46,12 @@ export const FoodCard = ({ item }: { item: FoodItem }) => {
         {/* Badges */}
         {(item.rating >= 4.7 || item.isBestSeller) && (
           <div className="absolute top-4 left-1/2 -translate-x-1/2 z-20 bg-primary text-white px-4 py-1 rounded-full text-[9px] font-black uppercase tracking-widest flex items-center gap-1 shadow-lg shadow-primary/30">
-            <Sparkles className="w-3 h-3" /> Best Seller
+            <Star className="w-3 h-3 fill-current" /> Best Seller
           </div>
         )}
         {item.isPopular && (
           <div className="absolute top-4 left-4 z-20 bg-amber-500 text-white px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest flex items-center gap-1 shadow-lg shadow-amber-500/30">
-            <Star className="w-3 h-3 fill-current" /> Popular
+            <Sparkles className="w-3 h-3" /> Popular
           </div>
         )}
 
@@ -63,17 +64,19 @@ export const FoodCard = ({ item }: { item: FoodItem }) => {
             className="object-cover group-hover:scale-110 transition-transform duration-1000"
             unoptimized={item.imageUrl.startsWith('http')}
           />
-          <div className="absolute top-4 right-4 z-10">
-            {item.isVeg ? (
-              <div className="bg-white/90 backdrop-blur px-2 py-2 rounded-xl border border-green-500 shadow-xl">
-                 <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              </div>
-            ) : (
-              <div className="bg-white/90 backdrop-blur px-2 py-2 rounded-xl border border-red-500 shadow-xl">
-                 <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-              </div>
-            )}
-          </div>
+          {!hideVegIndicator && (
+            <div className="absolute top-4 right-4 z-10">
+              {item.isVeg ? (
+                <div className="bg-white/90 backdrop-blur px-2 py-2 rounded-xl border border-green-500 shadow-xl">
+                   <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                </div>
+              ) : (
+                <div className="bg-white/90 backdrop-blur px-2 py-2 rounded-xl border border-red-500 shadow-xl">
+                   <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                </div>
+              )}
+            </div>
+          )}
           
           <button className="absolute bottom-4 right-4 w-10 h-10 rounded-2xl bg-white/90 backdrop-blur flex items-center justify-center text-muted-foreground hover:text-primary hover:scale-110 active:scale-95 transition-all z-10 shadow-lg shadow-black/5">
             <Heart className="w-5 h-5" />
