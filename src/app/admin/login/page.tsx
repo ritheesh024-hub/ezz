@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -9,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { ShoppingBag, Lock, Mail, Loader2, ArrowRight, AlertTriangle } from 'lucide-react';
+import { ShoppingBag, Lock, Mail, Loader2, ArrowRight, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import Link from 'next/link';
@@ -36,20 +35,11 @@ export default function AdminLoginPage() {
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!auth) {
+    if (!auth || !db) {
       toast({
         variant: "destructive",
-        title: "System Error",
-        description: "Firebase Authentication is not initialized. Please check your .env file and Firebase Console.",
-      });
-      return;
-    }
-
-    if (!db) {
-      toast({
-        variant: "destructive",
-        title: "Database Error",
-        description: "Firestore is not initialized. Check your project configuration.",
+        title: "Connection Error",
+        description: "Firebase services are not initialized. Check your .env file configuration.",
       });
       return;
     }
@@ -58,7 +48,7 @@ export default function AdminLoginPage() {
       toast({
         variant: "destructive",
         title: "Unauthorized Email",
-        description: `Only ${ADMIN_EMAIL} is authorized to access the Admin Panel.`,
+        description: `Access is restricted to ${ADMIN_EMAIL} only.`,
       });
       return;
     }
@@ -67,7 +57,6 @@ export default function AdminLoginPage() {
     try {
       if (isLogin) {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        // Ensure admin profile exists in Firestore to satisfy security rules
         const adminRef = doc(db, 'admins', userCredential.user.uid);
         const adminDoc = await getDoc(adminRef);
         if (!adminDoc.exists()) {
@@ -76,23 +65,22 @@ export default function AdminLoginPage() {
         toast({ title: "Welcome back, Admin" });
       } else {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        // Create Admin Profile for the new user
         const adminRef = doc(db, 'admins', userCredential.user.uid);
         await setDoc(adminRef, { email: email, role: 'admin' });
-        toast({ title: "Admin account created successfully" });
+        toast({ title: "Admin account registered" });
       }
       router.push('/admin/dashboard');
     } catch (error: any) {
+      console.error('Auth error:', error);
       let message = error.message;
-      if (error.code === 'auth/user-not-found') message = "Account not found. Try signing up.";
+      if (error.code === 'auth/user-not-found') message = "Account not found.";
       if (error.code === 'auth/wrong-password') message = "Incorrect password.";
-      if (error.code === 'auth/email-already-in-use') message = "Account already exists. Try logging in.";
-      if (error.code === 'auth/invalid-api-key') message = "Firebase API key is invalid. Check your environment variables.";
-      if (error.code === 'auth/operation-not-allowed') message = "Email/Password sign-in is not enabled in Firebase Console.";
+      if (error.code === 'auth/invalid-credential') message = "Invalid credentials provided.";
+      if (error.code === 'auth/operation-not-allowed') message = "Email/Password is disabled in Firebase Console.";
       
       toast({
         variant: "destructive",
-        title: isLogin ? "Login Failed" : "Registration Failed",
+        title: "Authentication Failed",
         description: message,
       });
     } finally {
@@ -102,97 +90,90 @@ export default function AdminLoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-secondary/30 p-4">
-      <Card className="w-full max-w-md rounded-[2rem] border shadow-2xl bg-card animate-in zoom-in duration-500">
-        <CardHeader className="space-y-2 text-center">
-          <div className="flex justify-center mb-4">
-            <div className="w-14 h-14 bg-primary rounded-2xl flex items-center justify-center transform rotate-12 shadow-lg shadow-primary/20">
+      <Card className="w-full max-w-md rounded-[2.5rem] border shadow-2xl bg-card animate-in zoom-in duration-500">
+        <CardHeader className="space-y-2 text-center pb-8 pt-10">
+          <div className="flex justify-center mb-6">
+            <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center transform rotate-12 shadow-xl shadow-primary/20">
               <ShoppingBag className="w-8 h-8 text-primary-foreground" />
             </div>
           </div>
-          <CardTitle className="text-3xl font-headline font-black">
-            {isLogin ? 'Admin Login' : 'Admin Register'}
-          </CardTitle>
-          <CardDescription className="font-medium">
-            Authorized access only for <span className="text-primary font-bold">{ADMIN_EMAIL}</span>
+          <CardTitle className="text-3xl font-headline font-black">Admin Access</CardTitle>
+          <CardDescription className="font-bold text-xs uppercase tracking-widest opacity-60">
+            Ezzy Bites Operational Console
           </CardDescription>
         </CardHeader>
 
-        {!auth && (
-          <div className="px-6 pb-4">
-            <Alert variant="destructive" className="rounded-xl bg-destructive/10 border-destructive/20">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertTitle className="font-bold">Firebase Not Connected</AlertTitle>
-              <AlertDescription className="text-[10px] leading-relaxed">
-                Authentication services are currently unavailable. Ensure you have enabled <b>Email/Password</b> provider in the Firebase Console.
+        {!auth ? (
+          <div className="px-8 pb-10">
+            <Alert variant="destructive" className="rounded-2xl bg-destructive/5 border-destructive/20 border-dashed py-6">
+              <AlertTriangle className="h-6 w-6 mb-2" />
+              <AlertTitle className="font-black uppercase text-xs tracking-widest mb-2">Connection Missing</AlertTitle>
+              <AlertDescription className="text-[10px] font-medium leading-relaxed opacity-80">
+                The application cannot connect to Firebase. Please ensure you have added your API keys to the <strong>.env</strong> file in the project root.
               </AlertDescription>
             </Alert>
           </div>
+        ) : (
+          <form onSubmit={handleAuth}>
+            <CardContent className="space-y-6 px-8">
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">Email Address</Label>
+                <div className="relative">
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input 
+                    type="email" 
+                    placeholder="sunnyritheesh@gmail.com" 
+                    className="h-14 pl-12 rounded-xl font-bold border-muted bg-secondary/20"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">Admin Password</Label>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input 
+                    type="password" 
+                    className="h-14 pl-12 rounded-xl border-muted bg-secondary/20"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+              <div className="flex items-center gap-2 px-1">
+                <ShieldCheck className="w-4 h-4 text-primary" />
+                <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground">Authorized Email Required</p>
+              </div>
+            </CardContent>
+            <CardFooter className="flex flex-col gap-4 pb-12 pt-6 px-8">
+              <Button 
+                type="submit" 
+                className="w-full h-16 rounded-2xl font-black text-lg shadow-xl shadow-primary/20 transition-all active:scale-95 bg-primary text-white" 
+                disabled={loading}
+              >
+                {loading ? (
+                  <Loader2 className="w-6 h-6 animate-spin" />
+                ) : (
+                  <div className="flex items-center gap-3">
+                    <span>{isLogin ? 'Sign In' : 'Register'}</span>
+                    <ArrowRight className="w-5 h-5" />
+                  </div>
+                )}
+              </Button>
+              
+              <button 
+                type="button"
+                onClick={() => setIsLogin(!isLogin)}
+                className="text-[10px] text-muted-foreground font-black uppercase tracking-widest hover:text-primary transition-colors"
+              >
+                {isLogin ? "Switch to Registration" : "Back to Login"}
+              </button>
+            </CardFooter>
+          </form>
         )}
-
-        <form onSubmit={handleAuth}>
-          <CardContent className="space-y-5">
-            <div className="space-y-2">
-              <Label htmlFor="email">Admin Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input 
-                  id="email" 
-                  type="email" 
-                  placeholder="sunnyritheesh@gmail.com" 
-                  className="pl-10 rounded-xl h-12 focus:ring-primary/20 font-medium"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input 
-                  id="password" 
-                  type="password" 
-                  className="pl-10 rounded-xl h-12 focus:ring-primary/20"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </div>
-            </div>
-          </CardContent>
-          <CardFooter className="flex flex-col gap-4 pb-8">
-            <Button 
-              type="submit" 
-              className="w-full h-14 rounded-xl font-black text-lg shadow-xl shadow-primary/10 transition-all active:scale-95" 
-              disabled={loading || !auth}
-            >
-              {loading ? (
-                <div className="flex items-center gap-2">
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>Verifying...</span>
-                </div>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <span>{isLogin ? 'Sign In' : 'Register Now'}</span>
-                  <ArrowRight className="w-5 h-5" />
-                </div>
-              )}
-            </Button>
-            
-            <button 
-              type="button"
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-xs text-muted-foreground font-bold hover:text-primary transition-colors"
-            >
-              {isLogin ? "Need a new admin account? Register" : "Already registered? Sign In"}
-            </button>
-
-            <Link href="/" className="text-xs text-muted-foreground hover:text-primary transition-colors flex items-center gap-1 font-bold mt-2">
-              Back to Storefront
-            </Link>
-          </CardFooter>
-        </form>
       </Card>
     </div>
   );

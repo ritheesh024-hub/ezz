@@ -8,9 +8,15 @@ import { firebaseConfig } from './config';
  * Returns null for services if the config is invalid to prevent runtime crashes.
  */
 export function initializeFirebase(): { app: FirebaseApp | null; db: Firestore | null; auth: Auth | null } {
-  // Check if we have at least the basic config
-  if (!firebaseConfig.apiKey || firebaseConfig.apiKey === '' || firebaseConfig.apiKey === 'undefined') {
-    console.warn('Firebase API Key is missing or invalid. Please set NEXT_PUBLIC_FIREBASE_API_KEY in your .env file.');
+  // Strict check for the API Key
+  const isConfigValid = 
+    firebaseConfig.apiKey && 
+    firebaseConfig.apiKey !== '' && 
+    firebaseConfig.apiKey !== 'undefined' &&
+    !firebaseConfig.apiKey.includes('your_');
+
+  if (!isConfigValid) {
+    console.warn('Firebase configuration is missing or incomplete. Please check your .env file.');
     return { app: null, db: null, auth: null };
   }
 
