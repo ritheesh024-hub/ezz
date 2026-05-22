@@ -34,17 +34,20 @@ export interface CartItem extends FoodItem {
 
 interface AppStore {
   cart: CartItem[];
+  isMuted: boolean;
   addToCart: (item: FoodItem, customization?: BeverageOptions) => void;
   removeFromCart: (cartId: string) => void;
   updateQuantity: (cartId: string, delta: number) => void;
   clearCart: () => void;
   getTotal: () => number;
+  toggleMute: () => void;
 }
 
 export const useStore = create<AppStore>()(
   persist(
     (set, get) => ({
       cart: [],
+      isMuted: false,
       addToCart: (item, customization) => set((state) => {
         const cartId = customization 
           ? `${item.id}-${customization.size}-${customization.temp}-${customization.sugar}-${customization.addons.sort().join(',')}`
@@ -82,6 +85,7 @@ export const useStore = create<AppStore>()(
       })),
       clearCart: () => set({ cart: [] }),
       getTotal: () => get().cart.reduce((acc, item) => acc + item.price * item.quantity, 0),
+      toggleMute: () => set((state) => ({ isMuted: !state.isMuted })),
     }),
     { name: 'ezzy-bites-beverage-storage' }
   )

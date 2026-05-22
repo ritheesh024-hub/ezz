@@ -1,7 +1,8 @@
 
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
+import { useStore } from '@/app/lib/store';
 
 // Premium, lightweight UI sound URLs
 const SOUNDS = {
@@ -15,20 +16,7 @@ const SOUNDS = {
 export type SoundType = keyof typeof SOUNDS;
 
 export function useSound() {
-  const [isMuted, setIsMuted] = useState(false);
-
-  useEffect(() => {
-    const saved = localStorage.getItem('ezzy-bites-muted');
-    if (saved !== null) {
-      setIsMuted(saved === 'true');
-    }
-  }, []);
-
-  const toggleMute = () => {
-    const newState = !isMuted;
-    setIsMuted(newState);
-    localStorage.setItem('ezzy-bites-muted', String(newState));
-  };
+  const { isMuted, toggleMute } = useStore();
 
   const playSound = useCallback((type: SoundType) => {
     if (typeof window === 'undefined' || isMuted) return;
@@ -36,11 +24,12 @@ export function useSound() {
     try {
       const audio = new Audio(SOUNDS[type]);
       audio.volume = 0.4; // Soft premium volume
-      audio.play().catch(() => {
-        // Handle autoplay restrictions gracefully
+      audio.play().catch((err) => {
+        // Log error only in dev mode if needed
+        // console.warn('Audio playback blocked by browser policies', err);
       });
     } catch (e) {
-      console.warn('Audio playback failed', e);
+      console.warn('Audio initialization failed', e);
     }
   }, [isMuted]);
 
