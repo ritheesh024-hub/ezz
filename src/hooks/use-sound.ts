@@ -1,12 +1,11 @@
-
 'use client';
 
 import { useCallback, useRef } from 'react';
 import { useStore } from '@/app/lib/store';
 
 const SOUNDS = {
-  // New order notification: Modern digital bell
-  ping: 'https://assets.mixkit.co/active_storage/sfx/1113/1113-preview.mp3', 
+  // New order ring: Modern digital telephone ring (more prominent)
+  ping: 'https://assets.mixkit.co/active_storage/sfx/1358/1358-preview.mp3', 
   // Status updated: Clean high-pitched tick
   success: 'https://assets.mixkit.co/active_storage/sfx/2568/2568-preview.mp3', 
   // Menu/Inventory updated: Light interface pop
@@ -32,7 +31,7 @@ export function useSound() {
       }
 
       const audio = audioRefs.current[type];
-      audio.volume = 0.4; // Slightly lower volume for a more premium feel
+      audio.volume = 0.5; // Slightly higher for the ring sound
       
       // Reset to start in case it's already playing
       audio.currentTime = 0;
