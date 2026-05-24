@@ -13,7 +13,8 @@ import {
   Trash2, Plus, Edit2, 
   Database, Receipt, ShoppingBag, 
   Volume2, VolumeX, BellRing,
-  MapPin, User, Settings, CheckCircle2
+  MapPin, User, Settings, CheckCircle2,
+  Users, UserPlus
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
@@ -24,6 +25,7 @@ import { BillingSystem } from './BillingSystem';
 import { StoreSettings } from './StoreSettings';
 import { NewOrderPopups } from './NewOrderPopups';
 import { KitchenSystem } from './KitchenSystem';
+import { StaffManagement } from './StaffManagement';
 import { cn } from '@/lib/utils';
 import { useSound } from '@/hooks/use-sound';
 import { StaffRole } from '@/app/admin/dashboard/page';
@@ -117,7 +119,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
   const availableTabs = useMemo(() => {
     if (activeView === 'kitchen') return ['kitchen'];
     if (activeView === 'cashier') return ['billing', 'orders'];
-    return ['overview', 'billing', 'orders', 'inventory', 'settings'];
+    return ['overview', 'billing', 'orders', 'inventory', 'staff', 'settings'];
   }, [activeView]);
 
   return (
@@ -131,24 +133,24 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
       <div className="container mx-auto px-4 pt-8">
         <Tabs defaultValue={availableTabs[0]} className="space-y-8">
           <div className="flex flex-col lg:flex-row justify-between items-center gap-6">
-            <TabsList className="bg-white dark:bg-zinc-900 p-1 rounded-full border w-full lg:w-fit flex shadow-sm">
+            <TabsList className="bg-white dark:bg-zinc-900 p-1 rounded-full border w-full lg:w-fit flex shadow-sm overflow-x-auto scrollbar-hide">
               {availableTabs.includes('overview') && (
-                <TabsTrigger value="overview" className="px-6 py-2.5 font-black uppercase text-[9px] tracking-widest rounded-full gap-2">
+                <TabsTrigger value="overview" className="px-6 py-2.5 font-black uppercase text-[9px] tracking-widest rounded-full gap-2 shrink-0">
                   <Zap className="w-3.5 h-3.5" /> Analysis
                 </TabsTrigger>
               )}
               {availableTabs.includes('billing') && (
-                <TabsTrigger value="billing" className="px-6 py-2.5 font-black uppercase text-[9px] tracking-widest rounded-full gap-2">
+                <TabsTrigger value="billing" className="px-6 py-2.5 font-black uppercase text-[9px] tracking-widest rounded-full gap-2 shrink-0">
                   <Receipt className="w-3.5 h-3.5" /> Billing
                 </TabsTrigger>
               )}
               {availableTabs.includes('kitchen') && (
-                <TabsTrigger value="kitchen" className="px-6 py-2.5 font-black uppercase text-[9px] tracking-widest rounded-full gap-2">
+                <TabsTrigger value="kitchen" className="px-6 py-2.5 font-black uppercase text-[9px] tracking-widest rounded-full gap-2 shrink-0">
                   <ChefHat className="w-3.5 h-3.5" /> Kitchen
                 </TabsTrigger>
               )}
               {availableTabs.includes('orders') && (
-                <TabsTrigger value="orders" className="px-6 py-2.5 font-black uppercase text-[9px] tracking-widest rounded-full gap-2 relative">
+                <TabsTrigger value="orders" className="px-6 py-2.5 font-black uppercase text-[9px] tracking-widest rounded-full gap-2 relative shrink-0">
                   <ShoppingBag className="w-3.5 h-3.5" /> Orders
                   {orderGroups.pending.length > 0 && (
                     <span className="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full animate-pulse border-2 border-white dark:border-zinc-900" />
@@ -156,12 +158,17 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
                 </TabsTrigger>
               )}
               {availableTabs.includes('inventory') && (
-                <TabsTrigger value="inventory" className="px-6 py-2.5 font-black uppercase text-[9px] tracking-widest rounded-full gap-2">
+                <TabsTrigger value="inventory" className="px-6 py-2.5 font-black uppercase text-[9px] tracking-widest rounded-full gap-2 shrink-0">
                   <Database className="w-3.5 h-3.5" /> Inventory
                 </TabsTrigger>
               )}
+              {availableTabs.includes('staff') && (
+                <TabsTrigger value="staff" className="px-6 py-2.5 font-black uppercase text-[9px] tracking-widest rounded-full gap-2 shrink-0">
+                  <Users className="w-3.5 h-3.5" /> Staff
+                </TabsTrigger>
+              )}
               {availableTabs.includes('settings') && (
-                <TabsTrigger value="settings" className="px-6 py-2.5 font-black uppercase text-[9px] tracking-widest rounded-full gap-2">
+                <TabsTrigger value="settings" className="px-6 py-2.5 font-black uppercase text-[9px] tracking-widest rounded-full gap-2 shrink-0">
                   <Settings className="w-3.5 h-3.5" /> Settings
                 </TabsTrigger>
               )}
@@ -277,6 +284,10 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
                 </Card>
               ))}
             </div>
+          </TabsContent>
+
+          <TabsContent value="staff">
+            <StaffManagement />
           </TabsContent>
 
           <TabsContent value="settings">

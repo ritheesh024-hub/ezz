@@ -13,8 +13,12 @@
         },
         "role": {
           "type": "string",
-          "enum": ["admin"],
-          "description": "The user role, must be 'admin'"
+          "enum": ["admin", "cashier", "kitchen"],
+          "description": "The user role defining workspace access"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
         }
       },
       "required": ["email", "role"]
@@ -88,7 +92,7 @@
   "firestore": {
     "/admins/{userId}": {
       "schema": "#/backend/entities/AdminProfile",
-      "description": "Restricted collection for admin user metadata"
+      "description": "Restricted collection for staff metadata"
     },
     "/users/{phone}": {
       "schema": "#/backend/entities/UserProfile",

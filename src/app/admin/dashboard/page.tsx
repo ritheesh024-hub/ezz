@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useUser, useAuth, useFirestore } from '@/firebase';
 import { AdminSection } from '@/components/AdminSection';
 import { Button } from '@/components/ui/button';
-import { ShoppingBag, LogOut, Loader2, ShieldCheck, UserCog, ChefHat, Receipt } from 'lucide-react';
+import { ShoppingBag, LogOut, Loader2, ShieldCheck, UserCog, ChefHat, Receipt, Users } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import Link from 'next/link';
 import { doc, getDoc } from 'firebase/firestore';
@@ -117,10 +117,17 @@ export default function AdminDashboardPage() {
               </div>
             </Link>
 
-            <Badge variant="outline" className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full border-primary/20 bg-primary/5 text-primary font-black uppercase text-[9px] tracking-widest">
-              <ShieldCheck className="w-3 h-3" />
-              {assignedRole}
-            </Badge>
+            <div className="hidden sm:flex items-center gap-2">
+              <Badge variant="outline" className="flex items-center gap-1.5 px-3 py-1 rounded-full border-primary/20 bg-primary/5 text-primary font-black uppercase text-[9px] tracking-widest">
+                <ShieldCheck className="w-3 h-3" />
+                {assignedRole}
+              </Badge>
+              {activeView !== assignedRole && (
+                <Badge variant="secondary" className="bg-orange-100 text-orange-700 font-black uppercase text-[8px] px-2 rounded-full">
+                  Viewing as {activeView}
+                </Badge>
+              )}
+            </div>
           </div>
 
           <div className="flex items-center gap-4">
