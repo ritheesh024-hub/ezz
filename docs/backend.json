@@ -16,9 +16,20 @@
           "enum": ["admin", "cashier", "kitchen"],
           "description": "The user role defining workspace access"
         },
-        "createdAt": {
-          "type": "string",
-          "format": "date-time"
+        "name": { "type": "string" },
+        "phone": { "type": "string" },
+        "photoUrl": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "disabled"] },
+        "onlineStatus": { "type": "string", "enum": ["online", "offline", "busy"] },
+        "lastLoginAt": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "stats": {
+          "type": "object",
+          "properties": {
+            "ordersHandled": { "type": "number" },
+            "billsGenerated": { "type": "number" },
+            "kitchenUpdates": { "type": "number" }
+          }
         }
       },
       "required": ["email", "role"]
@@ -46,6 +57,7 @@
         "customerPhone": { "type": "string" },
         "address": { "type": "string" },
         "instructions": { "type": "string" },
+        "processedBy": { "type": "string", "description": "UID of the staff member who handled the order" },
         "items": {
           "type": "array",
           "items": {

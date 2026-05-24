@@ -15,7 +15,7 @@ import {
   ChevronLeft, Fingerprint, UserCircle 
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import { doc, setDoc, getDoc, collection, getDocs, limit, query } from 'firebase/firestore';
+import { doc, setDoc, getDoc, collection, getDocs, limit, query, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { cn } from '@/lib/utils';
 
@@ -84,14 +84,32 @@ export default function AdminLoginPage() {
           if (adminsSnap.empty) {
             await setDoc(adminRef, { 
               email: email, 
-              role: 'admin', 
-              createdAt: new Date() 
+              name: email.split('@')[0],
+              role: 'admin',
+              status: 'active',
+              onlineStatus: 'online',
+              createdAt: serverTimestamp(),
+              lastLoginAt: serverTimestamp(),
+              stats: { ordersHandled: 0, billsGenerated: 0, kitchenUpdates: 0 }
             });
           } else {
             throw new Error("This account is not authorized as a staff member.");
           }
+        } else {
+          // Check if account is disabled
+          const data = adminSnap.data();
+          if (data.status === 'disabled') {
+            await auth.signOut();
+            throw new Error("This account has been disabled by the administrator.");
+          }
+          
+          // Update last login
+          await updateDoc(adminRef, { 
+            lastLoginAt: serverTimestamp(),
+            onlineStatus: 'online'
+          });
         }
-        toast({ title: "Authorized", description: "Welcome to the operational console." });
+        toast({ title: "Authorized", description: "Welcome back to the operational console." });
       } else {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const adminRef = doc(db, 'admins', userCredential.user.uid);
@@ -106,8 +124,13 @@ export default function AdminLoginPage() {
 
         await setDoc(adminRef, { 
           email: email, 
+          name: email.split('@')[0],
           role: role,
-          createdAt: new Date() 
+          status: 'active',
+          onlineStatus: 'online',
+          createdAt: serverTimestamp(),
+          lastLoginAt: serverTimestamp(),
+          stats: { ordersHandled: 0, billsGenerated: 0, kitchenUpdates: 0 }
         });
         
         toast({ title: "Account Created", description: `Registered as ${role.toUpperCase()}.` });
