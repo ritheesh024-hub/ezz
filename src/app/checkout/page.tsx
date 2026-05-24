@@ -19,7 +19,9 @@ import {
   ShoppingBag, 
   Loader2, 
   Trash2,
-  UserCheck
+  UserCheck,
+  TicketPercent,
+  X
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -39,6 +41,10 @@ export default function CheckoutPage() {
   const [orderId, setOrderId] = useState<string>('');
   const [isReturningUser, setIsReturningUser] = useState(false);
   
+  const [couponInput, setCouponInput] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
+  const [discount, setDiscount] = useState(0);
+
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -53,7 +59,34 @@ export default function CheckoutPage() {
 
   const subtotal = getTotal();
   const deliveryFee = subtotal >= 149 ? 0 : 40;
-  const total = subtotal + deliveryFee;
+  const total = subtotal - discount + deliveryFee;
+
+  const handleApplyCoupon = () => {
+    const code = couponInput.trim().toUpperCase();
+    if (code === 'STUDENTPOWER') {
+      if (subtotal < 200) {
+        toast({ 
+          variant: "destructive", 
+          title: "Minimum Value Required", 
+          description: "This coupon is valid for orders above ₹200." 
+        });
+        return;
+      }
+      const discountVal = Math.round(subtotal * 0.1);
+      setDiscount(discountVal);
+      setAppliedCoupon(code);
+      setCouponInput('');
+      toast({ title: "Coupon Applied! 🎉", description: "10% Student Discount activated." });
+    } else {
+      toast({ variant: "destructive", title: "Invalid Code", description: "This promo code does not exist or has expired." });
+    }
+  };
+
+  const removeCoupon = () => {
+    setDiscount(0);
+    setAppliedCoupon(null);
+    toast({ title: "Coupon Removed" });
+  };
 
   const handleNext = () => {
     if (step === 2) {
@@ -118,6 +151,8 @@ export default function CheckoutPage() {
         customization: item.customization || null
       })),
       subtotal: Number(subtotal),
+      discount: Number(discount),
+      couponCode: appliedCoupon,
       deliveryFee: Number(deliveryFee),
       total: Number(total),
       status: 'Pending',
@@ -363,25 +398,67 @@ export default function CheckoutPage() {
           </div>
 
           {step < 4 && (
-            <Card className="rounded-[24px] md:rounded-[40px] border-none shadow-xl h-fit sticky top-24 lg:top-28 bg-card">
-              <CardHeader className="p-6 border-b bg-muted/5">
-                <p className="text-[10px] font-black uppercase tracking-widest text-primary">Order Summary</p>
-              </CardHeader>
-              <CardContent className="p-6 space-y-4">
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>Subtotal</span>
-                  <span className="font-bold text-foreground">₹{subtotal}</span>
-                </div>
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>Delivery</span>
-                  <span className="font-bold text-green-600">{deliveryFee === 0 ? "FREE" : `₹${deliveryFee}`}</span>
-                </div>
-                <div className="border-t border-dashed pt-4 flex justify-between items-center">
-                  <span className="text-xs md:text-sm font-black uppercase tracking-widest">Total</span>
-                  <span className="text-2xl md:text-3xl font-headline font-black text-primary">₹{total}</span>
-                </div>
-              </CardContent>
-            </Card>
+            <div className="space-y-6 sticky top-24 lg:top-28 h-fit">
+              <Card className="rounded-[24px] md:rounded-[40px] border-none shadow-xl bg-card overflow-hidden">
+                <CardHeader className="p-6 border-b bg-muted/5">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-primary">Apply Coupon</p>
+                </CardHeader>
+                <CardContent className="p-6">
+                  {appliedCoupon ? (
+                    <div className="flex items-center justify-between bg-green-50 border border-green-100 p-3 rounded-xl animate-in zoom-in duration-300">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center text-white">
+                          <TicketPercent className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-black uppercase text-green-700">{appliedCoupon}</p>
+                          <p className="text-[8px] font-bold text-green-600 uppercase">10% Off Applied</p>
+                        </div>
+                      </div>
+                      <button onClick={removeCoupon} className="text-green-700 hover:text-destructive transition-colors">
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex gap-2">
+                      <Input 
+                        placeholder="Coupon Code" 
+                        value={couponInput} 
+                        onChange={(e) => setCouponInput(e.target.value)} 
+                        className="rounded-xl h-12 uppercase font-black placeholder:normal-case"
+                      />
+                      <Button onClick={handleApplyCoupon} variant="secondary" className="h-12 rounded-xl font-black text-[10px] uppercase px-6">Apply</Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="rounded-[24px] md:rounded-[40px] border-none shadow-xl bg-card">
+                <CardHeader className="p-6 border-b bg-muted/5">
+                  <p className="text-[10px] font-black uppercase tracking-widest text-primary">Order Summary</p>
+                </CardHeader>
+                <CardContent className="p-6 space-y-4">
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span>Subtotal</span>
+                    <span className="font-bold text-foreground">₹{subtotal}</span>
+                  </div>
+                  {discount > 0 && (
+                    <div className="flex justify-between text-sm text-green-600">
+                      <span>Discount (10%)</span>
+                      <span className="font-bold">- ₹{discount}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-sm text-muted-foreground">
+                    <span>Delivery</span>
+                    <span className="font-bold text-green-600">{deliveryFee === 0 ? "FREE" : `₹${deliveryFee}`}</span>
+                  </div>
+                  <div className="border-t border-dashed pt-4 flex justify-between items-center">
+                    <span className="text-xs md:text-sm font-black uppercase tracking-widest">Total</span>
+                    <span className="text-2xl md:text-3xl font-headline font-black text-primary">₹{total}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           )}
         </div>
       </main>
