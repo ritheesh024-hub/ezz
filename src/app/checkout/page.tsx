@@ -20,7 +20,8 @@ import {
   Trash2,
   UserCheck,
   TicketPercent,
-  X
+  X,
+  PartyPopper
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -43,6 +44,7 @@ export default function CheckoutPage() {
   const [couponInput, setCouponInput] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
   const [discount, setDiscount] = useState(0);
+  const [couponLoading, setCouponLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -60,24 +62,52 @@ export default function CheckoutPage() {
   const deliveryFee = subtotal >= 149 ? 0 : 40;
   const total = subtotal - discount + deliveryFee;
 
-  const handleApplyCoupon = () => {
+  const handleApplyCoupon = async () => {
+    if (!db) return;
     const code = couponInput.trim().toUpperCase();
-    if (code === 'STUDENT10') {
-      if (subtotal < 200) {
+    if (!code) return;
+
+    setCouponLoading(true);
+    try {
+      const couponRef = doc(db, 'coupons', code);
+      const couponSnap = await getDoc(couponRef);
+
+      if (couponSnap.exists()) {
+        const data = couponSnap.data();
+        if (!data.isActive) {
+          throw new Error("This coupon is currently disabled.");
+        }
+        if (data.expiryDate && new Date() > new Date(data.expiryDate)) {
+          throw new Error("This coupon has expired.");
+        }
+        if (data.minOrderValue && subtotal < data.minOrderValue) {
+          throw new Error(`Minimum order of ₹${data.minOrderValue} required.`);
+        }
+
+        const discountVal = Math.round(subtotal * (data.discount / 100));
+        setDiscount(discountVal);
+        setAppliedCoupon(code);
+        setCouponInput('');
         toast({ 
-          variant: "destructive", 
-          title: "Minimum Value Required", 
-          description: "This coupon is valid for orders above ₹200." 
+          title: "Coupon Applied! 🎉", 
+          description: `${data.discount}% discount activated.` 
         });
-        return;
+      } else {
+        // Fallback for hardcoded STUDENT10 if not in Firestore
+        if (code === 'STUDENT10') {
+           const discountVal = Math.round(subtotal * 0.1);
+           setDiscount(discountVal);
+           setAppliedCoupon(code);
+           setCouponInput('');
+           toast({ title: "Coupon Applied! 🎉", description: "10% Student Discount activated." });
+        } else {
+           throw new Error("Invalid promo code.");
+        }
       }
-      const discountVal = Math.round(subtotal * 0.1);
-      setDiscount(discountVal);
-      setAppliedCoupon(code);
-      setCouponInput('');
-      toast({ title: "Coupon Applied! 🎉", description: "10% Student Discount activated." });
-    } else {
-      toast({ variant: "destructive", title: "Invalid Code", description: "This promo code does not exist or has expired." });
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "Coupon Error", description: e.message });
+    } finally {
+      setCouponLoading(false);
     }
   };
 
@@ -406,12 +436,12 @@ export default function CheckoutPage() {
                   {appliedCoupon ? (
                     <div className="flex items-center justify-between bg-green-50 border border-green-100 p-3 rounded-xl animate-in zoom-in duration-300">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center text-white">
-                          <TicketPercent className="w-4 h-4" />
+                        <div className="w-10 h-10 bg-green-500 rounded-xl flex items-center justify-center text-white shadow-lg animate-bounce">
+                          <PartyPopper className="w-5 h-5" />
                         </div>
                         <div>
                           <p className="text-[10px] font-black uppercase text-green-700">{appliedCoupon}</p>
-                          <p className="text-[8px] font-bold text-green-600 uppercase">10% Off Applied</p>
+                          <p className="text-[8px] font-bold text-green-600 uppercase">Discount Applied Successfully</p>
                         </div>
                       </div>
                       <button onClick={removeCoupon} className="text-green-700 hover:text-destructive transition-colors">
@@ -420,13 +450,22 @@ export default function CheckoutPage() {
                     </div>
                   ) : (
                     <div className="flex gap-2">
-                      <Input 
-                        placeholder="Coupon Code" 
-                        value={couponInput} 
-                        onChange={(e) => setCouponInput(e.target.value)} 
-                        className="rounded-xl h-12 uppercase font-black placeholder:normal-case"
-                      />
-                      <Button onClick={handleApplyCoupon} variant="secondary" className="h-12 rounded-xl font-black text-[10px] uppercase px-6">Apply</Button>
+                      <div className="relative flex-1">
+                        <TicketPercent className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/40" />
+                        <Input 
+                          placeholder="Coupon Code" 
+                          value={couponInput} 
+                          onChange={(e) => setCouponInput(e.target.value)} 
+                          className="rounded-xl h-12 pl-10 uppercase font-black placeholder:normal-case placeholder:font-medium"
+                        />
+                      </div>
+                      <Button 
+                        onClick={handleApplyCoupon} 
+                        disabled={couponLoading || !couponInput}
+                        className="h-12 rounded-xl font-black text-[10px] uppercase px-6 bg-primary"
+                      >
+                        {couponLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Apply'}
+                      </Button>
                     </div>
                   )}
                 </CardContent>
@@ -438,13 +477,13 @@ export default function CheckoutPage() {
                 </CardHeader>
                 <CardContent className="p-6 space-y-4">
                   <div className="flex justify-between text-sm text-muted-foreground">
-                    <span>Subtotal</span>
+                    <span>Original Subtotal</span>
                     <span className="font-bold text-foreground">₹{subtotal}</span>
                   </div>
                   {discount > 0 && (
-                    <div className="flex justify-between text-sm text-green-600">
-                      <span>Discount (10%)</span>
-                      <span className="font-bold">- ₹{discount}</span>
+                    <div className="flex justify-between items-center bg-green-50 p-3 rounded-xl border border-green-100 animate-in slide-in-from-top-2">
+                      <span className="text-xs font-bold text-green-700">Coupon Discount</span>
+                      <span className="font-black text-green-600">- ₹{discount}</span>
                     </div>
                   )}
                   <div className="flex justify-between text-sm text-muted-foreground">
@@ -452,8 +491,13 @@ export default function CheckoutPage() {
                     <span className="font-bold text-green-600">{deliveryFee === 0 ? "FREE" : `₹${deliveryFee}`}</span>
                   </div>
                   <div className="border-t border-dashed pt-4 flex justify-between items-center">
-                    <span className="text-xs md:text-sm font-black uppercase tracking-widest">Total</span>
-                    <span className="text-2xl md:text-3xl font-headline font-black text-primary">₹{total}</span>
+                    <span className="text-xs md:text-sm font-black uppercase tracking-widest">Final Total</span>
+                    <div className="text-right">
+                      {discount > 0 && (
+                        <p className="text-[10px] line-through text-muted-foreground opacity-50 font-bold mb-[-4px]">₹{subtotal + deliveryFee}</p>
+                      )}
+                      <span className="text-2xl md:text-3xl font-headline font-black text-primary italic">₹{total}</span>
+                    </div>
                   </div>
                 </CardContent>
               </Card>

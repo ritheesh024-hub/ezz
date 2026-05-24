@@ -1,4 +1,3 @@
-
 "use client"
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -14,7 +13,8 @@ import {
   Database, Receipt, ShoppingBag, 
   Volume2, VolumeX, BellRing,
   MapPin, User, Settings, CheckCircle2,
-  Users, UserPlus, Globe, Utensils, Truck
+  Users, UserPlus, Globe, Utensils, Truck,
+  TicketPercent
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
@@ -26,6 +26,7 @@ import { StoreSettings } from './StoreSettings';
 import { NewOrderPopups } from './NewOrderPopups';
 import { KitchenSystem } from './KitchenSystem';
 import { StaffManagement } from './StaffManagement';
+import { CouponManager } from './CouponManager';
 import { cn } from '@/lib/utils';
 import { useSound } from '@/hooks/use-sound';
 import { StaffRole } from '@/app/admin/dashboard/page';
@@ -172,7 +173,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
   const availableTabs = useMemo(() => {
     if (activeView === 'kitchen') return ['kitchen'];
     if (activeView === 'cashier') return ['overview', 'billing', 'orders'];
-    return ['overview', 'billing', 'orders', 'inventory', 'staff', 'settings'];
+    return ['overview', 'billing', 'orders', 'inventory', 'coupons', 'staff', 'settings'];
   }, [activeView]);
 
   return (
@@ -213,6 +214,11 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
               {availableTabs.includes('inventory') && (
                 <TabsTrigger value="inventory" className="px-6 py-2.5 font-black uppercase text-[9px] tracking-widest rounded-full gap-2 shrink-0">
                   <Database className="w-3.5 h-3.5" /> Inventory
+                </TabsTrigger>
+              )}
+              {availableTabs.includes('coupons') && (
+                <TabsTrigger value="coupons" className="px-6 py-2.5 font-black uppercase text-[9px] tracking-widest rounded-full gap-2 shrink-0">
+                  <TicketPercent className="w-3.5 h-3.5" /> Coupons
                 </TabsTrigger>
               )}
               {availableTabs.includes('staff') && (
@@ -340,6 +346,10 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
                 </Card>
               ))}
             </div>
+          </TabsContent>
+
+          <TabsContent value="coupons">
+             <CouponManager />
           </TabsContent>
 
           <TabsContent value="staff">

@@ -4,10 +4,12 @@ import { Navbar } from '@/components/Navbar';
 import { SavorTool } from '@/components/SavorTool';
 import { FoodCard } from '@/components/FoodCard';
 import { WhatsAppButton } from '@/components/WhatsAppButton';
+import { PromoBanner } from '@/components/PromoBanner';
 import { 
   ShoppingBag, ArrowRight, Star, 
   Loader2, ChefHat, Truck, Award, 
-  HelpCircle, Instagram, Twitter, Facebook
+  HelpCircle, Instagram, Twitter, Facebook,
+  Zap, TicketPercent
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -75,7 +77,7 @@ export default function Home() {
 
               <div className="flex flex-col sm:flex-row gap-4 pt-4 animate-in fade-in duration-1000 delay-500">
                 <Link href="/menu" className="w-full sm:w-auto">
-                  <Button size="lg" className="w-full sm:w-auto rounded-full h-14 md:h-16 px-10 text-base font-black shadow-2xl shadow-primary/40 hover:scale-105 transition-all group">
+                  <Button size="lg" className="w-full sm:w-auto rounded-full h-14 md:h-16 px-10 text-base font-black shadow-2xl shadow-primary/40 hover:scale-105 transition-all group" style={{ background: 'hsl(var(--primary))' }}>
                     Start Your Order
                     <ArrowRight className="ml-2 w-5 h-5 transition-transform group-hover:translate-x-1" />
                   </Button>
@@ -101,6 +103,11 @@ export default function Home() {
               </div>
             </div>
           </div>
+        </section>
+
+        {/* PROMO BANNER SECTION */}
+        <section className="bg-background">
+           <PromoBanner />
         </section>
 
         {/* TRENDING SECTION */}
@@ -140,8 +147,62 @@ export default function Home() {
           </div>
         </section>
 
+        {/* FEATURED OFFERS SECTION */}
+        <section className="py-20 md:py-32 bg-secondary/30">
+          <div className="container mx-auto px-4">
+            <div className="text-center mb-16 space-y-4">
+               <div className="inline-flex items-center gap-2 text-primary font-black uppercase text-[10px] tracking-[0.4em]">
+                 <Zap className="w-4 h-4 fill-primary" /> Hot Deals
+               </div>
+               <h2 className="text-4xl md:text-6xl font-headline font-black">Featured <span className="text-primary italic">Offers</span></h2>
+            </div>
+            
+            <div className="grid md:grid-cols-2 gap-8 max-w-6xl mx-auto">
+              {/* Offer Card 1 */}
+              <div className="bg-white dark:bg-zinc-900 rounded-[3rem] overflow-hidden shadow-2xl flex flex-col md:flex-row border group hover:scale-[1.01] transition-all">
+                <div className="md:w-1/2 relative min-h-[250px]">
+                  <Image src="https://picsum.photos/seed/student-burger/800/600" alt="Student Offer" fill className="object-cover group-hover:scale-110 transition-transform duration-700" unoptimized />
+                  <div className="absolute inset-0 bg-black/20" />
+                </div>
+                <div className="md:w-1/2 p-8 md:p-12 flex flex-col justify-center space-y-6">
+                  <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center text-blue-600">
+                    <GraduationCap className="w-6 h-6" />
+                  </div>
+                  <div className="space-y-2">
+                    <h4 className="text-2xl font-black font-headline">Student Feast</h4>
+                    <p className="text-muted-foreground text-sm font-medium">Use code <span className="text-primary font-black">STUDENT10</span> for an instant 10% discount.</p>
+                  </div>
+                  <Link href="/menu">
+                    <Button className="rounded-full px-8 h-12 font-black uppercase text-[9px] tracking-widest gap-2">Apply Offer <ArrowRight className="w-3.5 h-3.5" /></Button>
+                  </Link>
+                </div>
+              </div>
+
+              {/* Offer Card 2 */}
+              <div className="bg-white dark:bg-zinc-900 rounded-[3rem] overflow-hidden shadow-2xl flex flex-col md:flex-row border group hover:scale-[1.01] transition-all">
+                <div className="md:w-1/2 relative min-h-[250px]">
+                  <Image src="https://picsum.photos/seed/first-order/800/600" alt="First Order" fill className="object-cover group-hover:scale-110 transition-transform duration-700" unoptimized />
+                  <div className="absolute inset-0 bg-black/20" />
+                </div>
+                <div className="md:w-1/2 p-8 md:p-12 flex flex-col justify-center space-y-6">
+                  <div className="w-12 h-12 bg-green-100 rounded-2xl flex items-center justify-center text-green-600">
+                    <TicketPercent className="w-6 h-6" />
+                  </div>
+                  <div className="space-y-2">
+                    <h4 className="text-2xl font-black font-headline">Free Delivery</h4>
+                    <p className="text-muted-foreground text-sm font-medium">Enjoy <span className="text-green-600 font-black">ZERO Fees</span> on your very first order above ₹149.</p>
+                  </div>
+                  <Link href="/menu">
+                    <Button variant="outline" className="rounded-full px-8 h-12 font-black uppercase text-[9px] tracking-widest gap-2 border-2">Unlock Now <ArrowRight className="w-3.5 h-3.5" /></Button>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* FEATURES SECTION */}
-        <section className="py-16 md:py-24 bg-secondary/30 relative overflow-hidden">
+        <section className="py-16 md:py-24 bg-background relative overflow-hidden">
           <div className="container mx-auto px-4">
             <div className="grid lg:grid-cols-4 gap-12">
               <div className="lg:col-span-1 space-y-4">
@@ -154,7 +215,7 @@ export default function Home() {
                   { icon: Truck, title: "Hyper-Local", desc: "A 25-minute delivery promise for all orders within our radius." },
                   { icon: Award, title: "Gold Standard", desc: "Only A-grade ingredients. No preservatives, just pure taste." }
                 ].map((f, i) => (
-                  <div key={i} className="bg-card p-8 rounded-[2rem] shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all group">
+                  <div key={i} className="bg-card p-8 rounded-[2rem] shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all group border">
                     <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mb-6 group-hover:bg-primary group-hover:text-white transition-all">
                       <f.icon className="w-6 h-6" />
                     </div>
@@ -168,7 +229,7 @@ export default function Home() {
         </section>
 
         {/* AI TOOL SECTION */}
-        <section className="py-16 md:py-24 bg-background">
+        <section className="py-16 md:py-24 bg-secondary/20">
           <div className="container mx-auto px-4">
             <SavorTool />
           </div>
