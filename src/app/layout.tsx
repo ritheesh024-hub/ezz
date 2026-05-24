@@ -1,3 +1,4 @@
+
 import type {Metadata, Viewport} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
@@ -14,6 +15,14 @@ export const metadata: Metadata = {
     statusBarStyle: 'default',
     title: 'Ezzy Bites',
   },
+  openGraph: {
+    title: 'Ezzy Bites | Premium Fast Food Cafe',
+    description: 'Order the legendard Maggie and Biryani variations in Hyderabad.',
+    url: 'https://ezzybites.com',
+    siteName: 'Ezzy Bites',
+    locale: 'en_IN',
+    type: 'website',
+  }
 };
 
 export const viewport: Viewport = {
