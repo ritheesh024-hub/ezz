@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -162,6 +161,23 @@ export const StaffManagement = () => {
       .finally(() => setSubmitting(false));
   };
 
+  const handleResetPassword = async (email: string) => {
+    if (!auth || !email) return;
+    try {
+      await sendPasswordResetEmail(auth, email);
+      toast({
+        title: "Reset Link Sent",
+        description: `Instructions sent to ${email}`,
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Reset Failed",
+        description: error.message,
+      });
+    }
+  };
+
   const handleAlertConfirm = async () => {
     if (!alertAction || !db) return;
     const { type, staffId } = alertAction;
@@ -239,7 +255,7 @@ export const StaffManagement = () => {
   const filteredStaff = useMemo(() => {
     if (!staffList) return [];
     return staffList.filter(s => {
-      const matchesSearch = s.name?.toLowerCase().includes(searchQuery.toLowerCase()) || s.email?.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearch = (s.name || '').toLowerCase().includes(searchQuery.toLowerCase()) || (s.email || '').toLowerCase().includes(searchQuery.toLowerCase());
       const matchesRole = roleFilter === 'all' || s.role === roleFilter;
       const matchesStatus = statusFilter === 'all' || s.status === statusFilter;
       return matchesSearch && matchesRole && matchesStatus;
@@ -308,13 +324,22 @@ export const StaffManagement = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {filteredStaff.map((staff) => (
+                  {filteredStaff.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-20 text-center opacity-30">
+                        <Users className="w-12 h-12 mx-auto mb-4" />
+                        <p className="font-black uppercase tracking-widest text-xs">No staff members found</p>
+                      </td>
+                    </tr>
+                  ) : filteredStaff.map((staff) => (
                     <tr key={staff.id} className="hover:bg-secondary/5 transition-colors group">
                       <td className="px-8 py-6">
                         <div className="flex items-center gap-4">
                           <Avatar className="h-12 w-12 rounded-2xl shadow-md border-2 border-background">
                             <AvatarImage src={staff.photoUrl} alt={staff.name} />
-                            <AvatarFallback className="bg-primary/10 text-primary font-black">{staff.name?.slice(0, 2).toUpperCase() || 'EB'}</AvatarFallback>
+                            <AvatarFallback className="bg-primary/10 text-primary font-black">
+                              {(staff.name || 'EB').slice(0, 2).toUpperCase()}
+                            </AvatarFallback>
                           </Avatar>
                           <div className="flex flex-col">
                             <span className="font-black text-sm group-hover:text-primary transition-colors">{staff.name || 'Anonymous'}</span>
@@ -408,7 +433,10 @@ export const StaffManagement = () => {
       </Dialog>
 
       {/* Edit Staff Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+      <Dialog open={isEditDialogOpen} onOpenChange={(open) => {
+        setIsEditDialogOpen(open);
+        if(!open) setSelectedStaff(null);
+      }}>
         <DialogContent className="max-w-xl rounded-[2.5rem] p-10 border-none bg-white dark:bg-zinc-900 shadow-3xl">
           <DialogHeader><DialogTitle className="text-3xl font-black font-headline uppercase tracking-tighter">Edit <span className="text-primary italic">Profile</span></DialogTitle></DialogHeader>
           <div className="space-y-6 mt-8">
@@ -426,6 +454,17 @@ export const StaffManagement = () => {
                 <Input value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className="h-14 rounded-xl border-muted bg-secondary/20 font-bold" />
               </div>
             </div>
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Update Role</Label>
+              <Select value={formData.role} onValueChange={(v: StaffRole) => setFormData({...formData, role: v})}>
+                <SelectTrigger className="h-14 rounded-xl bg-secondary/20 border-muted font-bold"><SelectValue /></SelectTrigger>
+                <SelectContent className="rounded-2xl">
+                  <SelectItem value="admin">Administrator</SelectItem>
+                  <SelectItem value="cashier">Billing Cashier</SelectItem>
+                  <SelectItem value="kitchen">Kitchen Chef</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <Button className="w-full h-18 rounded-2xl font-black text-lg bg-primary mt-4" onClick={handleUpdateStaff} disabled={submitting}>
               {submitting ? <Loader2 className="animate-spin" /> : 'Save Profile Changes'}
             </Button>
@@ -434,7 +473,10 @@ export const StaffManagement = () => {
       </Dialog>
 
       {/* Profile Detail View */}
-      <Dialog open={isProfileDialogOpen} onOpenChange={setIsProfileDialogOpen}>
+      <Dialog open={isProfileDialogOpen} onOpenChange={(open) => {
+        setIsProfileDialogOpen(open);
+        if(!open) setSelectedStaff(null);
+      }}>
         <DialogContent className="max-w-2xl rounded-[3rem] p-0 overflow-hidden border-none bg-white dark:bg-zinc-900 shadow-3xl">
           {selectedStaff && (
             <div className="flex flex-col">
@@ -443,14 +485,14 @@ export const StaffManagement = () => {
                 <div className="absolute -bottom-12 left-10">
                   <Avatar className="h-32 w-32 rounded-[2.5rem] border-8 border-white dark:border-zinc-900 shadow-2xl">
                     <AvatarImage src={selectedStaff.photoUrl} />
-                    <AvatarFallback className="bg-primary/20 text-primary font-black text-3xl">{selectedStaff.name?.slice(0, 2).toUpperCase()}</AvatarFallback>
+                    <AvatarFallback className="bg-primary/10 text-primary font-black text-3xl">{(selectedStaff.name || 'EB').slice(0, 2).toUpperCase()}</AvatarFallback>
                   </Avatar>
                 </div>
               </div>
               <div className="pt-16 px-10 pb-10 space-y-8">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className="text-3xl font-black font-headline tracking-tighter uppercase">{selectedStaff.name}</h3>
+                    <h3 className="text-3xl font-black font-headline tracking-tighter uppercase">{selectedStaff.name || 'Staff Member'}</h3>
                     <div className="flex items-center gap-3 mt-1">
                       <Badge className="bg-primary/10 text-primary border-none text-[9px] font-black uppercase tracking-widest">{selectedStaff.role}</Badge>
                       {getOnlineStatus(selectedStaff.onlineStatus)}
@@ -470,6 +512,16 @@ export const StaffManagement = () => {
                     <p className="text-[9px] font-black uppercase opacity-40">Kitchen Updates</p>
                     <p className="text-2xl font-black italic">{selectedStaff.stats?.kitchenUpdates || 0}</p>
                   </div>
+                </div>
+                <div className="space-y-4 pt-4 border-t border-dashed">
+                   <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
+                      <span className="opacity-40">Registered Email</span>
+                      <span>{selectedStaff.email}</span>
+                   </div>
+                   <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
+                      <span className="opacity-40">Joining Date</span>
+                      <span>{selectedStaff.createdAt?.toDate ? selectedStaff.createdAt.toDate().toLocaleDateString() : 'Active Member'}</span>
+                   </div>
                 </div>
               </div>
             </div>
