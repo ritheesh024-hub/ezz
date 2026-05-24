@@ -20,7 +20,8 @@ import {
   DialogContent, 
   DialogHeader, 
   DialogTitle, 
-  DialogDescription
+  DialogDescription,
+  DialogFooter
 } from '@/components/ui/dialog';
 import { 
   Select, 
@@ -149,7 +150,7 @@ export const StaffManagement = () => {
       .then(() => {
         toast({ title: "Profile Updated", description: "Record synchronized." });
         setIsEditDialogOpen(false);
-        setSelectedStaff(null);
+        // We clear selected staff only after the dialog state is handled to prevent animation crashes
       })
       .catch(async (error) => {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
@@ -222,12 +223,13 @@ export const StaffManagement = () => {
       role: staff.role || 'cashier',
       photoUrl: staff.photoUrl || ''
     });
-    setIsEditDialogOpen(true);
+    // Slight delay to ensure the dropdown closes properly before dialog opens
+    setTimeout(() => setIsEditDialogOpen(true), 50);
   };
 
   const openProfile = (staff: any) => {
     setSelectedStaff(staff);
-    setIsProfileDialogOpen(true);
+    setTimeout(() => setIsProfileDialogOpen(true), 50);
   };
 
   const triggerAlert = (type: 'delete' | 'disable' | 'enable', staffId: string) => {
@@ -368,17 +370,17 @@ export const StaffManagement = () => {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2 shadow-3xl border-none">
                             <DropdownMenuLabel className="text-[9px] font-black uppercase opacity-40 px-3 py-2">Quick Actions</DropdownMenuLabel>
-                            <DropdownMenuItem onClick={() => openProfile(staff)} className="rounded-xl gap-3 py-3 font-bold"><Eye className="w-4 h-4 text-blue-500" /> View Profile</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => openEdit(staff)} className="rounded-xl gap-3 py-3 font-bold"><Edit3 className="w-4 h-4 text-primary" /> Edit Details</DropdownMenuItem>
+                            <DropdownMenuItem onSelect={(e) => { e.preventDefault(); openProfile(staff); }} className="rounded-xl gap-3 py-3 font-bold cursor-pointer"><Eye className="w-4 h-4 text-blue-500" /> View Profile</DropdownMenuItem>
+                            <DropdownMenuItem onSelect={(e) => { e.preventDefault(); openEdit(staff); }} className="rounded-xl gap-3 py-3 font-bold cursor-pointer"><Edit3 className="w-4 h-4 text-primary" /> Edit Details</DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuLabel className="text-[9px] font-black uppercase opacity-40 px-3 py-2">Account Control</DropdownMenuLabel>
-                            <DropdownMenuItem onClick={() => handleResetPassword(staff.email)} className="rounded-xl gap-3 py-3 font-bold"><RefreshCcw className="w-4 h-4 text-purple-500" /> Send Reset Link</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => handleResetPassword(staff.email)} className="rounded-xl gap-3 py-3 font-bold cursor-pointer"><RefreshCcw className="w-4 h-4 text-purple-500" /> Send Reset Link</DropdownMenuItem>
                             {staff.status === 'active' ? (
-                              <DropdownMenuItem onClick={() => triggerAlert('disable', staff.id)} className="rounded-xl gap-3 py-3 font-bold text-orange-600"><Ban className="w-4 h-4" /> Block Access</DropdownMenuItem>
+                              <DropdownMenuItem onSelect={(e) => { e.preventDefault(); triggerAlert('disable', staff.id); }} className="rounded-xl gap-3 py-3 font-bold text-orange-600 cursor-pointer"><Ban className="w-4 h-4" /> Block Access</DropdownMenuItem>
                             ) : (
-                              <DropdownMenuItem onClick={() => triggerAlert('enable', staff.id)} className="rounded-xl gap-3 py-3 font-bold text-green-600"><CheckCircle2 className="w-4 h-4" /> Unblock Access</DropdownMenuItem>
+                              <DropdownMenuItem onSelect={(e) => { e.preventDefault(); triggerAlert('enable', staff.id); }} className="rounded-xl gap-3 py-3 font-bold text-green-600 cursor-pointer"><CheckCircle2 className="w-4 h-4" /> Unblock Access</DropdownMenuItem>
                             )}
-                            <DropdownMenuItem onClick={() => triggerAlert('delete', staff.id)} className="rounded-xl gap-3 py-3 font-bold text-destructive"><Trash2 className="w-4 h-4" /> Delete Forever</DropdownMenuItem>
+                            <DropdownMenuItem onSelect={(e) => { e.preventDefault(); triggerAlert('delete', staff.id); }} className="rounded-xl gap-3 py-3 font-bold text-destructive cursor-pointer"><Trash2 className="w-4 h-4" /> Delete Forever</DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </td>
@@ -435,49 +437,51 @@ export const StaffManagement = () => {
       {/* Edit Staff Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={(open) => {
         setIsEditDialogOpen(open);
-        if(!open) setSelectedStaff(null);
+        if(!open) setTimeout(() => setSelectedStaff(null), 300);
       }}>
         <DialogContent className="max-w-xl rounded-[2.5rem] p-10 border-none bg-white dark:bg-zinc-900 shadow-3xl">
           <DialogHeader>
             <DialogTitle className="text-3xl font-black font-headline uppercase tracking-tighter">Edit <span className="text-primary italic">Profile</span></DialogTitle>
           </DialogHeader>
-          <div className="space-y-6 mt-8">
-             <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Photo URL</Label>
-                <Input value={formData.photoUrl} onChange={(e) => setFormData({...formData, photoUrl: e.target.value})} className="h-14 rounded-xl border-muted bg-secondary/20 font-bold" />
-             </div>
-             <div className="grid md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Name</Label>
-                <Input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="h-14 rounded-xl border-muted bg-secondary/20 font-bold" />
+          {selectedStaff && (
+            <div className="space-y-6 mt-8">
+               <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Photo URL</Label>
+                  <Input value={formData.photoUrl} onChange={(e) => setFormData({...formData, photoUrl: e.target.value})} className="h-14 rounded-xl border-muted bg-secondary/20 font-bold" />
+               </div>
+               <div className="grid md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Name</Label>
+                  <Input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="h-14 rounded-xl border-muted bg-secondary/20 font-bold" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Mobile</Label>
+                  <Input value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className="h-14 rounded-xl border-muted bg-secondary/20 font-bold" />
+                </div>
               </div>
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Mobile</Label>
-                <Input value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className="h-14 rounded-xl border-muted bg-secondary/20 font-bold" />
+                <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Update Role</Label>
+                <Select value={formData.role} onValueChange={(v: StaffRole) => setFormData({...formData, role: v})}>
+                  <SelectTrigger className="h-14 rounded-xl bg-secondary/20 border-muted font-bold"><SelectValue /></SelectTrigger>
+                  <SelectContent className="rounded-2xl">
+                    <SelectItem value="admin">Administrator</SelectItem>
+                    <SelectItem value="cashier">Billing Cashier</SelectItem>
+                    <SelectItem value="kitchen">Kitchen Chef</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
+              <Button className="w-full h-18 rounded-2xl font-black text-lg bg-primary mt-4" onClick={handleUpdateStaff} disabled={submitting}>
+                {submitting ? <Loader2 className="animate-spin" /> : 'Save Profile Changes'}
+              </Button>
             </div>
-            <div className="space-y-2">
-              <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Update Role</Label>
-              <Select value={formData.role} onValueChange={(v: StaffRole) => setFormData({...formData, role: v})}>
-                <SelectTrigger className="h-14 rounded-xl bg-secondary/20 border-muted font-bold"><SelectValue /></SelectTrigger>
-                <SelectContent className="rounded-2xl">
-                  <SelectItem value="admin">Administrator</SelectItem>
-                  <SelectItem value="cashier">Billing Cashier</SelectItem>
-                  <SelectItem value="kitchen">Kitchen Chef</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <Button className="w-full h-18 rounded-2xl font-black text-lg bg-primary mt-4" onClick={handleUpdateStaff} disabled={submitting}>
-              {submitting ? <Loader2 className="animate-spin" /> : 'Save Profile Changes'}
-            </Button>
-          </div>
+          )}
         </DialogContent>
       </Dialog>
 
       {/* Profile Detail View */}
       <Dialog open={isProfileDialogOpen} onOpenChange={(open) => {
         setIsProfileDialogOpen(open);
-        if(!open) setSelectedStaff(null);
+        if(!open) setTimeout(() => setSelectedStaff(null), 300);
       }}>
         <DialogContent className="max-w-2xl rounded-[3rem] p-0 overflow-hidden border-none bg-white dark:bg-zinc-900 shadow-3xl">
           <DialogHeader className="sr-only">

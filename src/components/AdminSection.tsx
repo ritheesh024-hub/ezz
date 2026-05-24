@@ -326,7 +326,9 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
         </Tabs>
       </div>
 
-      <Dialog open={!!selectedOrderForView} onOpenChange={(open) => !open && setSelectedOrderForView(null)}>
+      <Dialog open={!!selectedOrderForView} onOpenChange={(open) => {
+        if (!open) setSelectedOrderForView(null);
+      }}>
         <DialogContent className="max-w-2xl rounded-[2rem] p-0 overflow-hidden border-none shadow-3xl bg-white dark:bg-zinc-900">
           <DialogHeader className="sr-only">
             <DialogTitle>Order Details for #{selectedOrderForView?.orderId}</DialogTitle>
@@ -384,7 +386,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
       </Dialog>
 
       <Dialog open={isMenuDialogOpen} onOpenChange={setIsMenuDialogOpen}>
-        <DialogContent className="max-w-xl rounded-[2.5rem] p-8 border-none bg-white dark:bg-zinc-900">
+        <DialogContent className="max-w-xl rounded-[2.5rem] p-8 border-none bg-white dark:bg-zinc-900 shadow-3xl">
           <DialogHeader>
             <DialogTitle className="text-2xl font-black font-headline">{editingItem ? 'Edit Product' : 'Add Product'}</DialogTitle>
           </DialogHeader>
