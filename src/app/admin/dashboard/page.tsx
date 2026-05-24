@@ -42,7 +42,6 @@ export default function AdminDashboardPage() {
       }
 
       if (!db || !auth) {
-        // Services not ready yet
         return;
       }
 
@@ -57,7 +56,6 @@ export default function AdminDashboardPage() {
           setActiveView(role);
           setCheckingRole(false);
         } else {
-          // Not an authorized staff member in Firestore
           toast({
             variant: "destructive",
             title: "Access Restricted",
@@ -68,7 +66,6 @@ export default function AdminDashboardPage() {
         }
       } catch (e: any) {
         console.error("Error checking role:", e);
-        // If it's a permission error, we should probably sign out
         if (e.code === 'permission-denied') {
           await auth.signOut();
           router.push('/admin/login');
@@ -99,7 +96,7 @@ export default function AdminDashboardPage() {
 
   if (userLoading || checkingRole || !activeView) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-background p-6 text-center">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-zinc-50 dark:bg-zinc-950 p-6 text-center">
         <div className="w-20 h-20 bg-primary/10 rounded-[2.5rem] flex items-center justify-center mb-8">
           <Loader2 className="w-10 h-10 animate-spin text-primary" />
         </div>
@@ -113,18 +110,18 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <nav className="border-b bg-white dark:bg-zinc-900 sticky top-0 z-[60]">
-        <div className="container mx-auto px-4 h-20 flex items-center justify-between">
+      <nav className="border-b bg-white dark:bg-zinc-900 sticky top-0 z-[60] h-20">
+        <div className="container mx-auto px-4 h-full flex items-center justify-between">
           <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-3 group">
               <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center transform group-hover:rotate-12 transition-all shadow-lg shadow-primary/20">
-                <ShoppingBag className="w-5 h-5 text-primary-foreground" />
+                <ShoppingBag className="w-5 h-5 text-white" />
               </div>
               <div className="flex flex-col">
                 <span className="text-xl font-headline font-black tracking-tight leading-none">
                   Ezzy<span className="text-primary italic">Ops</span>
                 </span>
-                <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-40">Operational Console</span>
+                <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-40">Staff Console</span>
               </div>
             </Link>
 
@@ -135,7 +132,7 @@ export default function AdminDashboardPage() {
               </Badge>
               {activeView !== assignedRole && (
                 <Badge variant="secondary" className="bg-orange-100 text-orange-700 font-black uppercase text-[8px] px-2 rounded-full">
-                  Viewing as {activeView}
+                  Mode: {activeView}
                 </Badge>
               )}
             </div>

@@ -123,7 +123,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
   }, [activeView]);
 
   return (
-    <section className="bg-secondary/5 dark:bg-zinc-950 min-h-screen pb-20">
+    <section className="bg-zinc-50 dark:bg-zinc-950 min-h-screen pb-20">
       <NewOrderPopups 
         pendingOrders={orderGroups.pending} 
         onViewDetails={(order) => setSelectedOrderForView(order)} 
