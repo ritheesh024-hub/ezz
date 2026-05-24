@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useEffect, useState, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useUser, useAuth, useFirestore } from '@/firebase';
 import { AdminSection } from '@/components/AdminSection';
 import { Button } from '@/components/ui/button';
@@ -21,15 +21,19 @@ import {
 
 export type StaffRole = 'admin' | 'cashier' | 'kitchen';
 
-export default function AdminDashboardPage() {
+function DashboardContent() {
   const { user, loading: userLoading } = useUser();
   const auth = useAuth();
   const db = useFirestore();
   const router = useRouter();
+  const searchParams = useSearchParams();
   
   const [assignedRole, setAssignedRole] = useState<StaffRole | null>(null);
   const [activeView, setActiveView] = useState<StaffRole | null>(null);
   const [checkingRole, setCheckingRole] = useState(true);
+
+  // Get requested view from URL if present
+  const requestedView = searchParams.get('view') as StaffRole;
 
   useEffect(() => {
     async function checkRole() {
@@ -52,10 +56,16 @@ export default function AdminDashboardPage() {
           const data = adminSnap.data();
           const role = (data.role as StaffRole) || 'cashier';
           setAssignedRole(role);
-          setActiveView(role);
+          
+          // Logic: If user is admin, allow them to use the view from URL param
+          if (role === 'admin' && ['admin', 'cashier', 'kitchen'].includes(requestedView)) {
+            setActiveView(requestedView);
+          } else {
+            setActiveView(role);
+          }
+          
           setCheckingRole(false);
         } else {
-          // If no profile exists for this UID, sign out and go to login
           toast({
             variant: "destructive",
             title: "Access Restricted",
@@ -75,7 +85,7 @@ export default function AdminDashboardPage() {
     }
 
     checkRole();
-  }, [user, userLoading, db, router, auth]);
+  }, [user, userLoading, db, router, auth, requestedView]);
 
   const handleLogout = async () => {
     if (auth) {
@@ -90,8 +100,10 @@ export default function AdminDashboardPage() {
       toast({ variant: "destructive", title: "Restricted", description: "Only Admins can override views." });
       return;
     }
+    // Update URL to persist the view choice in this tab/window
+    router.push(`/admin/dashboard?view=${role}`);
     setActiveView(role);
-    toast({ title: `Operational View: ${role.toUpperCase()}` });
+    toast({ title: `Switched to ${role.toUpperCase()} View` });
   };
 
   if (userLoading || checkingRole || !activeView) {
@@ -184,5 +196,17 @@ export default function AdminDashboardPage() {
         <AdminSection assignedRole={assignedRole as StaffRole} activeView={activeView as StaffRole} />
       </main>
     </div>
+  );
+}
+
+export default function AdminDashboardPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 className="w-10 h-10 animate-spin text-primary" />
+      </div>
+    }>
+      <DashboardContent />
+    </Suspense>
   );
 }
