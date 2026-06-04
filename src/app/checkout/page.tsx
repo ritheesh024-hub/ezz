@@ -1,3 +1,4 @@
+
 "use client"
 import React, { useState, useEffect } from 'react';
 import { Navbar } from '@/components/Navbar';
@@ -21,25 +22,28 @@ import {
   UserCheck,
   TicketPercent,
   X,
-  PartyPopper
+  PartyPopper,
+  Lock
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { toast } from '@/hooks/use-toast';
-import { useFirestore } from '@/firebase';
+import { useFirestore, useUser } from '@/firebase';
 import { doc, setDoc, getDoc, serverTimestamp, increment } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { cn } from '@/lib/utils';
+import { AuthModal } from '@/components/AuthModal';
 
 export default function CheckoutPage() {
   const { cart, getTotal, clearCart, removeFromCart } = useStore();
   const db = useFirestore();
+  const { user, loading: userLoading } = useUser();
   
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [orderId, setOrderId] = useState<string>('');
-  const [isReturningUser, setIsReturningUser] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   
   const [couponInput, setCouponInput] = useState('');
   const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
@@ -57,6 +61,30 @@ export default function CheckoutPage() {
   useEffect(() => {
     setOrderId(`EB-${Math.floor(Math.random() * 90000) + 10000}`);
   }, []);
+
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        name: prev.name || user.displayName || '',
+        phone: prev.phone || '' // Phone isn't usually in Google profile by default
+      }));
+      // Autofill address if profile exists in Firestore
+      if (db) {
+        getDoc(doc(db, 'users', user.uid)).then(snap => {
+          if (snap.exists()) {
+            const data = snap.data();
+            setFormData(prev => ({
+              ...prev,
+              name: prev.name || data.name || '',
+              phone: prev.phone || data.phone || '',
+              address: prev.address || data.address || ''
+            }));
+          }
+        });
+      }
+    }
+  }, [user, db]);
 
   const subtotal = getTotal();
   const deliveryFee = subtotal >= 149 ? 0 : 40;
@@ -93,7 +121,6 @@ export default function CheckoutPage() {
           description: `${data.discount}% discount activated.` 
         });
       } else {
-        // Fallback for hardcoded STUDENT10 if not in Firestore
         if (code === 'STUDENT10') {
            const discountVal = Math.round(subtotal * 0.1);
            setDiscount(discountVal);
@@ -128,6 +155,13 @@ export default function CheckoutPage() {
         return;
       }
     }
+    
+    // Auth Check before Payment
+    if (step === 2 && !user) {
+      setIsAuthModalOpen(true);
+      return;
+    }
+
     setStep(step + 1);
   };
 
@@ -135,31 +169,14 @@ export default function CheckoutPage() {
     setStep(step - 1);
   };
 
-  const checkReturningUser = async (phoneNumber: string) => {
-    if (phoneNumber.length === 10 && db) {
-      try {
-        const userRef = doc(db, 'users', phoneNumber);
-        const userSnap = await getDoc(userRef);
-        if (userSnap.exists()) {
-          const userData = userSnap.data();
-          setFormData(prev => ({
-            ...prev,
-            name: prev.name || userData.name || '',
-            address: prev.address || userData.address || ''
-          }));
-          setIsReturningUser(true);
-        } else {
-          setIsReturningUser(false);
-        }
-      } catch (e) {
-        console.error("User lookup failed", e);
-      }
-    }
-  };
-
   const handleSubmit = async () => {
     if (!db) {
       toast({ variant: "destructive", title: "System Offline" });
+      return;
+    }
+
+    if (!user) {
+      setIsAuthModalOpen(true);
       return;
     }
 
@@ -172,6 +189,7 @@ export default function CheckoutPage() {
       customerPhone: formData.phone,
       address: formData.address,
       instructions: formData.instructions || '',
+      userId: user.uid,
       items: cart.map(item => ({
         id: item.id,
         name: item.name,
@@ -193,7 +211,8 @@ export default function CheckoutPage() {
     const orderRef = doc(db, 'orders', currentOrderId);
     setDoc(orderRef, orderData)
       .then(() => {
-        const userRef = doc(db, 'users', formData.phone);
+        // Update customer record
+        const userRef = doc(db, 'users', user.uid);
         setDoc(userRef, {
           phone: formData.phone,
           name: formData.name,
@@ -295,9 +314,9 @@ export default function CheckoutPage() {
               <div className="space-y-6 animate-in fade-in slide-in-from-left duration-500">
                 <div className="flex justify-between items-end">
                   <h2 className="text-2xl md:text-4xl font-headline font-black">Delivery Details</h2>
-                  {isReturningUser && (
+                  {user && (
                     <Badge variant="outline" className="mb-2 bg-green-50 text-green-700 border-green-200 flex items-center gap-1 font-black text-[10px] py-1">
-                      <UserCheck className="w-3 h-3" /> Welcome Back!
+                      <UserCheck className="w-3 h-3" /> Signed in as {user.displayName?.split(' ')[0]}
                     </Badge>
                   )}
                 </div>
@@ -325,7 +344,6 @@ export default function CheckoutPage() {
                             onChange={(e) => {
                               const val = e.target.value.replace(/\D/g, '').slice(0, 10);
                               setFormData({...formData, phone: val});
-                              checkReturningUser(val);
                             }} 
                             className="h-12 md:h-14 pl-20 rounded-xl font-black" 
                             placeholder="00000 00000"
@@ -355,7 +373,10 @@ export default function CheckoutPage() {
                 </Card>
                 <div className="flex gap-3">
                   <Button variant="outline" onClick={handleBack} className="h-14 md:h-16 rounded-xl px-4 md:px-8 font-bold border-2"><ChevronLeft className="w-5 h-5" /></Button>
-                  <Button onClick={handleNext} className="flex-1 h-14 md:h-16 rounded-xl text-base md:text-lg font-bold shadow-xl">Select Payment</Button>
+                  <Button onClick={handleNext} className="flex-1 h-14 md:h-16 rounded-xl text-base md:text-lg font-bold shadow-xl">
+                    {!user && <Lock className="w-4 h-4 mr-2" />}
+                    {user ? 'Select Payment' : 'Secure Login to Continue'}
+                  </Button>
                 </div>
               </div>
             )}
@@ -505,6 +526,14 @@ export default function CheckoutPage() {
           )}
         </div>
       </main>
+
+      <AuthModal 
+        isOpen={isAuthModalOpen} 
+        onClose={() => setIsAuthModalOpen(false)}
+        onSuccess={() => {
+          if (step === 2) setStep(3);
+        }}
+      />
     </div>
   );
 }

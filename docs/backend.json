@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "AdminProfile": {
@@ -35,16 +36,20 @@
     },
     "UserProfile": {
       "title": "User Profile",
-      "description": "Customer profile linked to their mobile number",
+      "description": "Customer profile for authenticated users",
       "type": "object",
       "properties": {
-        "phone": { "type": "string", "description": "The verified mobile number" },
+        "uid": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
         "name": { "type": "string" },
+        "photoUrl": { "type": "string" },
+        "phone": { "type": "string", "description": "The verified mobile number" },
         "address": { "type": "string" },
         "lastOrderAt": { "type": "string", "format": "date-time" },
-        "orderCount": { "type": "number" }
+        "orderCount": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["phone"]
+      "required": ["uid", "email"]
     },
     "Order": {
       "title": "Order",
@@ -112,16 +117,16 @@
     }
   },
   "auth": {
-    "providers": ["password", "phone", "anonymous"]
+    "providers": ["password", "phone", "anonymous", "google.com"]
   },
   "firestore": {
     "/admins/{userId}": {
       "schema": "#/backend/entities/AdminProfile",
       "description": "Restricted collection for staff metadata"
     },
-    "/users/{phone}": {
+    "/users/{userId}": {
       "schema": "#/backend/entities/UserProfile",
-      "description": "Customer profiles keyed by phone number"
+      "description": "Customer profiles keyed by Firebase UID"
     },
     "/orders/{orderId}": {
       "schema": "#/backend/entities/Order",

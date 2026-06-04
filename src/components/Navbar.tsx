@@ -1,17 +1,34 @@
+
 "use client"
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Search, ShoppingBag, Menu, X, User, Heart } from 'lucide-react';
+import { Search, ShoppingBag, Menu, X, User, Heart, LogOut } from 'lucide-react';
 import { useStore } from '@/app/lib/store';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CartDrawer } from './CartDrawer';
 import { ThemeToggle } from './ThemeToggle';
 import { cn } from '@/lib/utils';
+import { useUser, useAuth } from '@/firebase';
+import { AuthModal } from './AuthModal';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuLabel, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
 
 export const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  
+  const { user, loading: userLoading } = useUser();
+  const auth = useAuth();
+  
   const cart = useStore((state) => state.cart);
   const cartCount = cart.reduce((acc, item) => acc + item.quantity, 0);
 
@@ -22,6 +39,12 @@ export const Navbar = () => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const handleLogout = async () => {
+    if (auth) {
+      await auth.signOut();
+    }
+  };
 
   return (
     <nav className={cn(
@@ -88,14 +111,49 @@ export const Navbar = () => {
               </Button>
             </CartDrawer>
 
-            <Link href="/orders">
-              <Button variant="ghost" size="icon" className={cn(
-                "rounded-full border transition-all",
-                !scrolled ? "text-white border-white/20 hover:bg-white/10" : "text-foreground border-border"
-              )}>
-                <User className="w-5 h-5" />
-              </Button>
-            </Link>
+            {!userLoading && (
+              user ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button className="outline-none focus:ring-2 focus:ring-primary/20 rounded-full">
+                      <Avatar className="h-10 w-10 border-2 border-background shadow-md">
+                        <AvatarImage src={user.photoURL || ''} alt={user.displayName || 'User'} />
+                        <AvatarFallback className="bg-primary text-white font-black text-xs">
+                          {user.displayName?.slice(0, 2).toUpperCase() || 'EB'}
+                        </AvatarFallback>
+                      </Avatar>
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2 border-none shadow-3xl">
+                    <DropdownMenuLabel className="px-3 py-2">
+                      <p className="text-xs font-black uppercase tracking-tight truncate">{user.displayName}</p>
+                      <p className="text-[10px] font-medium opacity-50 truncate">{user.email}</p>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild className="rounded-xl py-2.5 font-bold cursor-pointer">
+                      <Link href="/orders" className="flex items-center gap-3">
+                        <ShoppingBag className="w-4 h-4" /> My Orders
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleLogout} className="rounded-xl py-2.5 font-bold text-destructive cursor-pointer flex items-center gap-3">
+                      <LogOut className="w-4 h-4" /> Sign Out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <Button 
+                  onClick={() => setIsAuthModalOpen(true)}
+                  variant="ghost" 
+                  size="sm"
+                  className={cn(
+                    "rounded-full px-5 h-11 font-black uppercase text-[10px] tracking-widest transition-all",
+                    !scrolled ? "text-white border-white/20 hover:bg-white/10" : "text-foreground border"
+                  )}
+                >
+                  Sign In
+                </Button>
+              )
+            )}
           </div>
 
           {/* Mobile Actions */}
@@ -133,9 +191,22 @@ export const Navbar = () => {
             <Link href="/" onClick={() => setIsMenuOpen(false)} className="px-4 py-3 font-black uppercase tracking-widest text-[10px] hover:text-primary transition-colors">Home</Link>
             <Link href="/menu" onClick={() => setIsMenuOpen(false)} className="px-4 py-3 font-black uppercase tracking-widest text-[10px] hover:text-primary transition-colors">Menu</Link>
             <Link href="/orders" onClick={() => setIsMenuOpen(false)} className="px-4 py-3 font-black uppercase tracking-widest text-[10px] hover:text-primary transition-colors">My Orders</Link>
+            {!user && (
+              <button 
+                onClick={() => { setIsAuthModalOpen(true); setIsMenuOpen(false); }} 
+                className="px-4 py-3 font-black uppercase tracking-widest text-[10px] text-primary text-left"
+              >
+                Sign In
+              </button>
+            )}
           </div>
         </div>
       )}
+
+      <AuthModal 
+        isOpen={isAuthModalOpen} 
+        onClose={() => setIsAuthModalOpen(false)} 
+      />
     </nav>
   );
 };
