@@ -13,7 +13,7 @@ import {
   MoreVertical, Edit3, Power, Eye,
   Smartphone, Activity,
   AlertCircle, CheckCircle2,
-  Ban, RefreshCcw, Camera
+  Ban, RefreshCcw, Camera, Fingerprint, Copy
 } from 'lucide-react';
 import { 
   Dialog, 
@@ -233,6 +233,11 @@ export const StaffManagement = () => {
     setIsAlertDialogOpen(true);
   };
 
+  const copyText = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast({ title: "Copied to clipboard" });
+  };
+
   const getRoleIcon = (role: string) => {
     switch (role) {
       case 'admin': return <ShieldCheck className="w-3.5 h-3.5 text-primary" />;
@@ -253,7 +258,7 @@ export const StaffManagement = () => {
   const filteredStaff = useMemo(() => {
     if (!staffList) return [];
     return staffList.filter(s => {
-      const matchesSearch = (s.name || '').toLowerCase().includes(searchQuery.toLowerCase()) || (s.email || '').toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearch = (s.name || '').toLowerCase().includes(searchQuery.toLowerCase()) || (s.email || '').toLowerCase().includes(searchQuery.toLowerCase()) || (s.id || '').toLowerCase().includes(searchQuery.toLowerCase());
       const matchesRole = roleFilter === 'all' || s.role === roleFilter;
       const matchesStatus = statusFilter === 'all' || s.status === statusFilter;
       return matchesSearch && matchesRole && matchesStatus;
@@ -275,7 +280,7 @@ export const StaffManagement = () => {
       <div className="flex flex-col lg:flex-row gap-4 items-center bg-white dark:bg-zinc-900 p-4 rounded-[2rem] border shadow-sm">
         <div className="relative flex-1 w-full">
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Search staff members..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="h-12 pl-12 rounded-xl border-none bg-secondary/30 dark:bg-zinc-800 font-bold" />
+          <Input placeholder="Search name, email or UID..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="h-12 pl-12 rounded-xl border-none bg-secondary/30 dark:bg-zinc-800 font-bold" />
         </div>
         <div className="flex gap-2 w-full lg:w-auto">
           <Select value={roleFilter} onValueChange={setRoleFilter}>
@@ -314,7 +319,7 @@ export const StaffManagement = () => {
               <table className="w-full">
                 <thead className="bg-secondary/10 dark:bg-zinc-800 border-b">
                   <tr className="text-[10px] font-black uppercase text-muted-foreground text-left">
-                    <th className="px-8 py-6">Member</th>
+                    <th className="px-8 py-6">Member & UID</th>
                     <th className="px-8 py-6">Role</th>
                     <th className="px-8 py-6">Session</th>
                     <th className="px-8 py-6">Status</th>
@@ -333,15 +338,18 @@ export const StaffManagement = () => {
                     <tr key={staff.id} className="hover:bg-secondary/5 transition-colors group">
                       <td className="px-8 py-6">
                         <div className="flex items-center gap-4">
-                          <Avatar className="h-12 w-12 rounded-2xl shadow-md border-2 border-background">
+                          <Avatar className="h-12 w-12 rounded-2xl shadow-md border-2 border-background shrink-0">
                             <AvatarImage src={staff.photoUrl} alt={staff.name} />
                             <AvatarFallback className="bg-primary/10 text-primary font-black">
                               {(staff.name || 'EB').slice(0, 2).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
-                          <div className="flex flex-col">
-                            <span className="font-black text-sm group-hover:text-primary transition-colors">{staff.name || 'Anonymous'}</span>
-                            <span className="text-[10px] font-medium opacity-50">{staff.email}</span>
+                          <div className="flex flex-col min-w-0">
+                            <span className="font-black text-sm group-hover:text-primary transition-colors truncate">{staff.name || 'Anonymous'}</span>
+                            <span className="text-[9px] font-medium opacity-50 truncate">{staff.email}</span>
+                            <span className="text-[8px] font-black text-muted-foreground/60 flex items-center gap-1 mt-0.5">
+                              <Fingerprint className="w-2.5 h-2.5" /> {staff.id.slice(0, 16)}...
+                            </span>
                           </div>
                         </div>
                       </td>
@@ -370,6 +378,7 @@ export const StaffManagement = () => {
                             <DropdownMenuItem onSelect={(e) => { e.preventDefault(); openEdit(staff); }} className="rounded-xl gap-3 py-3 font-bold cursor-pointer"><Edit3 className="w-4 h-4 text-primary" /> Edit Details</DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuLabel className="text-[9px] font-black uppercase opacity-40 px-3 py-2">Account Control</DropdownMenuLabel>
+                            <DropdownMenuItem onClick={() => copyText(staff.id)} className="rounded-xl gap-3 py-3 font-bold cursor-pointer"><Fingerprint className="w-4 h-4 text-zinc-500" /> Copy UID</DropdownMenuItem>
                             <DropdownMenuItem onClick={() => handleResetPassword(staff.email)} className="rounded-xl gap-3 py-3 font-bold cursor-pointer"><RefreshCcw className="w-4 h-4 text-purple-500" /> Send Reset Link</DropdownMenuItem>
                             {staff.status === 'active' ? (
                               <DropdownMenuItem onSelect={(e) => { e.preventDefault(); triggerAlert('disable', staff.id); }} className="rounded-xl gap-3 py-3 font-bold text-orange-600 cursor-pointer"><Ban className="w-4 h-4" /> Block Access</DropdownMenuItem>
@@ -430,50 +439,6 @@ export const StaffManagement = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Staff Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={(open) => {
-        setIsEditDialogOpen(open);
-        if(!open) setTimeout(() => setSelectedStaff(null), 300);
-      }}>
-        <DialogContent className="max-w-xl rounded-[2.5rem] p-10 border-none bg-white dark:bg-zinc-900 shadow-3xl">
-          <DialogHeader>
-            <DialogTitle className="text-3xl font-black font-headline uppercase tracking-tighter">Edit <span className="text-primary italic">Profile</span></DialogTitle>
-          </DialogHeader>
-          {selectedStaff && (
-            <div className="space-y-6 mt-8">
-               <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Photo URL</Label>
-                  <Input value={formData.photoUrl} onChange={(e) => setFormData({...formData, photoUrl: e.target.value})} className="h-14 rounded-xl border-muted bg-secondary/20 dark:bg-zinc-800 font-bold" />
-               </div>
-               <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Name</Label>
-                  <Input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="h-14 rounded-xl border-muted bg-secondary/20 dark:bg-zinc-800 font-bold" />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Mobile</Label>
-                  <Input value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className="h-14 rounded-xl border-muted bg-secondary/20 dark:bg-zinc-800 font-bold" />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Update Role</Label>
-                <Select value={formData.role} onValueChange={(v: StaffRole) => setFormData({...formData, role: v})}>
-                  <SelectTrigger className="h-14 rounded-xl bg-secondary/20 dark:bg-zinc-800 border-muted font-bold"><SelectValue /></SelectTrigger>
-                  <SelectContent className="rounded-2xl">
-                    <SelectItem value="admin">Administrator</SelectItem>
-                    <SelectItem value="cashier">Billing Cashier</SelectItem>
-                    <SelectItem value="kitchen">Kitchen Chef</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button className="w-full h-18 rounded-2xl font-black text-lg bg-primary text-white mt-4" onClick={handleUpdateStaff} disabled={submitting}>
-                {submitting ? <Loader2 className="animate-spin" /> : 'Save Profile Changes'}
-              </Button>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
       {/* Profile Detail View */}
       <Dialog open={isProfileDialogOpen} onOpenChange={(open) => {
         setIsProfileDialogOpen(open);
@@ -502,6 +467,13 @@ export const StaffManagement = () => {
                       <Badge className="bg-primary/10 text-primary border-none text-[9px] font-black uppercase tracking-widest">{selectedStaff.role}</Badge>
                       {getOnlineStatus(selectedStaff.onlineStatus)}
                     </div>
+                  </div>
+                  <div className="bg-secondary/30 p-3 rounded-2xl text-right">
+                    <p className="text-[8px] font-black uppercase text-muted-foreground mb-1">Internal Reference UID</p>
+                    <p className="text-[10px] font-mono font-bold flex items-center gap-2">
+                      {selectedStaff.id}
+                      <Copy className="w-3 h-3 cursor-pointer hover:text-primary transition-colors" onClick={() => copyText(selectedStaff.id)} />
+                    </p>
                   </div>
                 </div>
                 <div className="grid md:grid-cols-3 gap-6">
@@ -550,8 +522,8 @@ export const StaffManagement = () => {
               <AlertCircle className="w-8 h-8 text-destructive" /> Security Check
             </AlertDialogTitle>
             <AlertDialogDescription className="font-medium text-base mt-4 leading-relaxed">
-              {alertAction?.type === 'delete' && "Are you sure? This will permanently remove the staff member."}
-              {alertAction?.type === 'disable' && "This will block the staff member from logging in."}
+              {alertAction?.type === 'delete' && "Are you sure? This will permanently remove the staff member from the database."}
+              {alertAction?.type === 'disable' && "This will block the staff member from logging in until re-enabled."}
               {alertAction?.type === 'enable' && "This will restore system access for this staff member."}
             </AlertDialogDescription>
           </AlertDialogHeader>

@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { 
   ShoppingBag, Lock, Mail, Loader2, ArrowRight, 
   ShieldCheck, Receipt, ChefHat, 
-  ChevronLeft
+  ChevronLeft, Fingerprint
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { doc, setDoc, getDoc, collection, getDocs, limit, query, updateDoc, serverTimestamp, where, deleteDoc } from 'firebase/firestore';
@@ -147,7 +147,7 @@ export default function AdminLoginPage() {
           stats: { ordersHandled: 0, billsGenerated: 0, kitchenUpdates: 0 }
         });
         
-        toast({ title: "Welcome, Admin", description: "System provisioned successfully." });
+        toast({ title: "Authorized as Admin", description: `UID: ${uid.slice(0, 12)}...` });
         router.push('/admin/dashboard');
         return;
       }
@@ -164,7 +164,7 @@ export default function AdminLoginPage() {
           lastLoginAt: serverTimestamp(),
           onlineStatus: 'online'
         });
-        toast({ title: "Authorized", description: `Welcome back, ${data.name || 'Staff'}` });
+        toast({ title: "Authorized", description: `Staff UID: ${uid.slice(0, 12)}...` });
         router.push('/admin/dashboard');
       } else {
         // No record exists anywhere
@@ -185,7 +185,7 @@ export default function AdminLoginPage() {
             stats: { ordersHandled: 0, billsGenerated: 0, kitchenUpdates: 0 }
           });
           await auth.signOut();
-          toast({ title: "Request Submitted", description: "Wait for an Admin to enable your access." });
+          toast({ title: "Registration Received", description: `Your unique ID is ${uid.slice(0, 8)}...` });
           setStep('selection');
         }
       }
