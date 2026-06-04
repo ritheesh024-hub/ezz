@@ -10,8 +10,8 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { 
   ShoppingBag, Lock, Mail, Loader2, ArrowRight, 
-  AlertTriangle, ShieldCheck, Receipt, ChefHat, 
-  ChevronLeft, Fingerprint, UserCircle 
+  ShieldCheck, Receipt, ChefHat, 
+  ChevronLeft
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { doc, setDoc, getDoc, collection, getDocs, limit, query, updateDoc, serverTimestamp, where, deleteDoc } from 'firebase/firestore';
@@ -43,7 +43,6 @@ export default function AdminLoginPage() {
         const allAdminsSnap = await getDocs(query(adminsColl, limit(1)));
         if (allAdminsSnap.empty) {
           setIsFirstSetup(true);
-          // If first setup, force Registration mode
           setIsLogin(false);
         } else {
           setIsFirstSetup(false);
@@ -62,14 +61,11 @@ export default function AdminLoginPage() {
         try {
           const adminRef = doc(db, 'admins', user.uid);
           const adminSnap = await getDoc(adminRef);
-          if (adminSnap.exists()) {
-            const data = adminSnap.data();
-            if (data.status === 'active') {
-              router.push('/admin/dashboard');
-            }
+          if (adminSnap.exists() && adminSnap.data().status === 'active') {
+            router.push('/admin/dashboard');
           }
         } catch (e) {
-          console.error("Error checking existing auth record:", e);
+          console.error("Error checking existing auth:", e);
         }
       }
     }
@@ -85,20 +81,7 @@ export default function AdminLoginPage() {
     e.preventDefault();
     
     if (!auth || !db) {
-      toast({
-        variant: "destructive",
-        title: "Connection Error",
-        description: "Firebase services are not initialized.",
-      });
-      return;
-    }
-
-    if (password.length < 6) {
-      toast({
-        variant: "destructive",
-        title: "Weak Password",
-        description: "Password must be at least 6 characters.",
-      });
+      toast({ variant: "destructive", title: "Connection Error" });
       return;
     }
 
@@ -106,101 +89,113 @@ export default function AdminLoginPage() {
     try {
       let userCredential;
       if (isLogin) {
-        userCredential = await signInWithEmailAndPassword(auth, email, password);
+        userCredential = await signInWithEmailAndPassword(auth, email.trim(), password);
       } else {
-        userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        userCredential = await createUserWithEmailAndPassword(auth, email.trim(), password);
       }
 
       const uid = userCredential.user.uid;
+      const normalizedEmail = email.trim().toLowerCase();
+      
+      // 1. Try to find record by UID
       const adminRef = doc(db, 'admins', uid);
-      const adminSnap = await getDoc(adminRef);
+      let adminSnap = await getDoc(adminRef);
 
-      // 1. Check if first user ever (Provisioning)
+      // 2. If not found by UID, try searching by Email (Handle pre-authorized staff)
+      if (!adminSnap.exists()) {
+        const adminsColl = collection(db, 'admins');
+        const q = query(adminsColl, where("email", "==", normalizedEmail), limit(1));
+        const emailSnap = await getDocs(q);
+
+        if (!emailSnap.empty) {
+          // Pre-authorized record found! Link it to this UID
+          const preRecord = emailSnap.docs[0];
+          const preData = preRecord.data();
+          
+          // Delete temporary record if it had a different ID (like staff-timestamp)
+          if (preRecord.id !== uid) {
+            await deleteDoc(doc(db, 'admins', preRecord.id));
+          }
+
+          // Create/Update the definitive UID record
+          await setDoc(adminRef, {
+            ...preData,
+            id: uid,
+            lastLoginAt: serverTimestamp(),
+            onlineStatus: 'online',
+            status: preData.status || 'active' // Respect pre-authorized status
+          });
+          
+          adminSnap = await getDoc(adminRef);
+        }
+      }
+
+      // 3. Handle First Setup (Provisioning)
       const adminsColl = collection(db, 'admins');
       const allAdminsSnap = await getDocs(query(adminsColl, limit(1)));
       
-      if (allAdminsSnap.empty || (adminSnap.exists() && adminSnap.data().role === 'admin' && allAdminsSnap.size === 1)) {
-        // PROVISION FIRST ADMIN (or re-sync if session died)
+      if (allAdminsSnap.empty || (isFirstSetup && !adminSnap.exists())) {
         await setDoc(adminRef, { 
           id: uid,
-          email: email.toLowerCase(), 
+          email: normalizedEmail, 
           name: email.split('@')[0],
           role: 'admin',
           status: 'active',
           onlineStatus: 'online',
-          createdAt: adminSnap.exists() ? adminSnap.data().createdAt : serverTimestamp(),
+          createdAt: serverTimestamp(),
           lastLoginAt: serverTimestamp(),
-          stats: adminSnap.exists() ? adminSnap.data().stats : { ordersHandled: 0, billsGenerated: 0, kitchenUpdates: 0 }
-        }, { merge: true });
+          stats: { ordersHandled: 0, billsGenerated: 0, kitchenUpdates: 0 }
+        });
         
-        toast({ title: "Welcome, Admin", description: "First administrative profile created." });
+        toast({ title: "Welcome, Admin", description: "System provisioned successfully." });
         router.push('/admin/dashboard');
         return;
       }
 
-      // 2. If profile already exists under this UID
+      // 4. Final Verification
       if (adminSnap.exists()) {
         const data = adminSnap.data();
         if (data.status === 'disabled') {
           await auth.signOut();
-          throw new Error("Account Disabled. Please contact your administrator.");
+          throw new Error("Access Denied. Please contact your manager.");
         }
         
         await updateDoc(adminRef, { 
           lastLoginAt: serverTimestamp(),
           onlineStatus: 'online'
         });
-        toast({ title: "Authorized", description: `Logged in as ${data.role.toUpperCase()}.` });
+        toast({ title: "Authorized", description: `Welcome back, ${data.name || 'Staff'}` });
         router.push('/admin/dashboard');
-        return;
-      }
-
-      // 3. New registration for non-first user
-      if (!isLogin) {
-        await setDoc(adminRef, { 
-          id: uid,
-          email: email.toLowerCase(), 
-          name: email.split('@')[0],
-          role: selectedRole || 'cashier',
-          status: 'disabled', // Requires approval
-          onlineStatus: 'offline',
-          createdAt: serverTimestamp(),
-          lastLoginAt: serverTimestamp(),
-          stats: { ordersHandled: 0, billsGenerated: 0, kitchenUpdates: 0 }
-        });
-        await auth.signOut();
-        toast({
-          title: "Registration Submitted",
-          description: "Please ask an Admin to enable your account access.",
-        });
-        setStep('selection');
       } else {
-        // They tried to login but no staff record exists for this UID
-        await auth.signOut();
-        throw new Error("Account not found in staff directory. Please register first.");
+        // No record exists anywhere
+        if (isLogin) {
+          await auth.signOut();
+          throw new Error("Staff record not found. Please register as new staff.");
+        } else {
+          // New Registration via Login Page
+          await setDoc(adminRef, { 
+            id: uid,
+            email: normalizedEmail, 
+            name: email.split('@')[0],
+            role: selectedRole || 'cashier',
+            status: 'disabled', // Pending manual admin approval
+            onlineStatus: 'offline',
+            createdAt: serverTimestamp(),
+            lastLoginAt: serverTimestamp(),
+            stats: { ordersHandled: 0, billsGenerated: 0, kitchenUpdates: 0 }
+          });
+          await auth.signOut();
+          toast({ title: "Request Submitted", description: "Wait for an Admin to enable your access." });
+          setStep('selection');
+        }
       }
 
     } catch (error: any) {
       console.error('Auth error:', error);
-      let errorMessage = error.message || "Failed to authenticate.";
+      let msg = error.message || "Failed to authenticate.";
+      if (error.code === 'auth/invalid-credential') msg = "Invalid credentials. Try registering if you haven't yet.";
       
-      if (error.code === 'auth/invalid-credential') {
-        errorMessage = isLogin 
-          ? "Incorrect credentials. If you haven't registered as staff yet, please click 'Register' below." 
-          : "Authentication failed. Please check your email and password requirements.";
-      } else if (error.code === 'auth/email-already-in-use') {
-        errorMessage = "This email is already registered. Try signing in instead.";
-      } else if (error.code === 'auth/weak-password') {
-        errorMessage = "Password is too weak. Minimum 6 characters required.";
-      } else if (error.code === 'auth/user-not-found') {
-        errorMessage = "Staff record not found. Please register first.";
-      }
-
-      toast({
-        variant: "destructive",
-        title: "Access Error",
-        description: errorMessage,
-      });
+      toast({ variant: "destructive", title: "Access Error", description: msg });
     } finally {
       setLoading(false);
     }
@@ -322,7 +317,6 @@ export default function AdminLoginPage() {
                   min={6}
                 />
               </div>
-              <p className="text-[9px] font-medium opacity-40 ml-1">Minimum 6 characters</p>
             </div>
           </CardContent>
           
