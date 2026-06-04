@@ -11,12 +11,11 @@ import {
   DialogFooter
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { ShoppingBag, Loader2 } from 'lucide-react';
+import { ShoppingBag, Loader2, AlertCircle } from 'lucide-react';
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { useAuth, useFirestore } from '@/firebase';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
-import { errorEmitter } from '@/firebase/error-emitter';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -30,10 +29,18 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
   const db = useFirestore();
 
   const handleGoogleSignIn = async () => {
-    if (!auth || !db) return;
+    if (!auth || !db) {
+      toast({
+        variant: "destructive",
+        title: "Connection Error",
+        description: "Authentication service is currently unavailable.",
+      });
+      return;
+    }
     
     setLoading(true);
     const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: 'select_account' });
     
     try {
       const result = await signInWithPopup(auth, provider);
@@ -63,13 +70,25 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
       onClose();
     } catch (error: any) {
       console.error("Auth error:", error);
-      if (error.code !== 'auth/popup-closed-by-user') {
-        toast({
-          variant: "destructive",
-          title: "Sign In Failed",
-          description: error.message || "Something went wrong with Google Sign-In.",
-        });
+      
+      // Silent handling for user closure
+      if (error.code === 'auth/popup-closed-by-user') {
+        setLoading(false);
+        return;
       }
+
+      let errorMessage = "Something went wrong with Google Sign-In.";
+      if (error.code === 'auth/unauthorized-domain') {
+        errorMessage = "This domain is not authorized for Google Sign-In. Please contact support.";
+      } else if (error.code === 'auth/popup-blocked') {
+        errorMessage = "Sign-in popup was blocked by your browser. Please allow popups for this site.";
+      }
+
+      toast({
+        variant: "destructive",
+        title: "Sign In Failed",
+        description: errorMessage,
+      });
     } finally {
       setLoading(false);
     }
@@ -112,6 +131,11 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
               </>
             )}
           </Button>
+          
+          <div className="flex items-center gap-2 justify-center p-3 bg-secondary/30 rounded-xl">
+            <AlertCircle className="w-3.5 h-3.5 text-muted-foreground" />
+            <p className="text-[9px] font-bold text-muted-foreground uppercase">Please enable popups to sign in</p>
+          </div>
           
           <p className="text-[9px] text-center text-muted-foreground font-bold uppercase tracking-widest opacity-50 px-8">
             By continuing, you agree to our Terms of Service and Privacy Policy.
