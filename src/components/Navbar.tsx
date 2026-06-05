@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Search, ShoppingBag, Menu, X, User, Heart, LogOut, History, Settings } from 'lucide-react';
+import { Search, ShoppingBag, Menu, X, User, LogOut, History, Share2, Check } from 'lucide-react';
 import { useStore } from '@/app/lib/store';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -20,11 +20,13 @@ import {
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
+import { toast } from '@/hooks/use-toast';
 
 export const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [isShared, setIsShared] = useState(false);
   
   const { user, loading: userLoading } = useUser();
   const auth = useAuth();
@@ -43,6 +45,27 @@ export const Navbar = () => {
   const handleLogout = async () => {
     if (auth) {
       await auth.signOut();
+    }
+  };
+
+  const handleShare = async () => {
+    const shareData = {
+      title: 'Ezzy Bites',
+      text: 'Check out this premium fast food cafe!',
+      url: window.location.origin,
+    };
+
+    if (navigator.share) {
+      try {
+        await navigator.share(shareData);
+      } catch (err) {
+        console.log('Share cancelled');
+      }
+    } else {
+      navigator.clipboard.writeText(window.location.origin);
+      setIsShared(true);
+      toast({ title: "Link Copied!", description: "Share it with your friends." });
+      setTimeout(() => setIsShared(false), 2000);
     }
   };
 
@@ -93,6 +116,18 @@ export const Navbar = () => {
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center gap-3">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={handleShare}
+              className={cn(
+                "rounded-full transition-all",
+                !scrolled ? "text-white hover:bg-white/10" : "text-foreground"
+              )}
+            >
+              {isShared ? <Check className="w-5 h-5 text-green-500" /> : <Share2 className="w-5 h-5" />}
+            </Button>
+
             <ThemeToggle />
             
             <Link href="/orders">
@@ -191,6 +226,7 @@ export const Navbar = () => {
             <Link href="/" onClick={() => setIsMenuOpen(false)} className="px-4 py-3 font-black uppercase tracking-widest text-[10px] hover:text-primary transition-colors">Home</Link>
             <Link href="/menu" onClick={() => setIsMenuOpen(false)} className="px-4 py-3 font-black uppercase tracking-widest text-[10px] hover:text-primary transition-colors">Digital Menu</Link>
             <Link href="/orders" onClick={() => setIsMenuOpen(false)} className="px-4 py-3 font-black uppercase tracking-widest text-[10px] hover:text-primary transition-colors">Order History</Link>
+            <button onClick={() => { handleShare(); setIsMenuOpen(false); }} className="px-4 py-3 font-black uppercase tracking-widest text-[10px] text-left">Share Site</button>
             {!user ? (
               <button 
                 onClick={() => { setIsAuthModalOpen(true); setIsMenuOpen(false); }} 

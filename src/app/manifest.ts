@@ -23,5 +23,17 @@ export default function manifest(): MetadataRoute.Manifest {
         purpose: 'any',
       },
     ],
+    shortcuts: [
+      {
+        name: 'View Menu',
+        url: '/menu',
+        icons: [{ src: 'https://placehold.co/96x96/ef4444/ffffff?text=Menu', sizes: '96x96' }]
+      },
+      {
+        name: 'Track Orders',
+        url: '/orders',
+        icons: [{ src: 'https://placehold.co/96x96/ef4444/ffffff?text=Track', sizes: '96x96' }]
+      }
+    ]
   };
 }

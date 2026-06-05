@@ -16,11 +16,25 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: 'Ezzy Bites | Premium Fast Food Cafe',
-    description: 'Order the legendard Maggie and Biryani variations in Hyderabad.',
-    url: 'https://easybites.com',
+    description: 'Order the legendary Maggie and Biryani variations. Fresh. Fast. Premium.',
+    url: 'https://ezzybites.vercel.app',
     siteName: 'Ezzy Bites',
+    images: [
+      {
+        url: 'https://picsum.photos/seed/ezzybites-og/1200/630',
+        width: 1200,
+        height: 630,
+        alt: 'Ezzy Bites Preview',
+      },
+    ],
     locale: 'en_IN',
     type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Ezzy Bites | Premium Fast Food Cafe',
+    description: 'Elevate your daily ritual with chef-crafted flavors.',
+    images: ['https://picsum.photos/seed/ezzybites-og/1200/630'],
   }
 };
 
