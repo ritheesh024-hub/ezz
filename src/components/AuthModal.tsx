@@ -10,7 +10,7 @@ import {
   DialogFooter
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { ShoppingBag, Loader2, AlertCircle } from 'lucide-react';
+import { ShoppingBag, Loader2, AlertCircle, Info } from 'lucide-react';
 import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { useAuth, useFirestore } from '@/firebase';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
@@ -79,7 +79,8 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
       let errorMessage = "Something went wrong with Google Sign-In.";
       
       if (error.code === 'auth/unauthorized-domain') {
-        errorMessage = "This domain is not authorized. Please ensure your development URL is added to 'Authorized Domains' in Firebase Console.";
+        const currentDomain = typeof window !== 'undefined' ? window.location.hostname : 'your domain';
+        errorMessage = `This domain (${currentDomain}) is not authorized. Please add it to 'Authorized Domains' in your Firebase Console under Authentication > Settings.`;
       } else if (error.code === 'auth/popup-blocked') {
         errorMessage = "Sign-in popup was blocked by your browser. Please allow popups for this site.";
       }
@@ -133,7 +134,7 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
           </Button>
           
           <div className="flex items-center gap-2 justify-center p-3 bg-secondary/30 rounded-xl">
-            <AlertCircle className="w-3.5 h-3.5 text-muted-foreground" />
+            <Info className="w-3.5 h-3.5 text-primary" />
             <p className="text-[9px] font-bold text-muted-foreground uppercase">Popups must be enabled</p>
           </div>
           
