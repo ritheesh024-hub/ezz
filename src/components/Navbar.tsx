@@ -69,8 +69,10 @@ export const Navbar = () => {
 
   return (
     <nav className={cn(
-      "fixed top-0 left-0 right-0 z-[100] transition-all duration-500 px-4",
-      scrolled ? "glass border-b border-border/50 py-2 shadow-soft" : "bg-white/90 dark:bg-zinc-950/90 py-4"
+      "fixed top-0 left-0 right-0 z-[100] transition-all duration-700 px-4",
+      scrolled 
+        ? "bg-white/30 dark:bg-black/30 backdrop-blur-2xl border-b border-white/10 py-2 shadow-2xl" 
+        : "bg-white/5 dark:bg-black/5 backdrop-blur-sm py-4"
     )}>
       <div className="container mx-auto">
         <div className="h-14 md:h-16 flex items-center justify-between gap-4">
@@ -79,7 +81,10 @@ export const Navbar = () => {
             <div className="w-10 h-10 bg-orange-gradient rounded-xl flex items-center justify-center transform group-hover:rotate-12 transition-all shadow-lg shadow-primary/20">
               <ShoppingBag className="w-5 h-5 text-white" />
             </div>
-            <span className="text-xl font-headline font-black tracking-tighter hidden sm:inline">
+            <span className={cn(
+              "text-xl font-headline font-black tracking-tighter hidden sm:inline transition-colors duration-500",
+              scrolled ? "text-foreground" : "text-white"
+            )}>
               Ezzy<span className="text-primary italic">Bites</span>
             </span>
           </Link>
@@ -87,18 +92,30 @@ export const Navbar = () => {
           {/* Search Bar - iPhone Style */}
           <div className="flex-1 max-w-lg hidden md:block">
             <form onSubmit={handleSearchSubmit} className="relative group">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+              <Search className={cn(
+                "absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors",
+                scrolled ? "text-muted-foreground" : "text-white/40",
+                "group-focus-within:text-primary"
+              )} />
               <Input 
                 value={navSearch}
                 onChange={(e) => setNavSearch(e.target.value)}
                 placeholder="Search premium bites..." 
-                className="w-full h-11 pl-11 pr-4 rounded-full border-none bg-secondary/50 focus:bg-white dark:focus:bg-zinc-900 transition-all font-medium text-sm focus:ring-2 focus:ring-primary/20"
+                className={cn(
+                  "w-full h-11 pl-11 pr-4 rounded-full border-none transition-all font-medium text-sm focus:ring-2 focus:ring-primary/20",
+                  scrolled 
+                    ? "bg-secondary/40 focus:bg-white dark:focus:bg-zinc-900" 
+                    : "bg-white/10 text-white placeholder:text-white/40 focus:bg-white/20 backdrop-blur-xl"
+                )}
               />
             </form>
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden xl:flex items-center gap-6">
+          <div className={cn(
+            "hidden xl:flex items-center gap-6 transition-colors duration-500",
+            scrolled ? "text-foreground" : "text-white/80"
+          )}>
             <Link href="/" className="text-[10px] font-black uppercase tracking-widest hover:text-primary transition-colors">Home</Link>
             <Link href="/menu" className="text-[10px] font-black uppercase tracking-widest hover:text-primary transition-colors">Menu</Link>
             <Link href="/orders" className="text-[10px] font-black uppercase tracking-widest hover:text-primary transition-colors">Orders</Link>
@@ -109,7 +126,10 @@ export const Navbar = () => {
             <ThemeToggle />
             
             <CartDrawer>
-              <Button variant="ghost" size="icon" className="rounded-full w-10 h-10 transition-all relative hover:bg-primary/5">
+              <Button variant="ghost" size="icon" className={cn(
+                "rounded-full w-10 h-10 transition-all relative",
+                scrolled ? "hover:bg-primary/5 text-foreground" : "hover:bg-white/10 text-white"
+              )}>
                 <ShoppingBag className="w-5 h-5" />
                 {cart.length > 0 && (
                   <span className="absolute top-1 right-1 w-4 h-4 bg-primary text-white text-[8px] font-black rounded-full flex items-center justify-center border-2 border-background">
@@ -175,7 +195,15 @@ export const Navbar = () => {
               )
             )}
 
-            <Button variant="ghost" size="icon" className="md:hidden rounded-full w-10 h-10" onClick={() => setIsMenuOpen(!isMenuOpen)}>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className={cn(
+                "md:hidden rounded-full w-10 h-10",
+                scrolled ? "text-foreground" : "text-white"
+              )} 
+              onClick={() => setIsMenuOpen(!isMenuOpen)}
+            >
               {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </Button>
           </div>
@@ -185,12 +213,20 @@ export const Navbar = () => {
       {/* Mobile Search Bar */}
       <div className="md:hidden mt-2 pb-2">
         <form onSubmit={handleSearchSubmit} className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+          <Search className={cn(
+            "absolute left-4 top-1/2 -translate-y-1/2 w-3.5 h-3.5",
+            scrolled ? "text-muted-foreground" : "text-white/40"
+          )} />
           <Input 
             value={navSearch}
             onChange={(e) => setNavSearch(e.target.value)}
             placeholder="Search..." 
-            className="w-full h-10 pl-10 rounded-full border-none bg-secondary/50 text-xs font-medium"
+            className={cn(
+              "w-full h-10 pl-10 rounded-full border-none text-xs font-medium",
+              scrolled 
+                ? "bg-secondary/50 focus:bg-white" 
+                : "bg-white/10 text-white placeholder:text-white/40 backdrop-blur-xl"
+            )}
           />
         </form>
       </div>
