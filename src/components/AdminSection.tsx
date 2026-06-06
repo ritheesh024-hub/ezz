@@ -14,7 +14,7 @@ import {
   Volume2, VolumeX, BellRing,
   MapPin, User, Settings, CheckCircle2,
   Users, UserPlus, Globe, Utensils, Truck,
-  TicketPercent
+  TicketPercent, BarChart3, Fingerprint
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
@@ -27,6 +27,7 @@ import { NewOrderPopups } from './NewOrderPopups';
 import { KitchenSystem } from './KitchenSystem';
 import { StaffManagement } from './StaffManagement';
 import { CouponManager } from './CouponManager';
+import { UserManagement } from './UserManagement';
 import { cn } from '@/lib/utils';
 import { useSound } from '@/hooks/use-sound';
 import { StaffRole } from '@/app/admin/dashboard/page';
@@ -45,7 +46,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
   
   const ordersQuery = useMemo(() => {
     if (!db) return null;
-    return query(collection(db, 'orders'), orderBy('createdAt', 'desc'), limit(100));
+    return query(collection(db, 'orders'), orderBy('createdAt', 'desc'), limit(500));
   }, [db]);
   const { data: realOrders } = useCollection<any>(ordersQuery);
 
@@ -173,7 +174,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
   const availableTabs = useMemo(() => {
     if (activeView === 'kitchen') return ['kitchen'];
     if (activeView === 'cashier') return ['overview', 'billing', 'orders'];
-    return ['overview', 'billing', 'orders', 'inventory', 'coupons', 'staff', 'settings'];
+    return ['overview', 'users', 'billing', 'orders', 'inventory', 'coupons', 'staff', 'settings'];
   }, [activeView]);
 
   return (
@@ -190,7 +191,12 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
             <TabsList className="bg-white dark:bg-zinc-900 p-1 rounded-full border w-full lg:w-fit flex shadow-sm overflow-x-auto scrollbar-hide">
               {availableTabs.includes('overview') && (
                 <TabsTrigger value="overview" className="px-6 py-2.5 font-black uppercase text-[9px] tracking-widest rounded-full gap-2 shrink-0">
-                  <Zap className="w-3.5 h-3.5" /> Analysis
+                  <BarChart3 className="w-3.5 h-3.5" /> Analytics
+                </TabsTrigger>
+              )}
+              {availableTabs.includes('users') && (
+                <TabsTrigger value="users" className="px-6 py-2.5 font-black uppercase text-[9px] tracking-widest rounded-full gap-2 shrink-0">
+                  <Users className="w-3.5 h-3.5" /> Customers
                 </TabsTrigger>
               )}
               {availableTabs.includes('billing') && (
@@ -223,7 +229,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
               )}
               {availableTabs.includes('staff') && (
                 <TabsTrigger value="staff" className="px-6 py-2.5 font-black uppercase text-[9px] tracking-widest rounded-full gap-2 shrink-0">
-                  <Users className="w-3.5 h-3.5" /> Staff
+                  <UserPlus className="w-3.5 h-3.5" /> Staff
                 </TabsTrigger>
               )}
               {availableTabs.includes('settings') && (
@@ -248,6 +254,10 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
 
           <TabsContent value="overview">
              <DashboardAnalysis orders={realOrders || []} products={dbMenu || []} />
+          </TabsContent>
+
+          <TabsContent value="users">
+            <UserManagement />
           </TabsContent>
 
           <TabsContent value="billing">
@@ -316,7 +326,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
           <TabsContent value="inventory" className="space-y-8">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-black font-headline uppercase tracking-tighter">Inventory</h2>
-              <Button onClick={() => { setEditingItem(null); setMenuFormData({ name: '', description: '', price: '', category: 'Veg Maggie', imageUrl: '', isVeg: true, isAvailable: true, rating: '4.5', isBeverage: false }); setIsMenuDialogOpen(true); }} className="rounded-xl h-12 px-6 font-black uppercase tracking-widest text-[10px] gap-2 bg-primary">
+              <Button onClick={() => { setEditingItem(null); setMenuFormData({ name: '', description: '', price: '', category: 'Veg Maggie', imageUrl: '', isVeg: true, isAvailable: true, rating: '4.5', isBeverage: false }); setIsMenuDialogOpen(true); }} className="rounded-xl h-12 px-6 font-black uppercase tracking-widest text-[10px] gap-2 bg-primary text-white">
                 <Plus className="w-5 h-5" /> Add New
               </Button>
             </div>

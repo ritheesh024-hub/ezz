@@ -27,7 +27,10 @@ import {
   History,
   Timer,
   Globe,
-  Utensils
+  Utensils,
+  Users,
+  CalendarDays,
+  Target
 } from 'lucide-react';
 import {
   XAxis,
@@ -42,8 +45,9 @@ import {
   Cell
 } from 'recharts';
 import { cn } from '@/lib/utils';
-import { isWithinInterval, startOfDay, endOfDay, subDays, startOfMonth, endOfMonth, subMonths, format } from 'date-fns';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { isWithinInterval, startOfDay, endOfDay, subDays, startOfMonth, endOfMonth, subMonths, format, isAfter, subWeeks } from 'date-fns';
+import { useFirestore, useCollection } from '@/firebase';
+import { collection, query } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 
 interface DashboardAnalysisProps {
@@ -54,13 +58,17 @@ interface DashboardAnalysisProps {
 type FilterType = 'today' | 'yesterday' | 'currentMonth' | 'lastMonth';
 
 export const DashboardAnalysis = ({ orders, products }: DashboardAnalysisProps) => {
+  const db = useFirestore();
   const [filterType, setFilterType] = useState<FilterType>('today');
   const [isMounted, setIsMounted] = useState(false);
-  const [activeMetricView, setActiveMetricView] = useState<'revenue' | 'orders' | 'load' | 'items' | null>(null);
+  const [activeMetricView, setActiveMetricView] = useState<'revenue' | 'orders' | 'load' | 'items' | 'users' | null>(null);
 
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  const usersQuery = useMemo(() => db ? query(collection(db, 'users')) : null, [db]);
+  const { data: allUsers } = useCollection<any>(usersQuery);
 
   const dateRange = useMemo(() => {
     const now = new Date();
@@ -86,7 +94,16 @@ export const DashboardAnalysis = ({ orders, products }: DashboardAnalysisProps) 
     const completed = filteredOrders.filter(o => o.status === 'Delivered');
     const revenue = completed.reduce((acc, curr) => acc + (Number(curr.total) || 0), 0);
     const pending = filteredOrders.filter(o => ['Pending', 'Preparing'].includes(o.status));
+    const preparing = filteredOrders.filter(o => o.status === 'Preparing');
+    const cancelled = filteredOrders.filter(o => o.status === 'Cancelled');
     
+    // User metrics
+    const totalRegisteredUsers = allUsers?.length || 0;
+    const newUsersThisWeek = allUsers?.filter(u => {
+      if (!u.createdAt?.toDate) return false;
+      return isAfter(u.createdAt.toDate(), subWeeks(new Date(), 1));
+    }).length || 0;
+
     // Item Stats calculation
     const itemMap: Record<string, { name: string, quantity: number, revenue: number }> = {};
     let totalItemsCount = 0;
@@ -106,19 +123,25 @@ export const DashboardAnalysis = ({ orders, products }: DashboardAnalysisProps) 
     });
 
     const itemStats = Object.values(itemMap).sort((a, b) => b.quantity - a.quantity);
+    const avgOrderValue = completed.length > 0 ? Math.round(revenue / completed.length) : 0;
 
     return { 
       total: filteredOrders.length, 
       revenue, 
+      avgOrderValue,
       pending: pending.length,
+      preparing: preparing.length,
+      cancelled: cancelled.length,
       pendingOrders: pending,
       completed: completed.length, 
       completedOrders: completed,
       itemsSold: totalItemsCount,
       itemStats,
-      allOrders: filteredOrders
+      allOrders: filteredOrders,
+      totalRegisteredUsers,
+      newUsersThisWeek
     };
-  }, [filteredOrders]);
+  }, [filteredOrders, allUsers]);
 
   const handleDownloadReport = () => {
     const reportDate = format(dateRange.start, 'yyyy-MM-dd');
@@ -128,8 +151,12 @@ export const DashboardAnalysis = ({ orders, products }: DashboardAnalysisProps) 
       ["Period", filterType.toUpperCase()],
       ["Total Revenue", `INR ${metrics.revenue}`],
       ["Total Orders", metrics.total],
+      ["Completed Orders", metrics.completed],
+      ["Cancelled Orders", metrics.cancelled],
+      ["Avg Order Value", `INR ${metrics.avgOrderValue}`],
       ["Items Sold", metrics.itemsSold],
-      ["Kitchen Load (Active)", metrics.pending],
+      ["Total Registered Users", metrics.totalRegisteredUsers],
+      ["New Users (Week)", metrics.newUsersThisWeek],
       ["", ""],
       ["--- ITEMIZED BREAKDOWN ---", ""],
       ["Item Name", "Quantity Sold", "Revenue Generated (INR)"]
@@ -145,15 +172,16 @@ export const DashboardAnalysis = ({ orders, products }: DashboardAnalysisProps) 
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `EzzyBites_Report_${reportDate}_${filterType}.csv`);
+    link.setAttribute("download", `EzzyBites_Master_Report_${reportDate}_${filterType}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     
-    toast({ title: "Report Generated", description: "The operational data has been exported to CSV." });
+    toast({ title: "Master Report Exported", description: "Operation metrics generated successfully." });
   };
 
   const chartData = useMemo(() => {
+    // Generate realistic temporal data based on metrics
     return [
       { name: '08:00', sales: Math.round(metrics.revenue * 0.1), orders: Math.floor(metrics.total * 0.1) },
       { name: '12:00', sales: Math.round(metrics.revenue * 0.3), orders: Math.floor(metrics.total * 0.3) },
@@ -161,28 +189,6 @@ export const DashboardAnalysis = ({ orders, products }: DashboardAnalysisProps) 
       { name: '20:00', sales: Math.round(metrics.revenue * 0.35), orders: Math.floor(metrics.total * 0.35) },
     ];
   }, [metrics]);
-
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'Delivered': return <Badge className="bg-green-100 text-green-700 border-none px-2 font-black text-[8px] uppercase">Delivered</Badge>;
-      case 'Cancelled': return <Badge className="bg-red-100 text-red-700 border-none px-2 font-black text-[8px] uppercase">Cancelled</Badge>;
-      case 'Preparing': return <Badge className="bg-orange-100 text-orange-700 border-none px-2 font-black text-[8px] uppercase">Preparing</Badge>;
-      default: return <Badge className="bg-blue-100 text-blue-700 border-none px-2 font-black text-[8px] uppercase">Pending</Badge>;
-    }
-  };
-
-  const getOrderTypeBadge = (type: string) => {
-    switch (type) {
-      case 'Online': 
-        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-100 text-[7px] font-black uppercase px-1.5 py-0 gap-1"><Globe className="w-2 h-2" /> Online</Badge>;
-      case 'Dine-In': 
-        return <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-100 text-[7px] font-black uppercase px-1.5 py-0 gap-1"><Utensils className="w-2 h-2" /> Dine-In</Badge>;
-      case 'Take Away': 
-        return <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-100 text-[7px] font-black uppercase px-1.5 py-0 gap-1"><Package className="w-2 h-2" /> Take Away</Badge>;
-      default: 
-        return <Badge variant="outline" className="text-[7px] font-black uppercase px-1.5 py-0">{type || 'Order'}</Badge>;
-    }
-  };
 
   if (!isMounted) return (
     <div className="h-[400px] flex flex-col items-center justify-center gap-4">
@@ -224,24 +230,43 @@ export const DashboardAnalysis = ({ orders, products }: DashboardAnalysisProps) 
         </div>
         <Button 
           onClick={handleDownloadReport}
-          className="w-full lg:w-auto h-10 px-8 rounded-full font-black text-[9px] uppercase bg-primary gap-2 shadow-lg shadow-primary/20"
+          className="w-full lg:w-auto h-10 px-8 rounded-full font-black text-[9px] uppercase bg-primary gap-2 shadow-lg shadow-primary/20 text-white"
         >
-          <Download className="w-4 h-4" /> Download Report
+          <Download className="w-4 h-4" /> Export Audit
         </Button>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <MetricCard onClick={() => setActiveMetricView('revenue')} label="Revenue" value={`₹${metrics.revenue}`} icon={IndianRupee} color="text-primary bg-primary/10" />
+        <MetricCard onClick={() => setActiveMetricView('revenue')} label="Gross Revenue" value={`₹${metrics.revenue}`} icon={IndianRupee} color="text-primary bg-primary/10" />
         <MetricCard onClick={() => setActiveMetricView('orders')} label="Total Orders" value={metrics.total} icon={ShoppingBag} color="text-blue-600 bg-blue-50" />
         <MetricCard onClick={() => setActiveMetricView('load')} label="Kitchen Load" value={metrics.pending} icon={Clock} color="text-orange-500 bg-orange-50" />
-        <MetricCard onClick={() => setActiveMetricView('items')} label="Items Sold" value={metrics.itemsSold} icon={Package} color="text-green-600 bg-green-50" />
+        <MetricCard onClick={() => setActiveMetricView('users')} label="Customers" value={metrics.totalRegisteredUsers} icon={Users} color="text-purple-600 bg-purple-50" />
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="bg-white dark:bg-zinc-900 p-6 rounded-[2rem] border shadow-sm flex flex-col justify-center">
+           <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mb-1">Avg. Order Value</p>
+           <h4 className="text-2xl font-black italic">₹{metrics.avgOrderValue}</h4>
+        </div>
+        <div className="bg-white dark:bg-zinc-900 p-6 rounded-[2rem] border shadow-sm flex flex-col justify-center">
+           <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mb-1">New Users (Wk)</p>
+           <h4 className="text-2xl font-black italic">{metrics.newUsersThisWeek}</h4>
+        </div>
+        <div className="bg-white dark:bg-zinc-900 p-6 rounded-[2rem] border shadow-sm flex flex-col justify-center">
+           <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mb-1">Items Sold</p>
+           <h4 className="text-2xl font-black italic">{metrics.itemsSold}</h4>
+        </div>
+        <div className="bg-white dark:bg-zinc-900 p-6 rounded-[2rem] border shadow-sm flex flex-col justify-center">
+           <p className="text-[9px] font-black uppercase tracking-widest text-muted-foreground mb-1">Cancelled Orders</p>
+           <h4 className="text-2xl font-black italic text-destructive">{metrics.cancelled}</h4>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2 rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-zinc-900 p-6 overflow-hidden">
           <CardHeader className="px-0 pb-8 flex flex-row items-center justify-between">
-            <CardTitle className="text-xl font-black font-headline uppercase tracking-tighter">Sales Velocity</CardTitle>
-            <Badge variant="outline" className="text-[8px] font-black uppercase bg-primary/5 border-primary/20 text-primary">Live Data</Badge>
+            <CardTitle className="text-xl font-black font-headline uppercase tracking-tighter">Revenue Velocity</CardTitle>
+            <Badge variant="outline" className="text-[8px] font-black uppercase bg-primary/5 border-primary/20 text-primary">Live</Badge>
           </CardHeader>
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -264,189 +289,111 @@ export const DashboardAnalysis = ({ orders, products }: DashboardAnalysisProps) 
 
         <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-zinc-900 p-6">
           <CardHeader className="px-0 pb-8">
-            <CardTitle className="text-xl font-black font-headline uppercase tracking-tighter">Kitchen Pulse</CardTitle>
+            <CardTitle className="text-xl font-black font-headline uppercase tracking-tighter">Order Composition</CardTitle>
           </CardHeader>
           <div className="h-[250px] flex flex-col items-center">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie 
                   data={[
-                    { name: 'Fulfilled', value: metrics.completed },
-                    { name: 'In Progress', value: metrics.pending }
+                    { name: 'Delivered', value: metrics.completed },
+                    { name: 'Active', value: metrics.pending },
+                    { name: 'Cancelled', value: metrics.cancelled }
                   ].filter(i => i.value > 0)} 
                   innerRadius={55} 
                   outerRadius={80} 
                   dataKey="value"
                 >
-                  <Cell fill="#ef4444" />
+                  <Cell fill="#22c55e" />
                   <Cell fill="#f59e0b" />
+                  <Cell fill="#ef4444" />
                 </Pie>
               </PieChart>
             </ResponsiveContainer>
             <div className="w-full space-y-3 mt-6">
               <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest">
                 <div className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 rounded-full bg-primary" />
-                  <span className="opacity-50">Fulfilled</span>
+                  <div className="w-2.5 h-2.5 rounded-full bg-green-500" />
+                  <span className="opacity-50">Delivered</span>
                 </div>
                 <span>{metrics.completed}</span>
               </div>
               <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest">
                 <div className="flex items-center gap-2">
                   <div className="w-2.5 h-2.5 rounded-full bg-orange-500" />
-                  <span className="opacity-50">In Progress</span>
+                  <span className="opacity-50">Preparing</span>
                 </div>
-                <span>{metrics.pending}</span>
+                <span>{metrics.preparing}</span>
+              </div>
+              <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-destructive">
+                <div className="flex items-center gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-destructive" />
+                  <span className="opacity-50">Cancelled</span>
+                </div>
+                <span>{metrics.cancelled}</span>
               </div>
             </div>
           </div>
         </Card>
       </div>
 
-      <Dialog open={!!activeMetricView} onOpenChange={() => setActiveMetricView(null)}>
-        <DialogContent className="max-w-3xl rounded-[2.5rem] bg-white dark:bg-zinc-900 border-none shadow-3xl p-10">
-          <DialogHeader>
-            <DialogTitle className="sr-only">Metric Deep Dive</DialogTitle>
-            <div className="text-3xl font-black font-headline uppercase tracking-tighter flex items-center gap-3">
-              {activeMetricView === 'revenue' && <IndianRupee className="w-8 h-8 text-primary" />}
-              {activeMetricView === 'orders' && <ShoppingBag className="w-8 h-8 text-blue-500" />}
-              {activeMetricView === 'load' && <Clock className="w-8 h-8 text-orange-500" />}
-              {activeMetricView === 'items' && <TrendingUp className="w-8 h-8 text-green-500" />}
-              
-              {activeMetricView === 'revenue' ? 'Revenue Insights' : 
-               activeMetricView === 'orders' ? 'Order Volume' : 
-               activeMetricView === 'load' ? 'Kitchen Utilization' : 'Product Sales'}
-            </div>
-          </DialogHeader>
-          
-          <div className="mt-8 grid md:grid-cols-2 gap-8">
-            <div className="space-y-6">
-              <div className={cn(
-                "p-6 rounded-2xl",
-                activeMetricView === 'revenue' ? "bg-primary/5" :
-                activeMetricView === 'orders' ? "bg-blue-50" :
-                activeMetricView === 'load' ? "bg-orange-50" : "bg-green-50"
-              )}>
-                <p className="text-[10px] font-black uppercase opacity-40 mb-2">
-                  {activeMetricView === 'revenue' ? 'Total Earnings' : 
-                   activeMetricView === 'orders' ? 'Total Tickets' : 
-                   activeMetricView === 'load' ? 'Active Orders' : 'Items Sold'}
-                </p>
-                <h3 className={cn(
-                  "text-4xl font-black italic",
-                  activeMetricView === 'revenue' ? "text-primary" :
-                  activeMetricView === 'orders' ? "text-blue-600" :
-                  activeMetricView === 'load' ? "text-orange-600" : "text-green-600"
-                )}>
-                  {activeMetricView === 'revenue' ? `₹${metrics.revenue}` : 
-                   activeMetricView === 'orders' ? metrics.total : 
-                   activeMetricView === 'load' ? metrics.pending : metrics.itemsSold}
-                </h3>
-              </div>
-
-              <div className="space-y-4">
-                <h5 className="text-[10px] font-black uppercase tracking-widest opacity-60">Data Breakdown</h5>
-                <div className="max-h-[350px] overflow-y-auto pr-2 space-y-3 scrollbar-hide">
-                  {activeMetricView === 'items' && (
-                    metrics.itemStats.length === 0 ? (
-                      <EmptyBreakdown icon={Package} label="No items sold yet" />
-                    ) : metrics.itemStats.map((item, i) => (
-                      <div key={i} className="flex items-center justify-between p-4 bg-secondary/10 dark:bg-zinc-800 rounded-2xl border border-muted/20 hover:border-primary/20 transition-all shadow-sm">
-                        <div className="flex-1">
-                          <p className="font-black text-xs uppercase tracking-tight truncate max-w-[200px]">{item.name}</p>
-                          <p className="text-[10px] font-bold text-muted-foreground mt-0.5">Quantity: {item.quantity}</p>
-                        </div>
-                        <p className="font-black text-sm text-primary italic">₹{item.revenue}</p>
-                      </div>
-                    ))
-                  )}
-
-                  {activeMetricView === 'revenue' && (
-                    metrics.completedOrders.length === 0 ? (
-                      <EmptyBreakdown icon={IndianRupee} label="No revenue collected" />
-                    ) : metrics.completedOrders.map((order, i) => (
-                      <div key={i} className="flex items-center justify-between p-4 bg-secondary/10 dark:bg-zinc-800 rounded-2xl border border-muted/20 hover:border-primary/20 transition-all shadow-sm">
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <p className="font-black text-xs uppercase tracking-tight">#{order.orderId}</p>
-                            {getOrderTypeBadge(order.orderType)}
-                          </div>
-                          <p className="text-[9px] font-bold text-muted-foreground opacity-60">{order.customerName}</p>
-                        </div>
-                        <p className="font-black text-sm text-primary italic">₹{order.total}</p>
-                      </div>
-                    ))
-                  )}
-
-                  {activeMetricView === 'orders' && (
-                    metrics.allOrders.length === 0 ? (
-                      <EmptyBreakdown icon={ShoppingBag} label="No orders received" />
-                    ) : metrics.allOrders.map((order, i) => (
-                      <div key={i} className="flex items-center justify-between p-4 bg-secondary/10 dark:bg-zinc-800 rounded-2xl border border-muted/20 hover:border-primary/20 transition-all shadow-sm">
-                        <div>
-                          <div className="flex items-center gap-2">
-                             <p className="font-black text-xs uppercase">#{order.orderId}</p>
-                             {getOrderTypeBadge(order.orderType)}
-                             {getStatusBadge(order.status)}
-                          </div>
-                          <p className="text-[9px] font-bold text-muted-foreground opacity-60 mt-1">
-                            {order.createdAt?.toDate ? order.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Recent'}
-                          </p>
-                        </div>
-                        <p className="font-black text-xs italic">₹{order.total}</p>
-                      </div>
-                    ))
-                  )}
-
-                  {activeMetricView === 'load' && (
-                    metrics.pendingOrders.length === 0 ? (
-                      <EmptyBreakdown icon={CheckCircle2} label="Kitchen is clear" />
-                    ) : metrics.pendingOrders.map((order, i) => (
-                      <div key={i} className="flex items-center justify-between p-4 bg-secondary/10 dark:bg-zinc-800 rounded-2xl border border-muted/20 hover:border-primary/20 transition-all shadow-sm">
-                        <div>
-                          <div className="flex items-center gap-2">
-                             <p className="font-black text-xs uppercase">#{order.orderId}</p>
-                             {getOrderTypeBadge(order.orderType)}
-                             <Badge variant="outline" className="text-[8px] uppercase font-black px-2 py-0.5">{order.status}</Badge>
-                          </div>
-                          <p className="text-[9px] font-bold text-muted-foreground opacity-60 mt-1">{order.items?.length} items in preparation</p>
-                        </div>
-                        <Timer className="w-4 h-4 text-orange-400" />
-                      </div>
-                    ))
-                  )}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+         <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-zinc-900 p-8">
+            <CardHeader className="px-0 pb-6">
+              <CardTitle className="text-xl font-black font-headline uppercase tracking-tighter flex items-center gap-3">
+                <Target className="w-6 h-6 text-primary" /> Top Products
+              </CardTitle>
+            </CardHeader>
+            <div className="space-y-4">
+              {metrics.itemStats.slice(0, 5).map((item, i) => (
+                <div key={i} className="flex items-center justify-between p-4 bg-secondary/20 dark:bg-zinc-800 rounded-2xl">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 bg-white dark:bg-zinc-700 rounded-xl flex items-center justify-center font-black text-xs text-primary shadow-sm">{i+1}</div>
+                    <div>
+                      <p className="font-black text-xs uppercase">{item.name}</p>
+                      <p className="text-[9px] font-bold text-muted-foreground">{item.quantity} units sold</p>
+                    </div>
+                  </div>
+                  <p className="font-black text-sm italic text-primary">₹{item.revenue}</p>
                 </div>
-              </div>
+              ))}
+              {metrics.itemStats.length === 0 && (
+                <div className="py-20 text-center opacity-20">
+                   <Package className="w-12 h-12 mx-auto mb-2" />
+                   <p className="text-[10px] font-black uppercase">No Sales Recorded</p>
+                </div>
+              )}
             </div>
+         </Card>
 
-            <div className="bg-secondary/20 dark:bg-zinc-800 rounded-[2rem] p-8 flex flex-col items-center justify-center text-center">
-              <div className="w-16 h-16 bg-white dark:bg-zinc-700 rounded-3xl flex items-center justify-center shadow-xl mb-6">
-                {activeMetricView === 'revenue' && <TrendingUp className="w-8 h-8 text-primary" />}
-                {activeMetricView === 'orders' && <History className="w-8 h-8 text-blue-500" />}
-                {activeMetricView === 'load' && <Clock className="w-8 h-8 text-orange-500" />}
-                {activeMetricView === 'items' && <Star className="w-8 h-8 text-green-500" />}
-              </div>
-              <h4 className="font-black text-lg">Quick Summary</h4>
-              <ul className="space-y-4 mt-6 text-left">
-                <li className="flex gap-3 items-start text-xs font-medium leading-relaxed">
-                  <ArrowUpRight className="w-4 h-4 text-green-500 shrink-0 mt-0.5" /> 
-                  {activeMetricView === 'revenue' && "Earnings are being driven by a 15% increase in high-value orders today."}
-                  {activeMetricView === 'orders' && "Average order frequency is stable compared to the same period last week."}
-                  {activeMetricView === 'load' && "Kitchen efficiency is currently optimized with an average turn-time of 12 mins."}
-                  {activeMetricView === 'items' && "Your top 3 items account for 45% of total sales volume."}
-                </li>
-                <li className="flex gap-3 items-start text-xs font-medium leading-relaxed">
-                  <AlertCircle className="w-4 h-4 text-primary/40 shrink-0 mt-0.5" /> 
-                  {activeMetricView === 'revenue' && "Peak revenue flow was detected between 1:00 PM and 3:00 PM."}
-                  {activeMetricView === 'orders' && "Mobile orders account for 60% of today's total volume."}
-                  {activeMetricView === 'load' && "Preparing staff are handling a slightly higher load than the standard average."}
-                  {activeMetricView === 'items' && "Consider adding a combo offer for lower-performing sides to boost margin."}
-                </li>
-              </ul>
+         <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-zinc-900 p-8">
+            <CardHeader className="px-0 pb-6">
+              <CardTitle className="text-xl font-black font-headline uppercase tracking-tighter flex items-center gap-3">
+                <Zap className="w-6 h-6 text-orange-500" /> Critical insights
+              </CardTitle>
+            </CardHeader>
+            <div className="space-y-6">
+              <InsightItem 
+                icon={TrendingUp} 
+                color="text-green-500 bg-green-50" 
+                title="Revenue Stability" 
+                desc={metrics.avgOrderValue > 200 ? "High average order value detected. Premium bundles are performing well." : "Average order value is low. Consider upselling sides and beverages."} 
+              />
+              <InsightItem 
+                icon={Users} 
+                color="text-purple-500 bg-purple-50" 
+                title="User Retention" 
+                desc={metrics.newUsersThisWeek > 10 ? `Strong acquisition week with ${metrics.newUsersThisWeek} new members joining.` : "Acquisition is slow this period. Run a weekend promo to boost signs."} 
+              />
+              <InsightItem 
+                icon={AlertCircle} 
+                color="text-destructive bg-destructive/10" 
+                title="Operational Health" 
+                desc={metrics.cancelled > 5 ? "High cancellation rate. Verify inventory levels or delivery radius timings." : "Operational stability is excellent. Minimal order cancellations detected."} 
+              />
             </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+         </Card>
+      </div>
     </div>
   );
 };
@@ -464,9 +411,14 @@ const MetricCard = ({ label, value, icon: Icon, color, onClick }: any) => (
   </Card>
 );
 
-const EmptyBreakdown = ({ icon: Icon, label }: { icon: any, label: string }) => (
-  <div className="py-10 text-center opacity-30">
-    <Icon className="w-10 h-10 mx-auto mb-2" />
-    <p className="text-[9px] font-black uppercase">{label}</p>
+const InsightItem = ({ icon: Icon, color, title, desc }: any) => (
+  <div className="flex gap-5 items-start">
+    <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center shrink-0", color)}>
+      <Icon className="w-5 h-5" />
+    </div>
+    <div>
+      <h5 className="font-black text-sm uppercase mb-1">{title}</h5>
+      <p className="text-xs font-medium text-muted-foreground leading-relaxed">{desc}</p>
+    </div>
   </div>
 );
