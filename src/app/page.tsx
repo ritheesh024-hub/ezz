@@ -49,8 +49,8 @@ export default function Home() {
       <Navbar />
       
       <main className="flex-1">
-        {/* HERO SECTION - CLEAN SWIGGY STYLE */}
-        <section className="relative pt-24 pb-12 md:pt-36 md:pb-24 overflow-hidden bg-gradient-to-br from-white to-secondary/20 dark:from-zinc-950 dark:to-zinc-900">
+        {/* HERO SECTION - REFINED PREMIUM LOOK */}
+        <section className="relative pt-24 pb-12 md:pt-36 md:pb-24 overflow-hidden bg-[#FDF2F2] dark:bg-zinc-950">
           <div className="container mx-auto px-4 relative z-20">
             <div className="grid lg:grid-cols-2 items-center gap-16">
               {/* LEFT SIDE: TEXT & CTA */}
@@ -61,7 +61,7 @@ export default function Home() {
                 </div>
                 
                 <div className="space-y-4">
-                  <h1 className="text-5xl md:text-8xl font-headline font-black leading-[0.95] tracking-tighter">
+                  <h1 className="text-5xl md:text-8xl font-headline font-black leading-[0.95] tracking-tighter text-[#2D2D2D] dark:text-white">
                     Flavor that <br />
                     <span className="text-primary italic">Commands</span> <br />
                     Respect.
@@ -74,7 +74,7 @@ export default function Home() {
                 <div className="flex flex-col sm:flex-row items-center gap-4 justify-center lg:justify-start pt-4">
                   <Link href="/menu" className="w-full sm:w-auto">
                     <Button size="lg" className="w-full sm:w-auto rounded-2xl h-16 md:h-20 px-12 text-lg font-black shadow-2xl shadow-primary/20 bg-orange-gradient text-white border-none transform transition-transform hover:scale-105 active:scale-95">
-                      Start Your Order
+                      Order Now
                       <ArrowRight className="ml-2 w-6 h-6" />
                     </Button>
                   </Link>
@@ -102,21 +102,29 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* RIGHT SIDE: SINGLE CLEAN HERO IMAGE */}
+              {/* RIGHT SIDE: PREMIUM 3D BURGER VISUAL */}
               <div className="relative flex items-center justify-center animate-in fade-in slide-in-from-right duration-1000">
-                <div className="relative w-full max-w-[500px] aspect-square">
-                  {/* Subtle Background Glow */}
-                  <div className="absolute inset-0 bg-primary/10 rounded-full blur-[100px] opacity-60" />
+                <div className="relative w-full max-w-[600px] aspect-[4/3] flex items-center justify-center">
+                  {/* Subtle Pedestal / Stage */}
+                  <div className="absolute bottom-[10%] w-[70%] h-12 bg-white rounded-[100%] shadow-[0_20px_50px_rgba(0,0,0,0.1)] blur-sm dark:bg-zinc-800" />
                   
-                  {/* Main Product Image - No Floating Animations */}
-                  <div className="relative h-full w-full transform transition-transform duration-700 hover:scale-[1.02]">
+                  {/* Main Product Image */}
+                  <div className="relative h-[110%] w-full transform transition-transform duration-700 hover:scale-[1.02] z-10">
                     <Image 
                       src={getImg('hero-burger')} 
-                      alt="Premium Featured Dish" 
+                      alt="Premium Featured 3D Burger" 
                       fill 
-                      className="object-contain drop-shadow-[0_20px_50px_rgba(0,0,0,0.15)]" 
+                      className="object-contain drop-shadow-[0_35px_60px_rgba(0,0,0,0.2)]" 
                       priority 
+                      data-ai-hint="3D burger explosion"
                     />
+                  </div>
+
+                  {/* 50% OFF Badge */}
+                  <div className="absolute right-[10%] top-[35%] z-20 w-24 h-24 md:w-28 md:h-28 bg-[#E62E2D] text-white rounded-full flex flex-col items-center justify-center shadow-2xl animate-float-slow border-4 border-white/20">
+                    <span className="text-[9px] font-black uppercase tracking-widest opacity-80">Up To</span>
+                    <span className="text-2xl md:text-3xl font-black leading-none">50%</span>
+                    <span className="text-[10px] font-black uppercase tracking-tighter">Off</span>
                   </div>
                 </div>
               </div>
@@ -169,7 +177,7 @@ export default function Home() {
         </section>
 
         {/* OFFERS SECTION */}
-        <section className="py-16 bg-secondary/10 dark:bg-zinc-900/30">
+        <section className="py-12 bg-secondary/10 dark:bg-zinc-900/30">
           <div className="container mx-auto px-4">
             <h2 className="text-2xl font-black uppercase tracking-tighter mb-8 px-2">Limited <span className="text-primary italic">Offers</span></h2>
             <PromoBanner />
