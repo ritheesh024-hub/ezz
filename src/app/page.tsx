@@ -1,27 +1,42 @@
 "use client"
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { WhatsAppButton } from '@/components/WhatsAppButton';
 import { 
   ShoppingBag, Star, ChefHat, Truck, Award, 
   HelpCircle, Instagram, Twitter, Facebook,
-  ArrowRight, History, Utensils
+  ArrowRight, History, Utensils, Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { FoodCard } from '@/components/FoodCard';
-import { MENU_ITEMS } from '@/app/lib/menu-data';
 import Link from 'next/link';
 import Image from 'next/image';
 import placeholderData from '@/app/lib/placeholder-images.json';
+import { useFirestore, useCollection } from '@/firebase';
+import { collection, query, where, limit } from 'firebase/firestore';
+import { FoodItem } from '@/app/lib/store';
 
 export default function Home() {
   const [currentYear, setCurrentYear] = useState<number | null>(null);
+  const db = useFirestore();
 
   useEffect(() => {
     setCurrentYear(new Date().getFullYear());
   }, []);
+
+  const highlightsQuery = useMemo(() => {
+    if (!db) return null;
+    // Fetch available items for the homepage highlights
+    return query(
+      collection(db, 'products'),
+      where('isAvailable', '==', true),
+      limit(4)
+    );
+  }, [db]);
+
+  const { data: menuItems, loading: menuLoading } = useCollection<FoodItem>(highlightsQuery);
 
   const getImg = (id: string) => placeholderData.placeholderImages.find(img => img.id === id)?.imageUrl || '';
 
@@ -58,7 +73,7 @@ export default function Home() {
               </p>
               <div className="flex flex-col sm:flex-row gap-4 pt-4 animate-in fade-in duration-1000 delay-500">
                 <Link href="/menu" className="w-full sm:w-auto">
-                  <Button size="lg" className="w-full sm:w-auto rounded-full h-16 md:h-20 px-12 text-lg font-black shadow-2xl shadow-primary/40 hover:scale-105 transition-all group bg-primary">
+                  <Button size="lg" className="w-full sm:w-auto rounded-full h-16 md:h-20 px-12 text-lg font-black shadow-2xl shadow-primary/40 hover:scale-105 transition-all group bg-primary text-white">
                     Start Your Order
                     <ArrowRight className="ml-2 w-6 h-6 transition-transform group-hover:translate-x-1" />
                   </Button>
@@ -100,11 +115,24 @@ export default function Home() {
                  </Button>
                </Link>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-              {MENU_ITEMS.slice(0, 4).map((item) => (
-                <FoodCard key={item.id} item={item} />
-              ))}
-            </div>
+            
+            {menuLoading ? (
+              <div className="py-20 flex flex-col items-center justify-center gap-4">
+                <Loader2 className="w-10 h-10 animate-spin text-primary" />
+                <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Syncing live kitchen...</p>
+              </div>
+            ) : menuItems && menuItems.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                {menuItems.map((item) => (
+                  <FoodCard key={item.id} item={item} />
+                ))}
+              </div>
+            ) : (
+              <div className="py-20 text-center bg-white dark:bg-zinc-900 rounded-[3rem] border-2 border-dashed">
+                <Utensils className="w-12 h-12 mx-auto mb-4 opacity-20" />
+                <p className="text-sm font-bold opacity-40">Menu is being updated. Check back in a moment!</p>
+              </div>
+            )}
           </div>
         </section>
 
