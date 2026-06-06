@@ -75,16 +75,6 @@ export const Navbar = () => {
           <div className="hidden md:flex items-center gap-3">
             <ThemeToggle />
             
-            <Link href="/menu">
-              <Button variant="ghost" size="sm" className={cn(
-                "rounded-full gap-2 px-5 font-black uppercase text-[10px] tracking-widest transition-colors",
-                !scrolled ? "text-white hover:bg-white/10" : "text-foreground"
-              )}>
-                <Utensils className="w-4 h-4" />
-                Digital Menu
-              </Button>
-            </Link>
-
             <Link href="/orders">
               <Button variant="ghost" size="sm" className={cn(
                 "rounded-full gap-2 px-5 font-black uppercase text-[10px] tracking-widest transition-colors",
@@ -185,7 +175,6 @@ export const Navbar = () => {
         <div className="md:hidden absolute top-full left-0 w-full glass border-t border-white/10 animate-in slide-in-from-top duration-300">
           <div className="flex flex-col p-6 gap-2">
             <Link href="/" onClick={() => setIsMenuOpen(false)} className="px-4 py-3 font-black uppercase tracking-widest text-[10px] hover:text-primary transition-colors">Home</Link>
-            <Link href="/menu" onClick={() => setIsMenuOpen(false)} className="px-4 py-3 font-black uppercase tracking-widest text-[10px] hover:text-primary transition-colors">Digital Menu</Link>
             <Link href="/orders" onClick={() => setIsMenuOpen(false)} className="px-4 py-3 font-black uppercase tracking-widest text-[10px] hover:text-primary transition-colors">Order History</Link>
             {!user ? (
               <button 

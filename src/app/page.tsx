@@ -79,12 +79,6 @@ export default function Home() {
                     <ArrowRight className="ml-2 w-6 h-6 transition-transform group-hover:translate-x-1" />
                   </Button>
                 </Link>
-                <Link href="/orders" className="w-full sm:w-auto">
-                  <Button variant="outline" size="lg" className="w-full sm:w-auto rounded-full h-16 md:h-20 px-10 text-base font-black border-2 border-white/20 text-white hover:bg-white/10 backdrop-blur-xl">
-                    <History className="mr-2 w-5 h-5" />
-                    Track History
-                  </Button>
-                </Link>
               </div>
             </div>
           </div>
@@ -211,7 +205,7 @@ export default function Home() {
             <div className="lg:col-start-3 space-y-6">
               <h4 className="font-black text-xl uppercase tracking-widest">Explore</h4>
               <ul className="space-y-3 text-muted-foreground font-bold text-sm">
-                <li><Link href="/menu" className="hover:text-primary transition-colors flex items-center gap-2"><Utensils className="w-4 h-4" /> Digital Menu</Link></li>
+                <li><Link href="/menu" className="hover:text-primary transition-colors flex items-center gap-2"><Utensils className="w-4 h-4" /> Menu</Link></li>
                 <li><Link href="/orders" className="hover:text-primary transition-colors flex items-center gap-2"><History className="w-4 h-4" /> Order History</Link></li>
               </ul>
             </div>
