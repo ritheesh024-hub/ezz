@@ -35,19 +35,12 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
   const handleCopyDomain = (domain: string) => {
     navigator.clipboard.writeText(domain);
     setCopied(true);
-    toast({ title: "Domain Copied", description: "Now paste this into Firebase Authorized Domains." });
+    toast({ title: "Domain Copied", description: "Paste this into Firebase Authorized Domains." });
     setTimeout(() => setCopied(false), 2000);
   };
 
   const handleGoogleSignIn = async () => {
-    if (!auth || !db) {
-      toast({
-        variant: "destructive",
-        title: "Connection Error",
-        description: "Authentication service is currently unavailable.",
-      });
-      return;
-    }
+    if (!auth || !db) return;
     
     setLoading(true);
     setAuthError(null);
@@ -80,26 +73,22 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
       if (onSuccess) onSuccess();
       onClose();
     } catch (error: any) {
-      // Gracefully handle if user closes the popup
       if (error.code === 'auth/popup-closed-by-user') {
         setLoading(false);
         return; 
       }
 
-      // Log only unexpected errors
-      console.error("Auth error:", error);
-
       if (error.code === 'auth/unauthorized-domain') {
         const domain = typeof window !== 'undefined' ? window.location.hostname : '';
         setAuthError({
-          message: "This domain is not authorized in Firebase. Please add it to your Authorized Domains list.",
+          message: "Authorization required. Please add this domain to Firebase.",
           domain
         });
       } else {
         toast({
           variant: "destructive",
           title: "Sign In Failed",
-          description: error.message || "Something went wrong with Google Sign-In.",
+          description: error.message || "Failed to connect.",
         });
       }
     } finally {
@@ -126,7 +115,7 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
 
         {authError && (
           <Alert variant="destructive" className="mt-6 border-none bg-red-50 text-red-900 rounded-2xl">
-            <AlertTitle className="font-black text-xs uppercase mb-2">Configuration Required</AlertTitle>
+            <AlertTitle className="font-black text-xs uppercase mb-2">Setup Required</AlertTitle>
             <AlertDescription className="text-[11px] font-medium leading-relaxed">
               {authError.message}
               {authError.domain && (
@@ -152,9 +141,7 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
             disabled={loading}
             className="w-full h-16 rounded-2xl bg-white dark:bg-zinc-800 text-foreground border-2 border-muted hover:bg-secondary/50 transition-all font-black uppercase text-[10px] tracking-widest gap-3 shadow-sm"
           >
-            {loading ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
+            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
               <>
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                   <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c1.61-1.48 2.53-3.66 2.53-6.09z" />
@@ -171,10 +158,6 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
             <Info className="w-3.5 h-3.5 text-primary" />
             <p className="text-[9px] font-bold text-muted-foreground uppercase">Popups must be enabled</p>
           </div>
-          
-          <p className="text-[9px] text-center text-muted-foreground font-bold uppercase tracking-widest opacity-50 px-8 leading-relaxed">
-            By continuing, you agree to our Terms of Service and Privacy Policy.
-          </p>
         </div>
 
         <DialogFooter className="mt-8 border-t pt-6">
