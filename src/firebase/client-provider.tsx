@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { ReactNode, useEffect, useState } from 'react';
@@ -7,6 +8,7 @@ import { FirebaseApp } from 'firebase/app';
 import { Firestore } from 'firebase/firestore';
 import { Auth } from 'firebase/auth';
 import { Loader2 } from 'lucide-react';
+import { useStore } from '@/app/lib/store';
 
 export function FirebaseClientProvider({ children }: { children: ReactNode }) {
   const [services, setServices] = useState<{
@@ -15,10 +17,23 @@ export function FirebaseClientProvider({ children }: { children: ReactNode }) {
     auth: Auth | null;
   } | null>(null);
 
+  const { isDarkMode } = useStore();
+
   useEffect(() => {
     const initialized = initializeFirebase();
     setServices(initialized);
   }, []);
+
+  // Sync dark mode class on mount and when state changes
+  useEffect(() => {
+    if (typeof document !== 'undefined') {
+      if (isDarkMode) {
+        document.documentElement.classList.add('dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+      }
+    }
+  }, [isDarkMode]);
 
   // Show a clean loading state if services aren't initialized yet
   if (!services) {

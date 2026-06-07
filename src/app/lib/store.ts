@@ -100,11 +100,15 @@ export const useStore = create<AppStore>()(
       setMenuViewMode: (mode) => set({ menuViewMode: mode }),
       toggleDarkMode: () => {
         const current = get().isDarkMode;
-        set({ isDarkMode: !current });
-        if (!current) {
-          document.documentElement.classList.add('dark');
-        } else {
-          document.documentElement.classList.remove('dark');
+        const next = !current;
+        set({ isDarkMode: next });
+        
+        if (typeof document !== 'undefined') {
+          if (next) {
+            document.documentElement.classList.add('dark');
+          } else {
+            document.documentElement.classList.remove('dark');
+          }
         }
       },
     }),

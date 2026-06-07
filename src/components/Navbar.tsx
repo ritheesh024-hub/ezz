@@ -119,7 +119,7 @@ export const Navbar = () => {
           <div className="flex-1 max-w-lg hidden sm:block">
             <form onSubmit={handleSearchSubmit} className="relative group">
               <Search className={cn(
-                "absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors",
+                "absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors z-10",
                 scrolled ? "text-muted-foreground" : "text-white/40",
                 "group-focus-within:text-primary"
               )} />
@@ -130,8 +130,8 @@ export const Navbar = () => {
                 className={cn(
                   "w-full h-10 pl-11 pr-4 rounded-full border-none transition-all font-medium text-xs focus:ring-2 focus:ring-primary/20",
                   scrolled 
-                    ? "bg-secondary/50 focus:bg-white dark:bg-zinc-900" 
-                    : "bg-white/10 text-white placeholder:text-white/40 focus:bg-white/20 backdrop-blur-xl"
+                    ? "bg-secondary/50 focus:bg-white dark:bg-zinc-900 !text-foreground" 
+                    : "bg-white/10 !text-white placeholder:text-white/40 focus:bg-white/20 backdrop-blur-xl"
                 )}
               />
             </form>
@@ -290,12 +290,21 @@ export const Navbar = () => {
                         className="flex items-center justify-between w-full p-4 rounded-2xl bg-secondary/30 hover:bg-secondary/50 transition-all group"
                        >
                          <div className="flex items-center gap-4">
-                           <div className="w-10 h-10 rounded-xl bg-background flex items-center justify-center">
+                           <div className="w-10 h-10 rounded-xl bg-background flex items-center justify-center border shadow-sm">
                              {isDarkMode ? <Sun className="w-5 h-5 text-yellow-500" /> : <Moon className="w-5 h-5 text-indigo-500" />}
                            </div>
                            <span className="font-black text-[11px] uppercase tracking-widest">
                              {isDarkMode ? 'Light Mode' : 'Dark Mode'}
                            </span>
+                         </div>
+                         <div className={cn(
+                           "w-8 h-4 rounded-full relative transition-colors duration-300",
+                           isDarkMode ? "bg-primary" : "bg-zinc-300"
+                         )}>
+                           <div className={cn(
+                             "absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all duration-300",
+                             isDarkMode ? "left-4.5" : "left-0.5"
+                           )} />
                          </div>
                        </button>
                     </div>

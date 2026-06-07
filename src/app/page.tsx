@@ -104,15 +104,15 @@ export default function Home() {
         </section>
 
         {/* MOBILE APP INTERFACE - SEARCH & CATEGORIES */}
-        <div className="sticky top-12 z-30 bg-white dark:bg-zinc-950 md:hidden pt-2 pb-1 border-b shadow-sm">
+        <div className="sticky top-10 z-30 bg-white dark:bg-zinc-950 md:hidden pt-2 pb-1 border-b shadow-sm">
            <div className="container px-4 space-y-3">
               <form onSubmit={handleSearch} className="relative group">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground z-10" />
                 <Input 
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search dishes, burgers, momos..." 
-                  className="w-full h-11 pl-11 rounded-2xl bg-secondary/50 border-none font-bold text-sm focus:ring-2 focus:ring-primary/20"
+                  className="w-full h-11 pl-11 rounded-2xl bg-secondary/50 border-none font-bold text-sm focus:ring-2 focus:ring-primary/20 !text-foreground"
                 />
               </form>
               <Categories />
