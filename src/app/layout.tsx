@@ -2,6 +2,7 @@ import type {Metadata, Viewport} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { FirebaseClientProvider } from '@/firebase/client-provider';
+import { SplashScreen } from '@/components/SplashScreen';
 import Script from 'next/script';
 
 export const metadata: Metadata = {
@@ -61,6 +62,7 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased min-h-screen bg-background">
         <FirebaseClientProvider>
+          <SplashScreen />
           {children}
           <Toaster />
         </FirebaseClientProvider>
