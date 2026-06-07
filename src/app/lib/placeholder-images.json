@@ -5,13 +5,13 @@
     { "id": "hero-fries", "description": "3D Fries splash", "imageUrl": "https://picsum.photos/seed/crispy-fries/600/600", "imageHint": "french fries" },
     { "id": "hero-drink", "description": "Iced cola splash", "imageUrl": "https://picsum.photos/seed/ice-drink/600/600", "imageHint": "soft drink" },
     { "id": "hero-bg-main", "description": "Premium gourmet food background", "imageUrl": "https://picsum.photos/seed/ezzybites-hero/1920/1080", "imageHint": "food background" },
-    { "id": "cat-burger", "description": "Category Burger", "imageUrl": "https://picsum.photos/seed/cat-burger/200/200", "imageHint": "burger icon" },
-    { "id": "cat-pizza", "description": "Category Pizza", "imageUrl": "https://picsum.photos/seed/cat-pizza/200/200", "imageHint": "pizza slice" },
-    { "id": "cat-biryani", "description": "Category Biryani", "imageUrl": "https://picsum.photos/seed/cat-biryani/200/200", "imageHint": "biryani bowl" },
-    { "id": "cat-chicken", "description": "Category Chicken", "imageUrl": "https://picsum.photos/seed/cat-chicken/200/200", "imageHint": "fried chicken" },
-    { "id": "cat-snacks", "description": "Category Snacks", "imageUrl": "https://picsum.photos/seed/cat-snacks/200/200", "imageHint": "nachos" },
-    { "id": "cat-desserts", "description": "Category Desserts", "imageUrl": "https://picsum.photos/seed/cat-dessert/200/200", "imageHint": "ice cream" },
-    { "id": "cat-drinks", "description": "Category Drinks", "imageUrl": "https://picsum.photos/seed/cat-drink/200/200", "imageHint": "iced tea" },
+    { "id": "cat-biryani", "description": "Gourmet Chicken Biryani Category", "imageUrl": "https://t4.ftcdn.net/jpg/15/27/13/33/240_F_1527133341_hSJALih4r2D6l9ymqvt0efOBAxxmV3Pd.jpg", "imageHint": "chicken biryani" },
+    { "id": "cat-burger", "description": "Category Burger", "imageUrl": "https://images.unsplash.com/photo-1571091718767-18b5b1457add?w=200&h=200&fit=crop", "imageHint": "burger icon" },
+    { "id": "cat-pizza", "description": "Category Pizza", "imageUrl": "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=200&h=200&fit=crop", "imageHint": "pizza slice" },
+    { "id": "cat-chicken", "description": "Category Momos", "imageUrl": "https://images.unsplash.com/photo-1625220194771-7ebdea0b70b9?w=200&h=200&fit=crop", "imageHint": "dumplings momos" },
+    { "id": "cat-snacks", "description": "Category Snacks", "imageUrl": "https://images.unsplash.com/photo-1599487488170-d11ec9c172f0?w=200&h=200&fit=crop", "imageHint": "nachos snacks" },
+    { "id": "cat-desserts", "description": "Category Desserts", "imageUrl": "https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=200&h=200&fit=crop", "imageHint": "ice cream dessert" },
+    { "id": "cat-drinks", "description": "Category Drinks", "imageUrl": "https://images.unsplash.com/photo-1544145945-f904253d0c7b?w=200&h=200&fit=crop", "imageHint": "iced tea drinks" },
     { "id": "biryani-mobile-featured", "description": "Gourmet Chicken Biryani for Mobile", "imageUrl": "https://t4.ftcdn.net/jpg/15/27/13/33/240_F_1527133341_hSJALih4r2D6l9ymqvt0efOBAxxmV3Pd.jpg", "imageHint": "chicken biryani" }
   ]
 }
