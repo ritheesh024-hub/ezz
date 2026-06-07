@@ -25,16 +25,16 @@ export const BrandIntro = () => {
       return;
     }
 
-    // 2. Animation sequence (Total ~2.1s lifecycle)
+    // 2. Animation sequence (Total ~4s lifecycle)
     const timers = [
-      setTimeout(() => setStage(1), 50),     // Start floating in
-      setTimeout(() => setStage(2), 600),    // Logo & Brand Text appears
-      setTimeout(() => setStage(3), 1200),   // Icons start orbiting
-      setTimeout(() => setStage(4), 1800),   // Entire overlay fades
+      setTimeout(() => setStage(1), 100),    // Start floating in
+      setTimeout(() => setStage(2), 1200),   // Logo & Brand Text appears
+      setTimeout(() => setStage(3), 2500),   // Icons start orbiting
+      setTimeout(() => setStage(4), 3500),   // Entire overlay fades
       setTimeout(() => {
         setIsVisible(false);
         sessionStorage.setItem('eb_intro_shown', 'true');
-      }, 2300), // Cleanup from DOM
+      }, 4000), // Cleanup from DOM
     ];
 
     return () => timers.forEach(t => clearTimeout(t));
@@ -91,7 +91,7 @@ export const BrandIntro = () => {
       {/* Progress Indicator */}
       <div className="absolute bottom-12 left-1/2 -translate-x-1/2 w-32 h-0.5 bg-white/5 rounded-full overflow-hidden">
         <div className={cn(
-          "h-full bg-primary transition-all duration-[1800ms] ease-linear",
+          "h-full bg-primary transition-all duration-[3500ms] ease-linear",
           stage > 0 ? "w-full" : "w-0"
         )} />
       </div>
