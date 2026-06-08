@@ -98,19 +98,7 @@ export const useStore = create<AppStore>()(
       getTotal: () => get().cart.reduce((acc, item) => acc + item.price * item.quantity, 0),
       toggleAdminMute: () => set((state) => ({ isAdminMuted: !state.isAdminMuted })),
       setMenuViewMode: (mode) => set({ menuViewMode: mode }),
-      toggleDarkMode: () => {
-        const current = get().isDarkMode;
-        const next = !current;
-        set({ isDarkMode: next });
-        
-        if (typeof document !== 'undefined') {
-          if (next) {
-            document.documentElement.classList.add('dark');
-          } else {
-            document.documentElement.classList.remove('dark');
-          }
-        }
-      },
+      toggleDarkMode: () => set((state) => ({ isDarkMode: !state.isDarkMode })),
     }),
     { name: 'ezzy-bites-operational-storage' }
   )

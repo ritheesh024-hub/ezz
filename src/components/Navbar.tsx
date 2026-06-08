@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -88,7 +89,6 @@ export const Navbar = () => {
     return () => handleScroll();
   }, []);
 
-  // Close sheet on route change
   useEffect(() => {
     setIsMenuOpen(false);
   }, [pathname]);
@@ -133,12 +133,11 @@ export const Navbar = () => {
         : "bg-white/5 dark:bg-black/5 backdrop-blur-sm py-3"
     )}>
       <div className="container mx-auto px-4">
-        <div className="h-10 md:h-16 flex items-center justify-between gap-4">
+        <div className="h-12 md:h-16 flex items-center justify-between gap-4">
           <Link href="/">
-            <Logo variant={scrolled ? 'dark' : 'light'} size="sm" className="shrink-0 scale-90 md:scale-100 origin-left" />
+            <Logo variant={scrolled ? 'dark' : (isDarkMode ? 'dark' : 'light')} size="sm" className="shrink-0 scale-90 md:scale-100 origin-left" />
           </Link>
 
-          {/* Search Bar - Tablet & Desktop Only */}
           <div className="flex-1 max-w-lg hidden sm:block">
             <form onSubmit={(e) => { e.preventDefault(); router.push(`/menu?q=${navSearch}`); }} className="relative group">
               <Search className={cn(
@@ -162,7 +161,6 @@ export const Navbar = () => {
           <div className="flex items-center gap-1.5 md:gap-3">
             <ThemeToggle className="hidden md:flex" />
             
-            {/* Desktop Only Actions */}
             <div className="hidden md:flex items-center gap-3">
               {!userLoading && (
                 user ? (
@@ -224,7 +222,6 @@ export const Navbar = () => {
               )}
             </div>
 
-            {/* Always Visible: Cart */}
             <CartDrawer>
               <Button variant="ghost" size="icon" className={cn(
                 "rounded-full w-9 h-9 md:w-10 md:h-10 transition-all relative",
@@ -239,13 +236,12 @@ export const Navbar = () => {
               </Button>
             </CartDrawer>
 
-            {/* Mobile/Tablet: Hamburger Side Menu */}
             <div className="md:hidden">
               <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
                 <SheetTrigger asChild>
                   <Button variant="ghost" size="icon" className={cn(
                     "rounded-full w-9 h-9",
-                    scrolled ? "text-foreground" : "text-white"
+                    scrolled ? "text-foreground" : (isDarkMode ? "text-foreground" : "text-white")
                   )}>
                     <Menu className="w-5 h-5" />
                   </Button>
@@ -286,7 +282,6 @@ export const Navbar = () => {
                   </SheetHeader>
 
                   <div className="flex-1 overflow-y-auto py-4 px-2 space-y-0.5 scrollbar-hide">
-                    {/* Reward Card */}
                     {user && (
                       <div className="px-4 mb-6">
                         <div className="bg-orange-gradient p-4 rounded-2xl text-white shadow-xl shadow-primary/20 relative overflow-hidden group">
@@ -301,21 +296,12 @@ export const Navbar = () => {
                                 <span className="text-[9px] font-black uppercase">Redeem</span>
                               </Link>
                            </div>
-                           <div className="mt-4 pt-3 border-t border-white/10 flex justify-between items-center">
-                              <p className="text-[8px] font-medium opacity-70 italic">10 Coins = ₹1.00</p>
-                              <div className="flex items-center gap-1 text-[9px] font-black uppercase">
-                                <span className="text-orange-200">Refer & Earn 50</span>
-                                <ChevronRight className="w-3 h-3" />
-                              </div>
-                           </div>
                         </div>
                       </div>
                     )}
 
-                    {/* Navigation Items */}
                     {menuItems.map((item) => {
                       if (item.authRequired && !user) return null;
-                      
                       return (
                         <Link 
                           key={item.label} 
@@ -333,7 +319,7 @@ export const Navbar = () => {
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
-                             {item.badge !== undefined && (
+                             {item.badge !== undefined && item.badge > 0 && (
                                <Badge className="bg-primary/10 text-primary border-none text-[8px] h-5 px-2 font-black">{item.badge}</Badge>
                              )}
                              <ChevronRight className="w-3.5 h-3.5 text-muted-foreground/30 group-hover:text-primary transition-all group-hover:translate-x-1" />
@@ -344,7 +330,6 @@ export const Navbar = () => {
 
                     <div className="h-px bg-border my-4 mx-4" />
 
-                    {/* Food Preferences */}
                     {user && (
                       <div className="px-4 py-2 space-y-3">
                         <p className="text-[9px] font-black uppercase tracking-widest opacity-40 ml-1">Food Preferences</p>
@@ -376,10 +361,10 @@ export const Navbar = () => {
                     <div className="px-4 pt-6 pb-2">
                        <button 
                         onClick={toggleDarkMode}
-                        className="flex items-center justify-between w-full p-4 rounded-2xl bg-secondary/30 hover:bg-secondary/50 transition-all group"
+                        className="flex items-center justify-between w-full p-4 rounded-2xl bg-secondary/30 hover:bg-secondary/50 transition-all group outline-none"
                        >
                          <div className="flex items-center gap-4">
-                           <div className="w-9 h-9 rounded-xl bg-background flex items-center justify-center border shadow-sm">
+                           <div className="w-9 h-9 rounded-xl bg-background flex items-center justify-center border shadow-sm transition-colors">
                              {isDarkMode ? <Sun className="w-4 h-4 text-yellow-500" /> : <Moon className="w-4 h-4 text-indigo-500" />}
                            </div>
                            <span className="font-black text-[10px] uppercase tracking-widest">
@@ -387,12 +372,12 @@ export const Navbar = () => {
                            </span>
                          </div>
                          <div className={cn(
-                           "w-8 h-4 rounded-full relative transition-colors duration-300",
-                           isDarkMode ? "bg-primary" : "bg-zinc-300"
+                           "w-10 h-5 rounded-full relative transition-colors duration-300",
+                           isDarkMode ? "bg-primary" : "bg-zinc-300 dark:bg-zinc-600"
                          )}>
                            <div className={cn(
-                             "absolute top-0.5 w-3 h-3 rounded-full bg-white transition-all duration-300",
-                             isDarkMode ? "left-4.5" : "left-0.5"
+                             "absolute top-1 w-3 h-3 rounded-full bg-white shadow-sm transition-all duration-300",
+                             isDarkMode ? "translate-x-6" : "translate-x-1"
                            )} />
                          </div>
                        </button>
