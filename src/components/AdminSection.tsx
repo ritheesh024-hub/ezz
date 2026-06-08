@@ -7,9 +7,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Loader2, 
   Package, Clock, ChefHat, 
-  Trash2, Receipt, ShoppingBag, 
+  Receipt, ShoppingBag, 
   Volume2, VolumeX, BellRing,
-  MapPin, User, CheckCircle2,
+  MapPin, User,
   Users, UserPlus, Globe, Utensils,
   TicketPercent, BarChart3, Fingerprint,
   LayoutGrid,
@@ -213,16 +213,18 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
             </Button>
           </div>
 
-          <TabsContent value="overview">
-             <DashboardAnalysis orders={realOrders || []} products={dbMenu || []} />
-          </TabsContent>
-          <TabsContent value="users"><UserManagement /></TabsContent>
-          <TabsContent value="billing"><BillingSystem products={dbMenu || []} orders={realOrders || []} /></TabsContent>
-          <TabsContent value="kitchen"><KitchenSystem orders={realOrders || []} onUpdateStatus={handleUpdateStatus} /></TabsContent>
-          <TabsContent value="products"><ProductManagement /></TabsContent>
-          <TabsContent value="coupons"><CouponManager /></TabsContent>
-          <TabsContent value="staff"><StaffManagement /></TabsContent>
-          <TabsContent value="settings"><StoreSettings /></TabsContent>
+          {availableTabs.includes('overview') && (
+            <TabsContent value="overview">
+               <DashboardAnalysis orders={realOrders || []} products={dbMenu || []} />
+            </TabsContent>
+          )}
+          {availableTabs.includes('users') && <TabsContent value="users"><UserManagement /></TabsContent>}
+          {availableTabs.includes('billing') && <TabsContent value="billing"><BillingSystem products={dbMenu || []} orders={realOrders || []} /></TabsContent>}
+          {availableTabs.includes('kitchen') && <TabsContent value="kitchen"><KitchenSystem orders={realOrders || []} onUpdateStatus={handleUpdateStatus} /></TabsContent>}
+          {availableTabs.includes('products') && <TabsContent value="products"><ProductManagement /></TabsContent>}
+          {availableTabs.includes('coupons') && <TabsContent value="coupons"><CouponManager /></TabsContent>}
+          {availableTabs.includes('staff') && <TabsContent value="staff"><StaffManagement /></TabsContent>}
+          {availableTabs.includes('settings') && <TabsContent value="settings"><StoreSettings /></TabsContent>}
 
           <TabsContent value="orders">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">

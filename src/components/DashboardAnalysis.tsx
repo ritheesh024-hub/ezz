@@ -14,23 +14,15 @@ import {
   IndianRupee,
   ShoppingBag,
   Clock,
-  Star,
   ChevronDown,
   Download,
   Zap,
   TrendingUp,
   Package,
-  ArrowUpRight,
   Loader2,
-  CheckCircle2,
-  AlertCircle,
-  History,
-  Timer,
-  Globe,
-  Utensils,
   Users,
-  CalendarDays,
-  Target
+  Target,
+  AlertCircle
 } from 'lucide-react';
 import {
   XAxis,
@@ -92,14 +84,9 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
     const completed = filteredOrders.filter(o => o.status === 'Delivered');
     const revenue = completed.reduce((acc, curr) => acc + (Number(curr.total) || 0), 0);
     const pending = filteredOrders.filter(o => ['Pending', 'Preparing', 'Confirmed'].includes(o.status));
-    const preparing = filteredOrders.filter(o => o.status === 'Preparing');
     const cancelled = filteredOrders.filter(o => o.status === 'Cancelled');
     
     const totalRegisteredUsers = (allUsers || []).length;
-    const newUsersThisWeek = (allUsers || []).filter(u => {
-      if (!u.createdAt?.toDate) return false;
-      return isAfter(u.createdAt.toDate(), subWeeks(new Date(), 1));
-    }).length;
 
     const itemMap: Record<string, { name: string, quantity: number, revenue: number }> = {};
     let totalItemsCount = 0;
@@ -126,12 +113,10 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
       revenue, 
       avgOrderValue,
       pending: pending.length,
-      preparing: preparing.length,
       cancelled: cancelled.length,
       itemsSold: totalItemsCount,
       itemStats,
-      totalRegisteredUsers,
-      newUsersThisWeek
+      totalRegisteredUsers
     };
   }, [filteredOrders, allUsers]);
 
@@ -143,8 +128,6 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
       ["Period", filterType.toUpperCase()],
       ["Total Revenue", `INR ${metrics.revenue}`],
       ["Total Orders", metrics.total],
-      ["Completed Orders", metrics.total - metrics.pending - metrics.cancelled],
-      ["Cancelled Orders", metrics.cancelled],
       ["Avg Order Value", `INR ${metrics.avgOrderValue}`],
       ["Items Sold", metrics.itemsSold],
       ["Total Registered Users", metrics.totalRegisteredUsers],
@@ -175,7 +158,7 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
       { name: '16:00', sales: Math.round(metrics.revenue * 0.25) },
       { name: '20:00', sales: Math.round(metrics.revenue * 0.35) },
     ];
-  }, [metrics]);
+  }, [metrics.revenue]);
 
   if (!isMounted) return (
     <div className="h-[400px] flex flex-col items-center justify-center gap-4">
