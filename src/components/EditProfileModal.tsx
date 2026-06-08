@@ -239,7 +239,7 @@ export const EditProfileModal = ({ isOpen, onClose }: EditProfileModalProps) => 
             {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : (
               <>
                 <Save className="w-5 h-5" />
-                Sync Changes
+                Save
               </>
             )}
           </Button>
