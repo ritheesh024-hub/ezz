@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { 
-  Plus, Search, Edit2, Trash2, 
+  Plus, Edit2, Trash2, 
   LayoutGrid, 
   Loader2, Package, Star, 
   Power
@@ -78,9 +78,6 @@ export const ProductManagement = () => {
   const [editingItem, setEditingItem] = useState<FoodItem | null>(null);
   const [saveLoading, setSaveLoading] = useState(false);
   
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All');
-
   const [formData, setFormData] = useState<ProductFormData>(DEFAULT_FORM_DATA);
 
   const stats = useMemo(() => {
@@ -98,14 +95,7 @@ export const ProductManagement = () => {
     };
   }, [products]);
 
-  const filteredProducts = useMemo(() => {
-    if (!products) return [];
-    return products.filter(p => {
-      const matchesSearch = (p.name || '').toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory = selectedCategory === 'All' || p.category === selectedCategory;
-      return matchesSearch && matchesCategory;
-    });
-  }, [products, searchQuery, selectedCategory]);
+  const displayProducts = products || [];
 
   const handleOpenModal = (item: FoodItem | null = null) => {
     if (item) {
@@ -196,24 +186,6 @@ export const ProductManagement = () => {
         <StatsCard label="Featured Showcase" value={stats.featured} icon={Star} color="bg-orange-50 text-orange-600" />
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-4 items-center bg-white dark:bg-zinc-900 p-4 rounded-[2.5rem] border shadow-sm sticky top-24 z-30">
-        <div className="relative flex-1 w-full">
-          <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input 
-            placeholder="Filter by dish name..." 
-            value={searchQuery} 
-            onChange={(e) => setSearchQuery(e.target.value)} 
-            className="h-14 pl-14 rounded-2xl border-none bg-secondary/40 dark:bg-zinc-800 font-bold" 
-          />
-        </div>
-        <div className="flex gap-2 w-full lg:w-auto">
-          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-             <SelectTrigger className="h-14 w-full lg:w-48 rounded-2xl bg-secondary/40 dark:bg-zinc-800 border-none font-black uppercase text-[10px] tracking-widest px-6"><SelectValue placeholder="Cuisine" /></SelectTrigger>
-             <SelectContent className="rounded-2xl">{CATEGORIES.map(c => <SelectItem key={c} value={c} className="font-bold">{c}</SelectItem>)}</SelectContent>
-          </Select>
-        </div>
-      </div>
-
       {loading ? (
         <div className="py-40 text-center space-y-6">
           <div className="relative inline-block">
@@ -222,15 +194,15 @@ export const ProductManagement = () => {
           </div>
           <p className="font-black uppercase tracking-[0.4em] text-[10px] text-muted-foreground animate-pulse">Syncing Cloud Catalog...</p>
         </div>
-      ) : filteredProducts.length === 0 ? (
+      ) : displayProducts.length === 0 ? (
         <div className="py-32 text-center bg-white dark:bg-zinc-900 rounded-[4rem] border-2 border-dashed">
           <Package className="w-20 h-20 mx-auto mb-6 opacity-10" />
           <h3 className="text-2xl font-black uppercase tracking-tighter">Null Result</h3>
-          <p className="text-sm font-medium text-muted-foreground mt-2 max-w-xs mx-auto">No products matched your current operational filter.</p>
+          <p className="text-sm font-medium text-muted-foreground mt-2 max-w-xs mx-auto">No products found in your database.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-          {filteredProducts.map((item) => (
+          {displayProducts.map((item) => (
             <Card key={item.id} className="rounded-[2.5rem] border-none shadow-xl overflow-hidden group hover:shadow-2xl transition-all relative bg-white dark:bg-zinc-900">
               <div className="aspect-[4/3] relative overflow-hidden bg-secondary/30">
                 <Image src={item.imageUrl} alt={item.name} fill className="object-cover group-hover:scale-110 transition-transform duration-700" unoptimized />
