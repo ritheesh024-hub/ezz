@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
@@ -7,9 +6,8 @@ import { WhatsAppButton } from '@/components/WhatsAppButton';
 import { PromoBanner } from '@/components/PromoBanner';
 import { SavorTool } from '@/components/SavorTool';
 import { 
-  ArrowRight, History, Utensils, Loader2,
-  HelpCircle, Instagram, Twitter, Facebook,
-  ShieldCheck, Clock, Star, Search
+  ArrowRight, Utensils, Loader2,
+  ShieldCheck, Clock, Search
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -40,7 +38,7 @@ export default function Home() {
     return query(
       collection(db, 'products'),
       where('isAvailable', '==', true),
-      limit(10)
+      limit(6)
     );
   }, [db]);
 
@@ -132,9 +130,9 @@ export default function Home() {
           </div>
         </section>
 
-        {/* SIGNATURE HIGHLIGHTS */}
+        {/* SIGNATURE HIGHLIGHTS - Optimized for Compact View */}
         <section className="md:py-24 py-8 bg-white dark:bg-zinc-950">
-          <div className="container mx-auto px-4">
+          <div className="container mx-auto px-4 max-w-6xl">
             <div className="flex justify-between items-end md:mb-16 mb-6 gap-6">
               <div className="space-y-1">
                 <Badge variant="outline" className="px-3 py-1 rounded-full text-[8px] md:text-[10px] font-black uppercase tracking-widest text-primary border-primary/20">Chef's Special</Badge>
@@ -148,13 +146,13 @@ export default function Home() {
             </div>
 
             {menuLoading ? (
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <div key={i} className="aspect-[3/4] bg-muted animate-pulse rounded-[1.5rem] md:rounded-[2.5rem]" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="h-32 md:h-48 bg-muted animate-pulse rounded-[1.5rem] md:rounded-[2.5rem]" />
                 ))}
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6 gap-3 md:gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
                 {menuItems?.map((item) => (
                   <FoodCard key={item.id} item={item} />
                 ))}

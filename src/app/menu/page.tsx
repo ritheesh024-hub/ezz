@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useEffect, Suspense } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { FoodCard } from '@/components/FoodCard';
-import { Search, Loader2, PackageX, AlertCircle, Filter } from 'lucide-react';
+import { Search, Loader2, PackageX, AlertCircle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useSearchParams } from 'next/navigation';
@@ -67,14 +67,14 @@ function MenuContent() {
     <div className="min-h-screen bg-background">
       <Navbar />
       
-      <main className="container mx-auto px-4 md:px-8 py-4 pt-20 md:pt-32 max-w-7xl">
-        {/* MOBILE SEARCH (Visible only on mobile) */}
-        <div className="md:hidden mb-4">
+      <main className="container mx-auto px-4 md:px-8 py-4 pt-20 md:pt-32 max-w-6xl">
+        {/* COMPACT SEARCH (Center aligned for premium feel) */}
+        <div className="max-w-2xl mx-auto mb-8">
           <div className="relative group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <Input 
-              placeholder="Search dishes..." 
-              className="h-11 pl-11 rounded-2xl border-none bg-secondary/50 text-sm font-bold placeholder:text-muted-foreground/40"
+              placeholder="Search dishes, burgers, momos..." 
+              className="h-14 pl-14 rounded-[2rem] border-none bg-secondary/50 text-base font-bold placeholder:text-muted-foreground/40 shadow-inner focus:ring-2 focus:ring-primary/20"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
             />
@@ -82,8 +82,8 @@ function MenuContent() {
         </div>
 
         {/* STICKY APP-STYLE FILTER CHIPS */}
-        <div className="sticky top-[60px] md:top-20 z-40 -mx-4 px-4 py-3 bg-background/95 backdrop-blur-xl border-b border-border/40 shadow-sm">
-          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide snap-x">
+        <div className="sticky top-[60px] md:top-20 z-40 -mx-4 px-4 py-4 bg-background/95 backdrop-blur-xl border-b border-border/40 shadow-sm">
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide snap-x max-w-6xl mx-auto">
             {filterChips.map((chip, idx) => {
               const isActive = (chip.type === 'diet' && dietFilter === chip.value) || 
                              (chip.type === 'category' && (activeCategory === chip.label || (activeCategory === 'All' && chip.value === 'all')));
@@ -93,7 +93,7 @@ function MenuContent() {
                   key={idx}
                   onClick={() => handleChipClick(chip)}
                   className={cn(
-                    "rounded-full px-4 h-9 font-black uppercase text-[10px] tracking-widest transition-all shrink-0 border snap-start flex items-center gap-1.5",
+                    "rounded-full px-5 h-10 font-black uppercase text-[10px] tracking-widest transition-all shrink-0 border snap-start flex items-center gap-2",
                     isActive 
                       ? "bg-primary text-white border-primary shadow-lg shadow-primary/20" 
                       : "bg-white dark:bg-zinc-900 border-muted text-muted-foreground hover:border-primary/40"
@@ -124,8 +124,8 @@ function MenuContent() {
              <Button variant="outline" className="mt-8 rounded-full h-12 px-10 border-destructive/20 text-destructive font-black uppercase text-[10px]" onClick={() => window.location.reload()}>Try Again</Button>
            </div>
         ) : filteredItems.length > 0 ? (
-          <div className="py-6">
-            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-8">
+          <div className="py-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
               {filteredItems.map((item) => (
                 <FoodCard key={item.id} item={item} />
               ))}
