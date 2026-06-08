@@ -38,7 +38,7 @@ export default function Home() {
     return query(
       collection(db, 'products'),
       where('isAvailable', '==', true),
-      limit(6)
+      limit(8)
     );
   }, [db]);
 
@@ -132,7 +132,7 @@ export default function Home() {
 
         {/* SIGNATURE HIGHLIGHTS - Optimized for Compact View */}
         <section className="md:py-24 py-8 bg-white dark:bg-zinc-950">
-          <div className="container mx-auto px-4 max-w-6xl">
+          <div className="container mx-auto px-4 max-w-7xl">
             <div className="flex justify-between items-end md:mb-16 mb-6 gap-6">
               <div className="space-y-1">
                 <Badge variant="outline" className="px-3 py-1 rounded-full text-[8px] md:text-[10px] font-black uppercase tracking-widest text-primary border-primary/20">Chef's Special</Badge>
@@ -146,13 +146,13 @@ export default function Home() {
             </div>
 
             {menuLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="h-32 md:h-48 bg-muted animate-pulse rounded-[1.5rem] md:rounded-[2.5rem]" />
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-6">
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                  <div key={i} className="aspect-[4/5] bg-muted animate-pulse rounded-[1.5rem]" />
                 ))}
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-8">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-6">
                 {menuItems?.map((item) => (
                   <FoodCard key={item.id} item={item} />
                 ))}
