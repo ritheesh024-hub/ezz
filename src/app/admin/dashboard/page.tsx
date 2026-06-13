@@ -44,9 +44,7 @@ function DashboardContent() {
         return;
       }
 
-      if (!db || !auth) {
-        return;
-      }
+      if (!db || !auth) return;
 
       try {
         const adminRef = doc(db, 'admins', user.uid);
@@ -57,7 +55,6 @@ function DashboardContent() {
           const role = (data.role as StaffRole) || 'cashier';
           setAssignedRole(role);
           
-          // Logic: If user is admin, allow them to use the view from URL param
           if (role === 'admin' && ['admin', 'cashier', 'kitchen'].includes(requestedView)) {
             setActiveView(requestedView);
           } else {
@@ -66,20 +63,18 @@ function DashboardContent() {
           
           setCheckingRole(false);
         } else {
+          // If user email is the primary admin email, we allow them to fix it by logging in again
+          // or we check if we should auto-provision here. For now, redirect to login for a fresh sync.
           toast({
             variant: "destructive",
-            title: "Access Restricted",
-            description: "Your account is not registered in our staff directory.",
+            title: "Identity Desync",
+            description: "Staff record missing. Please sign in again to restore access.",
           });
           await auth.signOut();
           router.push('/admin/login');
         }
       } catch (e: any) {
-        console.error("Error checking role:", e);
-        if (e.code === 'permission-denied') {
-          await auth.signOut();
-          router.push('/admin/login');
-        }
+        console.error("Dashboard role error:", e);
         setCheckingRole(false);
       }
     }
@@ -90,27 +85,16 @@ function DashboardContent() {
   const handleLogout = async () => {
     if (auth) {
       await auth.signOut();
-      toast({ title: "Logged out", description: "Operational session ended." });
+      toast({ title: "Session Closed", description: "Operational hub logged out." });
       router.push('/admin/login');
     }
   };
 
   const switchView = (role: StaffRole) => {
-    if (assignedRole !== 'admin') {
-      toast({ variant: "destructive", title: "Restricted", description: "Only Admins can override views." });
-      return;
-    }
-    // Update URL to persist the view choice in this tab/window
+    if (assignedRole !== 'admin') return;
     router.push(`/admin/dashboard?view=${role}`);
     setActiveView(role);
-    toast({ title: `Switched to ${role.toUpperCase()} View` });
-  };
-
-  const copyUid = () => {
-    if (user?.uid) {
-      navigator.clipboard.writeText(user.uid);
-      toast({ title: "UID Copied", description: user.uid });
-    }
+    toast({ title: `Switched to ${role.toUpperCase()}` });
   };
 
   if (userLoading || checkingRole || !activeView) {
@@ -120,8 +104,8 @@ function DashboardContent() {
           <Loader2 className="w-10 h-10 animate-spin text-primary" />
         </div>
         <div className="space-y-2">
-          <h2 className="text-xl font-black uppercase tracking-tight">Authenticating</h2>
-          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground animate-pulse">Establishing Secure Session...</p>
+          <h2 className="text-xl font-black uppercase tracking-tight">Syncing Identity</h2>
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground animate-pulse">Establishing Secure Hub...</p>
         </div>
       </div>
     );
@@ -137,67 +121,38 @@ function DashboardContent() {
                 <ShoppingBag className="w-5 h-5 text-white" />
               </div>
               <div className="flex flex-col">
-                <span className="text-xl font-headline font-black tracking-tight leading-none">
-                  Ezzy<span className="text-primary italic">Ops</span>
-                </span>
-                <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-40">Staff Console</span>
+                <span className="text-xl font-headline font-black tracking-tight leading-none">Ezzy<span className="text-primary italic">Ops</span></span>
+                <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-40">Staff Control</span>
               </div>
             </Link>
 
             <div className="hidden sm:flex items-center gap-2">
               <Badge variant="outline" className="flex items-center gap-1.5 px-3 py-1 rounded-full border-primary/20 bg-primary/5 text-primary font-black uppercase text-[9px] tracking-widest">
-                <ShieldCheck className="w-3 h-3" />
-                {assignedRole}
+                <ShieldCheck className="w-3 h-3" /> {assignedRole}
               </Badge>
-              {activeView !== assignedRole && (
-                <Badge variant="secondary" className="bg-orange-100 text-orange-700 font-black uppercase text-[8px] px-2 rounded-full">
-                  Mode: {activeView}
-                </Badge>
-              )}
             </div>
           </div>
 
           <div className="flex items-center gap-4">
-            <Link href="/">
-              <Button variant="ghost" size="sm" className="hidden md:flex rounded-xl gap-2 font-black uppercase text-[9px] tracking-widest">
-                <ArrowLeft className="w-3.5 h-3.5" /> Site Home
-              </Button>
-            </Link>
-
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="rounded-xl h-12 px-6 gap-2 font-black uppercase text-[10px] tracking-widest border-2">
-                  <UserCog className="w-4 h-4" />
-                  Account
+                  <UserCog className="w-4 h-4" /> Account
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-64 rounded-2xl p-2 shadow-3xl">
                 <DropdownMenuLabel className="text-[9px] font-black uppercase opacity-40 px-2 py-1.5">Staff Identity</DropdownMenuLabel>
                 <div className="px-2 py-3 bg-secondary/30 rounded-xl mb-2">
                   <p className="text-xs font-black truncate">{user?.email}</p>
-                  <button 
-                    onClick={copyUid}
-                    className="flex items-center gap-1.5 mt-1 text-[8px] font-black uppercase text-muted-foreground hover:text-primary transition-colors"
-                  >
-                    <Fingerprint className="w-2.5 h-2.5" />
-                    ID: {user?.uid?.slice(0, 12)}...
-                    <Copy className="w-2 h-2" />
-                  </button>
                 </div>
                 
                 {assignedRole === 'admin' && (
                   <>
                     <DropdownMenuSeparator />
-                    <DropdownMenuLabel className="text-[9px] font-black uppercase opacity-40 px-2 py-1.5">Operational Overrides</DropdownMenuLabel>
-                    <DropdownMenuItem onClick={() => switchView('admin')} className="rounded-xl gap-3 py-3 font-bold">
-                      <ShieldCheck className="w-4 h-4 text-primary" /> Admin View
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => switchView('cashier')} className="rounded-xl gap-3 py-3 font-bold">
-                      <Receipt className="w-4 h-4 text-blue-500" /> Cashier View
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => switchView('kitchen')} className="rounded-xl gap-3 py-3 font-bold">
-                      <ChefHat className="w-4 h-4 text-orange-500" /> Kitchen View
-                    </DropdownMenuItem>
+                    <DropdownMenuLabel className="text-[9px] font-black uppercase opacity-40 px-2 py-1.5">Switch Mode</DropdownMenuLabel>
+                    <DropdownMenuItem onClick={() => switchView('admin')} className="rounded-xl gap-3 py-3 font-bold"><ShieldCheck className="w-4 h-4 text-primary" /> Admin View</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => switchView('cashier')} className="rounded-xl gap-3 py-3 font-bold"><Receipt className="w-4 h-4 text-blue-500" /> Cashier View</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => switchView('kitchen')} className="rounded-xl gap-3 py-3 font-bold"><ChefHat className="w-4 h-4 text-orange-500" /> Kitchen View</DropdownMenuItem>
                   </>
                 )}
                 
@@ -207,15 +162,6 @@ function DashboardContent() {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="rounded-xl h-12 w-12 hover:bg-destructive/10 hover:text-destructive transition-all md:hidden" 
-              onClick={handleLogout}
-            >
-              <LogOut className="w-5 h-5" />
-            </Button>
           </div>
         </div>
       </nav>
@@ -229,11 +175,7 @@ function DashboardContent() {
 
 export default function AdminDashboardPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="w-10 h-10 animate-spin text-primary" />
-      </div>
-    }>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><Loader2 className="w-10 h-10 animate-spin text-primary" /></div>}>
       <DashboardContent />
     </Suspense>
   );
