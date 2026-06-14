@@ -10,7 +10,7 @@ import {
   DialogFooter
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Loader2, Copy, Check, ShieldAlert } from 'lucide-react';
+import { Loader2, Copy, Check, ShieldAlert, AlertCircle } from 'lucide-react';
 import { GoogleAuthProvider, signInWithPopup, setPersistence, browserLocalPersistence, signOut } from 'firebase/auth';
 import { useAuth, useFirestore } from '@/firebase';
 import { doc, setDoc, getDoc, serverTimestamp, collection, addDoc } from 'firebase/firestore';
@@ -55,13 +55,13 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
       
+      // RESTRICTION: Block primary admin from customer portal
       const PRIMARY_ADMIN_EMAIL = "sunnyritheesh@gmail.com";
       
-      // RESTRICTION: Block primary admin from customer side
-      if (user.email === PRIMARY_ADMIN_EMAIL) {
+      if (user.email?.toLowerCase() === PRIMARY_ADMIN_EMAIL) {
         await signOut(auth);
         setAuthError({
-          message: "This is a restricted Admin account. Access is limited to the Staff Console for system integrity.",
+          message: "This restricted Admin account is only authorized in the Staff Console Hub.",
           isRestricted: true
         });
         setLoading(false);
@@ -110,7 +110,7 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
 
       toast({
         title: "Authorized Successfully",
-        description: `Welcome, ${user.displayName?.split(' ')[0]}.`,
+        description: `Welcome back, ${user.displayName?.split(' ')[0] || 'Member'}.`,
       });
       
       if (onSuccess) onSuccess();
@@ -158,7 +158,7 @@ export const AuthModal = ({ isOpen, onClose, onSuccess }: AuthModalProps) => {
 
         {authError && (
           <Alert variant="destructive" className="mt-6 border-none bg-red-50 dark:bg-red-950/20 text-red-900 dark:text-red-400 rounded-2xl">
-            {authError.isRestricted ? <ShieldAlert className="h-5 w-5" /> : null}
+            <AlertCircle className="h-5 w-5" />
             <AlertTitle className="font-black text-[10px] uppercase mb-2 tracking-widest">
               {authError.isRestricted ? "Access Restricted" : "Setup Required"}
             </AlertTitle>

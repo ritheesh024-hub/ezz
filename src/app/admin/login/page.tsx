@@ -47,6 +47,7 @@ export default function AdminLoginPage() {
   const { user, loading: userLoading } = useUser();
   const router = useRouter();
 
+  // MASTER ADMIN CONSTANT
   const PRIMARY_ADMIN_EMAIL = "sunnyritheesh@gmail.com";
 
   useEffect(() => {
@@ -75,21 +76,6 @@ export default function AdminLoginPage() {
       setEmail(PRIMARY_ADMIN_EMAIL);
     } else {
       setEmail('');
-    }
-  };
-
-  const handleForgotPassword = async () => {
-    if (!email) {
-      toast({ variant: "destructive", title: "Email Required", description: "Please enter your staff email first." });
-      return;
-    }
-    if (!auth) return;
-
-    try {
-      await sendPasswordResetEmail(auth, email);
-      toast({ title: "Reset Link Sent", description: `Check ${email} for instructions.` });
-    } catch (e: any) {
-      toast({ variant: "destructive", title: "Error", description: e.message });
     }
   };
 
@@ -124,14 +110,14 @@ export default function AdminLoginPage() {
       const googleUser = result.user;
       const normalizedEmail = googleUser.email?.toLowerCase() || '';
 
-      // 1. Check if Primary Admin
+      // 1. MASTER ADMIN SYNC
       if (normalizedEmail === PRIMARY_ADMIN_EMAIL) {
         const adminRef = doc(db, 'admins', googleUser.uid);
         await setDoc(adminRef, {
           id: googleUser.uid,
           uid: googleUser.uid,
           email: normalizedEmail,
-          name: googleUser.displayName || "Master Admin",
+          name: "Master Admin",
           role: 'admin',
           status: 'active',
           onlineStatus: 'online',
@@ -140,14 +126,12 @@ export default function AdminLoginPage() {
         }, { merge: true });
         
         await logStaffLogin(googleUser.uid, normalizedEmail, 'admin');
-        toast({ title: "Master Access Granted", description: "Identity verified via Google." });
+        toast({ title: "Master Sync Complete", description: "Identity verified via Google." });
         router.push('/admin/dashboard');
         return;
       }
 
-      // 2. Check if existing staff in Firestore
-      // Since Google UID might differ from staff-placeholder-ID, we search by email
-      // For MVP simplicity, we check if a record exists with this UID or try to find by email if needed
+      // 2. CHECK REGISTRY FOR OTHER STAFF
       const adminRef = doc(db, 'admins', googleUser.uid);
       const adminSnap = await getDoc(adminRef);
 
@@ -155,7 +139,7 @@ export default function AdminLoginPage() {
         const data = adminSnap.data();
         if (data.status === 'disabled') {
           await signOut(auth);
-          toast({ variant: "destructive", title: "Access Blocked", description: "Your account is currently inactive." });
+          toast({ variant: "destructive", title: "Access Blocked", description: "Your staff account is currently inactive." });
           setLoading(false);
           return;
         }
@@ -163,16 +147,14 @@ export default function AdminLoginPage() {
         await logStaffLogin(googleUser.uid, normalizedEmail, data.role || 'staff');
         router.push('/admin/dashboard');
       } else {
-        // Staff must be invited first (record must exist)
         await signOut(auth);
         toast({ 
           variant: "destructive", 
           title: "Access Denied", 
-          description: "This Google account is not registered in the Ezzy Bites Staff Registry." 
+          description: "This account is not in the Ezzy Bites Staff Registry." 
         });
       }
     } catch (error: any) {
-      console.error('Google Staff Auth Error:', error);
       toast({ variant: "destructive", title: "Auth Failed", description: error.message });
     } finally {
       setLoading(false);
@@ -183,10 +165,7 @@ export default function AdminLoginPage() {
     e.preventDefault();
     setAuthError(null);
     
-    if (!auth || !db) {
-      toast({ variant: "destructive", title: "Connection Error", description: "Firebase services not initialized." });
-      return;
-    }
+    if (!auth || !db) return;
 
     setLoading(true);
     try {
@@ -194,23 +173,23 @@ export default function AdminLoginPage() {
       const isPrimary = normalizedEmail === PRIMARY_ADMIN_EMAIL;
       let uid = '';
 
-      // 1. Authenticate
+      // 1. ATTEMPT AUTHENTICATION
       try {
         const userCredential = await signInWithEmailAndPassword(auth, normalizedEmail, password);
         uid = userCredential.user.uid;
       } catch (signInError: any) {
-        // Master Admin Auto-Provision Path
+        // AUTO-PROVISION MASTER ADMIN ON FIRST RUN
         if (isPrimary && (signInError.code === 'auth/user-not-found' || signInError.code === 'auth/invalid-credential')) {
            try {
              const createCredential = await createUserWithEmailAndPassword(auth, normalizedEmail, password);
              uid = createCredential.user.uid;
-             toast({ title: "Identity Established", description: "Master admin account synchronized." });
+             toast({ title: "Identity Established", description: "Master admin account initialized." });
            } catch (createError: any) {
              if (createError.code === 'auth/email-already-in-use') {
                 toast({ 
                   variant: "destructive", 
                   title: "Auth Failed", 
-                  description: "Incorrect password for this staff account." 
+                  description: "Incorrect password for the Master Admin account." 
                 });
                 setLoading(false);
                 return;
@@ -222,7 +201,7 @@ export default function AdminLoginPage() {
         }
       }
 
-      // 2. Synchronize Firestore Admin Record
+      // 2. SYNCHRONIZE FIRESTORE ROLE
       const adminRef = doc(db, 'admins', uid);
       
       if (isPrimary) {
@@ -241,15 +220,9 @@ export default function AdminLoginPage() {
         toast({ title: "Access Granted", description: "Master Console synchronized." });
       } else {
         const adminSnap = await getDoc(adminRef);
-        if (!adminSnap.exists()) {
+        if (!adminSnap.exists() || adminSnap.data().status === 'disabled') {
            await signOut(auth);
-           toast({ variant: "destructive", title: "Access Denied", description: "Staff record not found." });
-           setLoading(false);
-           return;
-        }
-        if (adminSnap.data().status === 'disabled') {
-           await signOut(auth);
-           toast({ variant: "destructive", title: "Account Blocked", description: "Your staff account is inactive." });
+           toast({ variant: "destructive", title: "Access Denied", description: "Invalid staff record." });
            setLoading(false);
            return;
         }
@@ -262,26 +235,13 @@ export default function AdminLoginPage() {
     } catch (error: any) {
       console.error('Auth Error:', error);
       let message = error.message || "An unexpected error occurred.";
-      if (error.code === 'auth/unauthorized-domain') {
-        const domain = typeof window !== 'undefined' ? window.location.hostname : '';
-        setAuthError({ message: "This domain is not authorized in Firebase.", domain });
-        setLoading(false);
-        return;
-      }
-      if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
-        message = "Incorrect credentials for this staff account.";
+      if (error.code === 'auth/invalid-credential') {
+        message = "Incorrect password for this staff email.";
       }
       toast({ variant: "destructive", title: "Authentication Failed", description: message });
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleCopyDomain = (domain: string) => {
-    navigator.clipboard.writeText(domain);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-    toast({ title: "Domain Copied" });
   };
 
   if (!systemChecked) return (
@@ -331,24 +291,6 @@ export default function AdminLoginPage() {
           <CardDescription className="font-bold text-[10px] uppercase tracking-widest opacity-60">Identity Verification</CardDescription>
         </CardHeader>
 
-        {authError && (
-          <div className="px-8 pb-6">
-            <Alert variant="destructive" className="border-none bg-red-50 text-red-900 rounded-2xl">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle className="text-[10px] font-black uppercase tracking-widest">Setup Required</AlertTitle>
-              <AlertDescription className="text-[11px]">
-                Add this domain to Firebase Authorized Domains:
-                <div className="mt-2 p-3 bg-white/50 rounded-xl flex items-center justify-between border border-red-100">
-                  <code className="text-[9px] font-mono break-all">{authError.domain}</code>
-                  <button onClick={() => handleCopyDomain(authError.domain!)} className="p-1.5 hover:bg-white rounded-lg transition-colors">
-                    {copied ? <Check className="w-3 h-3 text-green-600" /> : <Copy className="h-3 w-3" />}
-                  </button>
-                </div>
-              </AlertDescription>
-            </Alert>
-          </div>
-        )}
-
         <form onSubmit={handleAuth}>
           <CardContent className="space-y-5 px-8">
             <div className="space-y-2">
@@ -369,13 +311,13 @@ export default function AdminLoginPage() {
             <div className="space-y-2">
               <div className="flex justify-between items-center ml-1">
                 <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">Password</Label>
-                <button type="button" onClick={handleForgotPassword} className="text-[9px] font-black text-primary uppercase hover:underline">Forgot?</button>
+                <button type="button" onClick={() => email && sendPasswordResetEmail(auth!, email).then(() => toast({ title: "Reset Sent" }))} className="text-[9px] font-black text-primary uppercase hover:underline">Forgot?</button>
               </div>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input 
                   type={showPassword ? "text" : "password"} 
-                  className="h-14 pl-12 pr-12 rounded-xl bg-secondary/20" 
+                  className="h-14 pl-12 pr-12 rounded-xl bg-secondary/20 font-bold" 
                   value={password} 
                   onChange={(e) => setPassword(e.target.value)} 
                   required={!loading} 
