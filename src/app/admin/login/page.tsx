@@ -18,11 +18,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { 
   ShoppingBag, Lock, Mail, Loader2, ArrowRight, 
   ShieldCheck, Receipt, ChefHat, 
-  ChevronLeft, Eye, EyeOff
+  ChevronLeft, Eye, EyeOff, Home
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { doc, setDoc, getDoc, serverTimestamp, collection, addDoc } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
+import Link from 'next/link';
 
 type LoginStep = 'selection' | 'auth';
 type SelectedRole = 'admin' | 'cashier' | 'kitchen';
@@ -183,11 +184,17 @@ export default function AdminLoginPage() {
           <p className="text-muted-foreground text-xs font-black uppercase tracking-[0.3em]">Operational Access Hub</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-5xl mb-12">
           <RoleCard icon={ShieldCheck} title="Master Admin" desc="Platform control & analytics" color="bg-primary" onClick={() => handleRoleSelect('admin')} />
           <RoleCard icon={Receipt} title="Counter Cashier" desc="POS & Billing operations" color="bg-blue-600" onClick={() => handleRoleSelect('cashier')} />
           <RoleCard icon={ChefHat} title="Kitchen Station" desc="Live cooking & dispatch" color="bg-orange-500" onClick={() => handleRoleSelect('kitchen')} />
         </div>
+
+        <Link href="/">
+          <Button variant="ghost" className="rounded-full h-14 px-10 gap-3 font-black uppercase text-[10px] tracking-widest text-muted-foreground hover:text-primary transition-all">
+            <Home className="w-4 h-4" /> Return to Home
+          </Button>
+        </Link>
       </div>
     );
   }
