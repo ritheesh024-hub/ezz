@@ -22,7 +22,8 @@ import {
   TicketPercent,
   X,
   PartyPopper,
-  Lock
+  Lock,
+  MapPin
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -34,12 +35,14 @@ import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/e
 import { cn } from '@/lib/utils';
 import { AuthModal } from '@/components/AuthModal';
 import { useAnalytics } from '@/hooks/use-analytics';
+import { useSmartPermissions } from '@/hooks/use-smart-permissions';
 
 export default function CheckoutPage() {
   const { cart, getTotal, clearCart, removeFromCart } = useStore();
   const db = useFirestore();
   const { user, loading: userLoading } = useUser();
   const { trackCheckoutStarted, trackOrderPlaced } = useAnalytics();
+  const { requestSmartly } = useSmartPermissions();
   
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -60,7 +63,6 @@ export default function CheckoutPage() {
   });
 
   useEffect(() => {
-    // Correct way to generate dynamic values to avoid hydration mismatch
     setOrderId(`EB-${Math.floor(10000 + Math.random() * 90000)}`);
   }, []);
 
@@ -68,7 +70,11 @@ export default function CheckoutPage() {
     if (cart.length > 0 && step === 1) {
       trackCheckoutStarted(cart, getTotal());
     }
-  }, [cart, step, trackCheckoutStarted, getTotal]);
+    // Smart Trigger: Location detection during delivery info step
+    if (step === 2) {
+      requestSmartly('location');
+    }
+  }, [cart, step, trackCheckoutStarted, getTotal, requestSmartly]);
 
   useEffect(() => {
     if (user && db) {
@@ -97,6 +103,24 @@ export default function CheckoutPage() {
   const subtotal = getTotal();
   const deliveryFee = subtotal >= 149 ? 0 : 40;
   const total = subtotal - discount + deliveryFee;
+
+  const handleDetectLocation = () => {
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(async (position) => {
+        const { latitude, longitude } = position.coords;
+        try {
+          const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+          const data = await response.json();
+          if (data.display_name) {
+            setFormData(prev => ({ ...prev, address: data.display_name }));
+            toast({ title: "Sanctuary Located", description: "Address pre-filled from your location." });
+          }
+        } catch (e) {
+          toast({ variant: "destructive", title: "Sync Failed", description: "Could not reverse geocode location." });
+        }
+      });
+    }
+  };
 
   const handleApplyCoupon = async () => {
     if (!db) return;
@@ -191,7 +215,6 @@ export default function CheckoutPage() {
     const orderRef = doc(db, 'orders', finalOrderId);
     setDoc(orderRef, orderData)
       .then(() => {
-        // Update customer profile for better UX next time
         const userRef = doc(db, 'users', user.uid);
         setDoc(userRef, {
           phone: formData.phone,
@@ -205,14 +228,16 @@ export default function CheckoutPage() {
         clearCart();
         setStep(4);
         toast({ title: "Order Placed Successfully! 🚀" });
+        
+        // Smart Trigger: Ask for notifications after first order
+        requestSmartly('notifications');
       })
       .catch(async (error) => {
-        const permissionError = new FirestorePermissionError({
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
           path: orderRef.path,
           operation: 'create',
           requestResourceData: orderData,
-        } satisfies SecurityRuleContext);
-        errorEmitter.emit('permission-error', permissionError);
+        } satisfies SecurityRuleContext));
       })
       .finally(() => setLoading(false));
   };
@@ -239,7 +264,6 @@ export default function CheckoutPage() {
     <div className="min-h-screen bg-secondary/10 pb-12 overflow-x-hidden">
       <Navbar />
       <main className="container mx-auto px-4 pt-20 md:pt-24">
-        {/* Stepper */}
         <div className="max-w-xl mx-auto mb-10 md:mb-16 px-2">
           <div className="flex items-center justify-between relative">
             <div className="absolute top-1/2 left-0 w-full h-0.5 bg-muted -translate-y-1/2 z-0" />
@@ -307,7 +331,9 @@ export default function CheckoutPage() {
                   <CardContent className="p-6 md:p-10 space-y-6">
                     <div className="grid md:grid-cols-2 gap-4 md:gap-6">
                       <div className="space-y-2">
-                        <Label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">Full Name</Label>
+                        <div className="flex justify-between items-center ml-1">
+                          <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">Full Name</Label>
+                        </div>
                         <Input 
                           value={formData.name} 
                           onChange={(e) => setFormData({...formData, name: e.target.value})} 
@@ -335,7 +361,12 @@ export default function CheckoutPage() {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-black uppercase tracking-widest ml-1 opacity-60">Delivery Address</Label>
+                      <div className="flex justify-between items-center ml-1">
+                        <Label className="text-[10px] font-black uppercase tracking-widest opacity-60">Delivery Address</Label>
+                        <button onClick={handleDetectLocation} className="text-[9px] font-black text-primary uppercase flex items-center gap-1.5 hover:underline">
+                          <MapPin className="w-3 h-3" /> Detect Sanctuary
+                        </button>
+                      </div>
                       <Textarea 
                         value={formData.address} 
                         onChange={(e) => setFormData({...formData, address: e.target.value})} 

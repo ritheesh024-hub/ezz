@@ -18,6 +18,7 @@ import { Camera, Loader2, Save, Phone, Mail, User, MapPin } from 'lucide-react';
 import { useFirestore, useUser } from '@/firebase';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
+import { useSmartPermissions } from '@/hooks/use-smart-permissions';
 
 interface EditProfileModalProps {
   isOpen: boolean;
@@ -28,6 +29,7 @@ export const EditProfileModal = ({ isOpen, onClose }: EditProfileModalProps) => 
   const { user } = useUser();
   const db = useFirestore();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { requestSmartly } = useSmartPermissions();
   
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
@@ -77,7 +79,9 @@ export const EditProfileModal = ({ isOpen, onClose }: EditProfileModalProps) => 
     loadProfile();
   }, [user, db, isOpen]);
 
-  const handleImageClick = () => {
+  const handleImageClick = async () => {
+    // Smart Trigger: Request camera/storage access before file selection
+    await requestSmartly('camera');
     fileInputRef.current?.click();
   };
 
@@ -152,7 +156,6 @@ export const EditProfileModal = ({ isOpen, onClose }: EditProfileModalProps) => 
           </div>
         ) : (
           <div className="p-8 space-y-8 overflow-y-auto scrollbar-hide flex-1">
-            {/* Avatar Section */}
             <div className="flex flex-col items-center gap-4">
               <div 
                 className="relative group cursor-pointer" 

@@ -4,12 +4,14 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { BrandIntro } from '@/components/BrandIntro';
+import { SmartPermissionModal } from '@/components/SmartPermissionModal';
+import { useSmartPermissions } from '@/hooks/use-smart-permissions';
 import Script from 'next/script';
 import React, { useEffect } from 'react';
 import { useAnalytics } from '@/hooks/use-analytics';
 import { useNotifications } from '@/hooks/use-notifications';
 import { toast } from '@/hooks/use-toast';
-import { ShoppingBag, Bell } from 'lucide-react';
+import { useUser } from '@/firebase';
 
 function AnalyticsInitializer() {
   const { trackAppOpen } = useAnalytics();
@@ -24,7 +26,6 @@ function AnalyticsInitializer() {
 function NotificationInitializer() {
   const { notifications } = useNotifications();
   
-  // Listen for the newest notification to show an in-app toast
   useEffect(() => {
     if (notifications.length > 0) {
       const latest = notifications[0];
@@ -40,6 +41,34 @@ function NotificationInitializer() {
   }, [notifications]);
 
   return null;
+}
+
+function PermissionController() {
+  const { activeRequest, closeRequest, confirmRequest, requestSmartly } = useSmartPermissions();
+  const { user } = useUser();
+
+  // Smart Trigger: 30 seconds after app usage
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      requestSmartly('notifications');
+    }, 30000);
+    return () => clearTimeout(timer);
+  }, [requestSmartly]);
+
+  // Smart Trigger: On sign in
+  useEffect(() => {
+    if (user) {
+      requestSmartly('notifications');
+    }
+  }, [user, requestSmartly]);
+
+  return (
+    <SmartPermissionModal 
+      type={activeRequest} 
+      onClose={closeRequest} 
+      onConfirm={confirmRequest} 
+    />
+  );
 }
 
 export default function RootLayout({
@@ -59,6 +88,7 @@ export default function RootLayout({
         <FirebaseClientProvider>
           <AnalyticsInitializer />
           <NotificationInitializer />
+          <PermissionController />
           <BrandIntro />
           {children}
           <Toaster />
