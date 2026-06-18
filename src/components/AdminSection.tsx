@@ -43,6 +43,7 @@ import { StaffRole } from '@/app/admin/dashboard/page';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAnalytics } from '@/hooks/use-analytics';
 
 interface AdminSectionProps {
   assignedRole: StaffRole;
@@ -53,7 +54,9 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
   const db = useFirestore();
   const { user } = useUser();
   const { playSound, isAdminMuted, toggleAdminMute } = useSound();
+  const { logStaffAction } = useAnalytics();
   
+  // Real-time Data Listeners
   const ordersQuery = useMemo(() => {
     if (!db) return null;
     return query(collection(db, 'orders'), orderBy('createdAt', 'desc'), limit(1000));
@@ -80,17 +83,22 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
   }, [realOrders]);
 
   const handleUpdateStatus = (id: string, newStatus: string) => {
-    if (!db) return;
+    if (!db || !user) return;
     const orderRef = doc(db, 'orders', id);
     const updateData: any = { status: newStatus };
     if (newStatus === 'Confirmed') updateData.acceptedAt = serverTimestamp();
 
     updateDoc(orderRef, updateData)
       .then(() => {
-        if (user) {
-          const staffRef = doc(db, 'admins', user.uid);
-          updateDoc(staffRef, { 'stats.kitchenUpdates': increment(1), 'stats.ordersHandled': increment(1) }).catch(() => {});
-        }
+        const staffRef = doc(db, 'admins', user.uid);
+        updateDoc(staffRef, { 
+          'stats.kitchenUpdates': increment(1), 
+          'stats.ordersHandled': increment(1) 
+        }).catch(() => {});
+
+        // Real-time Operational Log
+        logStaffAction(user.uid, user.displayName || 'Staff', 'ORDER_STATUS_CHANGE', `Order #${id} changed to ${newStatus}`);
+
         playSound('success');
         toast({ title: `Order ${newStatus}` });
         if (selectedOrderForView?.id === id) setSelectedOrderForView(null);
@@ -124,7 +132,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
   }, [activeView]);
 
   return (
-    <section className="bg-[#F8F9FA] dark:bg-zinc-950 min-h-screen pb-24 overflow-x-hidden">
+    <section className="bg-[#F8F9FA] dark:bg-zinc-950 min-h-screen pb-24 overflow-x-hidden scrollbar-gutter-stable">
       <NewOrderPopups pendingOrders={orderGroups.pending} onViewDetails={(order) => setSelectedOrderForView(order)} onUpdateStatus={handleUpdateStatus} />
       
       <div className="container mx-auto px-4 pt-10">
@@ -178,14 +186,25 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
 
           <div className="flex-1 min-w-0 min-h-[70vh]">
             <AnimatePresence mode="wait">
+              <TabsContent value={activeView} className="mt-0 outline-none">
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  {/* The actual content renders based on the selected tab trigger, not activeView prop directly */}
+                </motion.div>
+              </TabsContent>
+
+              {/* Fix: Directly use TabsContent children logic to prevent content mismatch */}
               {availableTabs.map((tab) => (
                 <TabsContent key={tab} value={tab} className="mt-0 outline-none">
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2, ease: "easeOut" }}
-                  >
+                   <motion.div
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.3 }}
+                   >
                     {tab === 'overview' && <DashboardAnalysis orders={realOrders || []} products={dbMenu || []} />}
                     {tab === 'users' && <UserManagement />}
                     {tab === 'billing' && <BillingSystem products={dbMenu || []} orders={realOrders || []} />}
@@ -250,7 +269,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
                         ))}
                       </div>
                     )}
-                  </motion.div>
+                   </motion.div>
                 </TabsContent>
               ))}
             </AnimatePresence>

@@ -2,42 +2,56 @@
 
 import { useCallback } from 'react';
 import { logEvent } from 'firebase/analytics';
-import { useAnalyticsInstance } from '@/firebase/provider';
+import { useAnalyticsInstance, useFirestore } from '@/firebase/provider';
 import { FoodItem } from '@/app/lib/store';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 /**
- * Custom hook for high-level Firebase Analytics event tracking.
+ * Custom hook for high-level Firebase Analytics event tracking and Firestore behavioral logging.
  */
 export function useAnalytics() {
   const analytics = useAnalyticsInstance();
+  const db = useFirestore();
 
-  const trackEvent = useCallback((eventName: string, params?: object) => {
+  const trackEvent = useCallback(async (eventName: string, params?: object) => {
+    // 1. Google Analytics (Standard)
     if (analytics) {
       logEvent(analytics, eventName, params);
     }
-  }, [analytics]);
+
+    // 2. Firestore Analytics (Real-time Custom Dashboard Feed)
+    if (db) {
+      try {
+        await addDoc(collection(db, 'analytics'), {
+          event: eventName,
+          ...params,
+          timestamp: serverTimestamp()
+        });
+      } catch (e) {
+        console.warn("Behavioral log failed", e);
+      }
+    }
+  }, [analytics, db]);
 
   const trackAppOpen = useCallback(() => {
     trackEvent('app_open');
   }, [trackEvent]);
 
-  const trackLogin = useCallback((method: string = 'google') => {
-    trackEvent('login', { method });
+  const trackLogin = useCallback((method: string = 'google', userEmail?: string) => {
+    trackEvent('login', { method, email: userEmail });
   }, [trackEvent]);
 
-  const trackSignup = useCallback((method: string = 'google') => {
-    trackEvent('sign_up', { method });
+  const trackSignup = useCallback((method: string = 'google', userEmail?: string) => {
+    trackEvent('sign_up', { method, email: userEmail });
   }, [trackEvent]);
 
   const trackAddToCart = useCallback((item: FoodItem, quantity: number = 1) => {
     trackEvent('add_to_cart', {
-      items: [{
-        item_id: item.id,
-        item_name: item.name,
-        item_category: item.category,
-        price: item.price,
-        quantity: quantity
-      }],
+      item_id: item.id,
+      item_name: item.name,
+      item_category: item.category,
+      price: item.price,
+      quantity: quantity,
       value: item.price * quantity,
       currency: 'INR'
     });
@@ -45,13 +59,7 @@ export function useAnalytics() {
 
   const trackCheckoutStarted = useCallback((cart: any[], total: number) => {
     trackEvent('begin_checkout', {
-      items: cart.map(item => ({
-        item_id: item.id,
-        item_name: item.name,
-        item_category: item.category,
-        price: item.price,
-        quantity: item.quantity
-      })),
+      item_count: cart.length,
       value: total,
       currency: 'INR'
     });
@@ -62,12 +70,7 @@ export function useAnalytics() {
       transaction_id: order.orderId,
       value: order.total,
       currency: 'INR',
-      items: order.items.map((item: any) => ({
-        item_id: item.id,
-        item_name: item.name,
-        price: item.price,
-        quantity: item.quantity
-      }))
+      items: order.items.length
     });
   }, [trackEvent]);
 
@@ -88,18 +91,33 @@ export function useAnalytics() {
 
   const trackProductView = useCallback((item: FoodItem) => {
     trackEvent('view_item', {
-      items: [{
-        item_id: item.id,
-        item_name: item.name,
-        item_category: item.category,
-        price: item.price
-      }]
+      item_id: item.id,
+      item_name: item.name,
+      item_category: item.category
     });
   }, [trackEvent]);
 
   const trackMenuView = useCallback(() => {
     trackEvent('menu_view');
   }, [trackEvent]);
+
+  /**
+   * Logs staff-specific operational actions to the audit trail
+   */
+  const logStaffAction = useCallback(async (staffId: string, staffName: string, action: string, details: string) => {
+    if (!db) return;
+    try {
+      await addDoc(collection(db, 'activity_logs'), {
+        staffId,
+        staffName,
+        action,
+        details,
+        timestamp: serverTimestamp()
+      });
+    } catch (e) {
+      console.warn("Activity log failed", e);
+    }
+  }, [db]);
 
   return {
     trackEvent,
@@ -113,6 +131,7 @@ export function useAnalytics() {
     trackSearch,
     trackCategoryView,
     trackProductView,
-    trackMenuView
+    trackMenuView,
+    logStaffAction
   };
 }
