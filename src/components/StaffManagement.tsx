@@ -270,79 +270,79 @@ export const StaffManagement = () => {
   }, [staffList, searchQuery, roleFilter, statusFilter]);
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+    <div className="space-y-10 animate-in fade-in duration-700">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
         <div className="space-y-1">
-          <h2 className="text-4xl font-black font-headline uppercase tracking-tighter">Team <span className="text-primary italic">Ops</span></h2>
-          <p className="text-muted-foreground text-sm font-medium">Manage permissions, monitor activity, and grow your crew.</p>
+          <h2 className="text-4xl font-black font-headline uppercase tracking-tighter italic">Team <span className="text-primary">Registry</span></h2>
+          <p className="text-muted-foreground text-sm font-medium tracking-tight">Manage permissions, monitor activity, and grow your crew.</p>
         </div>
-        <Button onClick={() => { resetForm(); setIsAddDialogOpen(true); }} className="h-14 px-8 rounded-2xl font-black uppercase text-[10px] tracking-widest gap-2 bg-primary text-white shadow-xl shadow-primary/20 hover:scale-105 transition-all">
-          <UserPlus className="w-5 h-5" /> Add New Staff
+        <Button onClick={() => { resetForm(); setIsAddDialogOpen(true); }} className="h-16 px-10 rounded-2xl font-black uppercase text-[10px] tracking-widest gap-3 bg-primary text-white shadow-3xl hover:scale-[1.02] transition-all">
+          <UserPlus className="w-5 h-5" /> Register Staff
         </Button>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-4 items-center bg-white dark:bg-zinc-900 p-4 rounded-[2rem] border shadow-sm">
+      <div className="flex flex-col lg:flex-row gap-6 items-center bg-white dark:bg-zinc-900 p-6 rounded-[2.5rem] border shadow-sm border-zinc-100">
         <div className="relative flex-1 w-full">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input placeholder="Search name, email or UID..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="h-12 pl-12 rounded-xl border-none bg-secondary/30 dark:bg-zinc-800 font-bold" />
+          <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground opacity-40" />
+          <Input placeholder="Search name, email or operational UID..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="h-14 pl-14 rounded-2xl border-none bg-secondary/30 dark:bg-zinc-800 font-bold text-base" />
         </div>
-        <div className="flex gap-2 w-full lg:w-auto">
+        <div className="flex gap-4 w-full lg:w-auto">
           <Select value={roleFilter} onValueChange={setRoleFilter}>
-            <SelectTrigger className="h-12 w-full lg:w-40 rounded-xl bg-secondary/30 dark:bg-zinc-800 border-none font-black uppercase text-[9px] tracking-widest">
+            <SelectTrigger className="h-14 w-full lg:w-48 rounded-2xl bg-secondary/30 dark:bg-zinc-800 border-none font-black uppercase text-[9px] tracking-widest px-6">
               <SelectValue placeholder="Roles" />
             </SelectTrigger>
             <SelectContent className="rounded-2xl">
               <SelectItem value="all">All Roles</SelectItem>
-              <SelectItem value="admin">Admins</SelectItem>
+              <SelectItem value="admin">Administrators</SelectItem>
               <SelectItem value="cashier">Cashiers</SelectItem>
-              <SelectItem value="kitchen">Kitchen</SelectItem>
+              <SelectItem value="kitchen">Kitchen Station</SelectItem>
             </SelectContent>
           </Select>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="h-12 w-full lg:w-40 rounded-xl bg-secondary/30 dark:bg-zinc-800 border-none font-black uppercase text-[9px] tracking-widest">
+            <SelectTrigger className="h-14 w-full lg:w-48 rounded-2xl bg-secondary/30 dark:bg-zinc-800 border-none font-black uppercase text-[9px] tracking-widest px-6">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent className="rounded-2xl">
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="disabled">Disabled</SelectItem>
+              <SelectItem value="all">All Access</SelectItem>
+              <SelectItem value="active">Operational</SelectItem>
+              <SelectItem value="disabled">Restricted</SelectItem>
             </SelectContent>
           </Select>
         </div>
       </div>
 
-      <Card className="rounded-[2.5rem] border-none shadow-2xl bg-white dark:bg-zinc-900 overflow-hidden">
+      <Card className="rounded-[3rem] border-none shadow-2xl bg-white dark:bg-zinc-900 overflow-hidden border">
         <CardContent className="p-0">
           {loading ? (
-            <div className="p-40 text-center space-y-4">
-              <Loader2 className="animate-spin mx-auto w-12 h-12 text-primary" />
-              <p className="font-black uppercase tracking-widest text-[10px] text-muted-foreground">Syncing Staff Directory...</p>
+            <div className="p-48 text-center space-y-6">
+              <Loader2 className="animate-spin mx-auto w-12 h-12 text-primary opacity-20" />
+              <p className="font-black uppercase tracking-[0.3em] text-[10px] text-muted-foreground animate-pulse">Establishing Team Sync...</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto scrollbar-hide">
               <table className="w-full">
-                <thead className="bg-secondary/10 dark:bg-zinc-800 border-b">
-                  <tr className="text-[10px] font-black uppercase text-muted-foreground text-left">
-                    <th className="px-8 py-6">Member & UID</th>
-                    <th className="px-8 py-6">Role</th>
-                    <th className="px-8 py-6">Identity Verification</th>
-                    <th className="px-8 py-6">Status</th>
-                    <th className="px-8 py-6 text-right">Actions</th>
+                <thead className="bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-100 dark:border-zinc-800">
+                  <tr className="text-[10px] font-black uppercase text-muted-foreground text-left tracking-[0.2em]">
+                    <th className="px-10 py-6">Member Identity</th>
+                    <th className="px-10 py-6">Operational Role</th>
+                    <th className="px-10 py-6">Entity Verification</th>
+                    <th className="px-10 py-6">Access Hub</th>
+                    <th className="px-10 py-6 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y">
+                <tbody className="divide-y divide-zinc-50 dark:divide-zinc-800">
                   {filteredStaff.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="py-20 text-center opacity-30">
-                        <Users className="w-12 h-12 mx-auto mb-4" />
-                        <p className="font-black uppercase tracking-widest text-xs">No staff members found</p>
+                      <td colSpan={5} className="py-24 text-center opacity-10">
+                        <Users className="w-16 h-16 mx-auto mb-4" />
+                        <p className="font-black uppercase tracking-[0.4em] text-sm italic">Registry Entry Empty</p>
                       </td>
                     </tr>
                   ) : filteredStaff.map((staff) => (
-                    <tr key={staff.id} className={cn("hover:bg-secondary/5 transition-colors group", staff.id === currentUser?.uid && "bg-primary/5")}>
-                      <td className="px-8 py-6">
-                        <div className="flex items-center gap-4">
-                          <Avatar className="h-12 w-12 rounded-2xl shadow-md border-2 border-background shrink-0">
+                    <tr key={staff.id} className={cn("hover:bg-primary/5 transition-all group", staff.id === currentUser?.uid && "bg-primary/5")}>
+                      <td className="px-10 py-6">
+                        <div className="flex items-center gap-5">
+                          <Avatar className="h-14 w-14 rounded-2xl shadow-xl border-4 border-white dark:border-zinc-800 shrink-0 group-hover:scale-110 transition-transform duration-700">
                             <AvatarImage src={staff.photoUrl} alt={staff.name} />
                             <AvatarFallback className="bg-primary/10 text-primary font-black">
                               {(staff.name || 'EB').slice(0, 2).toUpperCase()}
@@ -350,68 +350,67 @@ export const StaffManagement = () => {
                           </Avatar>
                           <div className="flex flex-col min-w-0">
                             <div className="flex items-center gap-2">
-                              <span className="font-black text-sm group-hover:text-primary transition-colors truncate">{staff.name || 'Anonymous'}</span>
+                              <span className="font-black text-base uppercase tracking-tighter group-hover:text-primary transition-colors truncate">{staff.name || 'Staff'}</span>
                               {staff.id === currentUser?.uid && (
-                                <Badge variant="outline" className="text-[7px] font-black uppercase border-primary/20 text-primary bg-primary/5 px-1 py-0">You</Badge>
+                                <Badge className="bg-primary text-white border-none text-[7px] font-black uppercase px-2 py-0.5 rounded-full">ACTIVE YOU</Badge>
                               )}
                             </div>
-                            <span className="text-[9px] font-medium opacity-50 truncate">{staff.email}</span>
-                            <span className="text-[8px] font-black text-muted-foreground/60 flex items-center gap-1 mt-0.5">
-                              <Fingerprint className="w-2.5 h-2.5" /> {staff.id.slice(0, 16)}...
+                            <span className="text-[10px] font-medium opacity-50 truncate">{staff.email}</span>
+                            <span className="text-[8px] font-black text-muted-foreground/40 flex items-center gap-1 mt-1 uppercase tracking-widest">
+                              <Fingerprint className="w-2.5 h-2.5" /> ID: {staff.id.slice(0, 12)}...
                             </span>
                           </div>
                         </div>
                       </td>
-                      <td className="px-8 py-6">
-                        <Badge variant="outline" className="rounded-full px-3 py-1 gap-2 border-muted bg-zinc-50 dark:bg-zinc-800 text-foreground font-black uppercase text-[8px] tracking-widest">
+                      <td className="px-10 py-6">
+                        <Badge variant="outline" className="rounded-full px-4 py-1.5 gap-2 border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800 text-foreground font-black uppercase text-[8px] tracking-widest">
                           {getRoleIcon(staff.role)}
                           {staff.role}
                         </Badge>
                       </td>
-                      <td className="px-8 py-6">
+                      <td className="px-10 py-6">
                         {staff.id.startsWith('staff-') ? (
                           <div className="flex flex-col gap-1">
-                             <Badge className="bg-orange-50 text-orange-600 border-orange-100 font-black text-[7px] uppercase w-fit px-1.5 py-0">Invite Placeholder</Badge>
-                             <p className="text-[8px] font-medium text-muted-foreground italic">Linked via email invite</p>
+                             <Badge className="bg-orange-50 text-orange-600 border-orange-100 font-black text-[7px] uppercase w-fit px-2 py-0.5 rounded-md">Pending Link</Badge>
+                             <p className="text-[8px] font-medium text-muted-foreground italic">Invite Placeholder</p>
                           </div>
                         ) : (
                           <div className="flex flex-col gap-1">
-                             <Badge className="bg-green-50 text-green-600 border-green-100 font-black text-[7px] uppercase w-fit px-1.5 py-0">Real Identity</Badge>
-                             <p className="text-[8px] font-black text-muted-foreground/40 uppercase">Verified Firebase UID</p>
+                             <Badge className="bg-emerald-50 text-emerald-600 border-emerald-100 font-black text-[7px] uppercase w-fit px-2 py-0.5 rounded-md">Verified node</Badge>
+                             <p className="text-[8px] font-black text-muted-foreground/40 uppercase">Authenticated ID</p>
                           </div>
                         )}
                       </td>
-                      <td className="px-8 py-6">
+                      <td className="px-10 py-6">
                         {staff.status === 'active' ? (
-                          <Badge className="bg-green-100 text-green-700 border-none px-2 font-black text-[8px] uppercase">Active</Badge>
+                          <Badge className="bg-emerald-500 text-white border-none px-3 py-1 rounded-lg font-black text-[8px] uppercase shadow-sm">Operational</Badge>
                         ) : (
-                          <Badge className="bg-red-100 text-red-700 border-none px-2 font-black text-[8px] uppercase">Blocked</Badge>
+                          <Badge className="bg-rose-500 text-white border-none px-3 py-1 rounded-lg font-black text-[8px] uppercase shadow-sm">Restricted</Badge>
                         )}
                       </td>
-                      <td className="px-8 py-6 text-right">
+                      <td className="px-10 py-6 text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="rounded-xl hover:bg-primary/10 hover:text-primary"><MoreVertical className="w-5 h-5" /></Button>
+                            <Button variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-primary/10 hover:text-primary transition-all"><MoreVertical className="w-5 h-5" /></Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-56 rounded-2xl p-2 shadow-3xl border-none">
-                            <DropdownMenuLabel className="text-[9px] font-black uppercase opacity-40 px-3 py-2">Quick Actions</DropdownMenuLabel>
-                            <DropdownMenuItem onSelect={(e) => { e.preventDefault(); openProfile(staff); }} className="rounded-xl gap-3 py-3 font-bold cursor-pointer"><Eye className="w-4 h-4 text-blue-500" /> View Profile</DropdownMenuItem>
-                            <DropdownMenuItem onSelect={(e) => { e.preventDefault(); openEdit(staff); }} className="rounded-xl gap-3 py-3 font-bold cursor-pointer"><Edit3 className="w-4 h-4 text-primary" /> Edit Details</DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuLabel className="text-[9px] font-black uppercase opacity-40 px-3 py-2">Account Control</DropdownMenuLabel>
-                            <DropdownMenuItem onClick={() => copyText(staff.id)} className="rounded-xl gap-3 py-3 font-bold cursor-pointer"><Fingerprint className="w-4 h-4 text-zinc-500" /> Copy UID</DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => handleResetPassword(staff.email)} className="rounded-xl gap-3 py-3 font-bold cursor-pointer"><RefreshCcw className="w-4 h-4 text-purple-500" /> Send Reset Link</DropdownMenuItem>
+                          <DropdownMenuContent align="end" className="w-60 rounded-[1.8rem] p-2 shadow-3xl border-none mt-2">
+                            <DropdownMenuLabel className="text-[9px] font-black uppercase opacity-40 px-3 py-2">Entity Actions</DropdownMenuLabel>
+                            <DropdownMenuItem onSelect={(e) => { e.preventDefault(); openProfile(staff); }} className="rounded-xl gap-4 py-3.5 font-bold cursor-pointer transition-all"><Eye className="w-4 h-4 text-blue-500" /> View Record</DropdownMenuItem>
+                            <DropdownMenuItem onSelect={(e) => { e.preventDefault(); openEdit(staff); }} className="rounded-xl gap-4 py-3.5 font-bold cursor-pointer transition-all"><Edit3 className="w-4 h-4 text-primary" /> Modify Profile</DropdownMenuItem>
+                            <DropdownMenuSeparator className="opacity-10" />
+                            <DropdownMenuLabel className="text-[9px] font-black uppercase opacity-40 px-3 py-2">Security Hub</DropdownMenuLabel>
+                            <DropdownMenuItem onClick={() => handleResetPassword(staff.email)} className="rounded-xl gap-4 py-3.5 font-bold cursor-pointer transition-all"><RefreshCcw className="w-4 h-4 text-purple-500" /> Reset Password</DropdownMenuItem>
                             {staff.status === 'active' ? (
-                              <DropdownMenuItem onSelect={(e) => { e.preventDefault(); triggerAlert('disable', staff.id); }} className="rounded-xl gap-3 py-3 font-bold text-orange-600 cursor-pointer"><Ban className="w-4 h-4" /> Block Access</DropdownMenuItem>
+                              <DropdownMenuItem onSelect={(e) => { e.preventDefault(); triggerAlert('disable', staff.id); }} className="rounded-xl gap-4 py-3.5 font-bold text-orange-600 cursor-pointer transition-all"><Ban className="w-4 h-4" /> Block Entry</DropdownMenuItem>
                             ) : (
-                              <DropdownMenuItem onSelect={(e) => { e.preventDefault(); triggerAlert('enable', staff.id); }} className="rounded-xl gap-3 py-3 font-bold text-green-600 cursor-pointer"><CheckCircle2 className="w-4 h-4" /> Unblock Access</DropdownMenuItem>
+                              <DropdownMenuItem onSelect={(e) => { e.preventDefault(); triggerAlert('enable', staff.id); }} className="rounded-xl gap-4 py-3.5 font-bold text-emerald-600 cursor-pointer transition-all"><CheckCircle2 className="w-4 h-4" /> Restore Access</DropdownMenuItem>
                             )}
                             <DropdownMenuItem 
                               onSelect={(e) => { e.preventDefault(); triggerAlert('delete', staff.id); }} 
-                              className={cn("rounded-xl gap-3 py-3 font-bold text-destructive cursor-pointer", staff.id === currentUser?.uid && "opacity-30 cursor-not-allowed")}
+                              className={cn("rounded-xl gap-4 py-3.5 font-bold text-rose-600 cursor-pointer transition-all", staff.id === currentUser?.uid && "opacity-30 cursor-not-allowed")}
                               disabled={staff.id === currentUser?.uid}
                             >
-                              <Trash2 className="w-4 h-4" /> Delete Forever
+                              <Trash2 className="w-4 h-4" /> Purge Entity
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -425,135 +424,124 @@ export const StaffManagement = () => {
         </CardContent>
       </Card>
 
-      {/* Add Staff Dialog */}
+      {/* MODALS RENDERED HERE FOR FLOW */}
+      {/* ADD STAFF DIALOG */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="max-w-xl rounded-[2.5rem] p-10 border-none bg-white dark:bg-zinc-900 shadow-3xl">
-          <DialogHeader>
-            <DialogTitle className="text-3xl font-black font-headline uppercase tracking-tighter">Add <span className="text-primary italic">Recruit</span></DialogTitle>
-          </DialogHeader>
-          <div className="space-y-6 mt-8">
+        <DialogContent className="max-w-xl rounded-[3rem] p-0 overflow-hidden border-none shadow-3xl bg-white dark:bg-zinc-950">
+          <div className="p-10 bg-primary text-white shrink-0 relative overflow-hidden">
+             <div className="absolute -right-16 -top-16 w-56 h-56 bg-white/10 rounded-full blur-3xl" />
+             <DialogHeader className="relative z-10">
+                <DialogTitle className="text-4xl font-black font-headline uppercase tracking-tighter leading-none">New <span className="italic opacity-80">Recruit</span></DialogTitle>
+                <p className="text-white/70 font-medium text-xs uppercase tracking-widest mt-2">Provisioning Operational Identity</p>
+             </DialogHeader>
+          </div>
+          <div className="p-10 space-y-8">
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Staff Name</Label>
-                <Input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="h-14 rounded-xl border-muted bg-secondary/20 dark:bg-zinc-800 font-bold" />
+                <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Full Legal Name</Label>
+                <Input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="h-14 rounded-2xl border-none bg-secondary/30 dark:bg-zinc-800 font-bold px-6" placeholder="Staff Name" />
               </div>
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Work Email</Label>
-                <Input type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="h-14 rounded-xl border-muted bg-secondary/20 dark:bg-zinc-800 font-bold" />
+                <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Professional Email</Label>
+                <Input type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} className="h-14 rounded-2xl border-none bg-secondary/30 dark:bg-zinc-800 font-bold px-6" placeholder="staff@ezzybites.com" />
               </div>
             </div>
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Assigned Role</Label>
+                <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Operational Assignment</Label>
                 <Select value={formData.role} onValueChange={(v: StaffRole) => setFormData({...formData, role: v})}>
-                  <SelectTrigger className="h-14 rounded-xl bg-secondary/20 dark:bg-zinc-800 border-muted font-bold"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-14 rounded-2xl border-none bg-secondary/30 dark:bg-zinc-800 font-bold px-6 uppercase text-[10px] tracking-widest"><SelectValue /></SelectTrigger>
                   <SelectContent className="rounded-2xl">
-                    <SelectItem value="admin">Administrator</SelectItem>
-                    <SelectItem value="cashier">Billing Cashier</SelectItem>
-                    <SelectItem value="kitchen">Kitchen Chef</SelectItem>
+                    <SelectItem value="admin" className="font-bold">Administrator</SelectItem>
+                    <SelectItem value="cashier" className="font-bold">Billing Cashier</SelectItem>
+                    <SelectItem value="kitchen" className="font-bold">Kitchen Chef</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Mobile</Label>
-                <Input value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className="h-14 rounded-xl border-muted bg-secondary/20 dark:bg-zinc-800 font-bold" />
+                <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Secure Contact</Label>
+                <Input value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className="h-14 rounded-2xl border-none bg-secondary/30 dark:bg-zinc-800 font-bold px-6" placeholder="Mobile" />
               </div>
             </div>
-            <Button className="w-full h-18 rounded-2xl font-black text-lg bg-primary text-white mt-4" onClick={handleAddStaff} disabled={submitting}>
-              {submitting ? <Loader2 className="animate-spin" /> : 'Register Staff Member'}
+            <Button className="w-full h-18 rounded-[1.8rem] font-black text-lg bg-primary text-white shadow-2xl shadow-primary/20 hover:scale-[1.02] transition-all uppercase tracking-widest mt-4" onClick={handleAddStaff} disabled={submitting}>
+              {submitting ? <Loader2 className="animate-spin w-6 h-6" /> : 'Register Identity'}
             </Button>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Profile Detail View */}
+      {/* PROFILE DETAIL VIEW */}
       <Dialog open={isProfileDialogOpen} onOpenChange={(open) => {
         setIsProfileDialogOpen(open);
         if(!open) setTimeout(() => setSelectedStaff(null), 300);
       }}>
-        <DialogContent className="max-w-2xl rounded-[3rem] p-0 overflow-hidden border-none bg-white dark:bg-zinc-900 shadow-3xl">
+        <DialogContent className="max-w-2xl rounded-[3.5rem] p-0 overflow-hidden border-none bg-white dark:bg-zinc-950 shadow-3xl">
           <DialogHeader className="sr-only">
             <DialogTitle>Staff Profile: {selectedStaff?.name || 'Details'}</DialogTitle>
           </DialogHeader>
           {selectedStaff && (
             <div className="flex flex-col">
-              <div className="relative h-48 bg-primary overflow-hidden">
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-                <div className="absolute -bottom-12 left-10">
-                  <Avatar className="h-32 w-32 rounded-[2.5rem] border-8 border-white dark:border-zinc-900 shadow-2xl">
+              <div className="relative h-56 bg-zinc-950 overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+                <div className="absolute -bottom-14 left-10">
+                  <Avatar className="h-36 w-32 rounded-[2.5rem] border-8 border-white dark:border-zinc-900 shadow-3xl">
                     <AvatarImage src={selectedStaff.photoUrl} />
-                    <AvatarFallback className="bg-primary/10 text-primary font-black text-3xl">{(selectedStaff.name || 'EB').slice(0, 2).toUpperCase()}</AvatarFallback>
+                    <AvatarFallback className="bg-primary/10 text-primary font-black text-4xl">{(selectedStaff.name || 'EB').slice(0, 2).toUpperCase()}</AvatarFallback>
                   </Avatar>
                 </div>
+                <div className="absolute top-8 right-10">
+                   <Badge className="bg-white/20 text-white backdrop-blur-md px-4 py-1.5 rounded-full border border-white/20 font-black text-[9px] uppercase tracking-widest">Operational Entity</Badge>
+                </div>
               </div>
-              <div className="pt-16 px-10 pb-10 space-y-8">
+              <div className="pt-20 px-10 pb-12 space-y-10">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className="text-3xl font-black font-headline tracking-tighter uppercase">{selectedStaff.name || 'Staff Member'}</h3>
-                    <div className="flex items-center gap-3 mt-1">
-                      <Badge className="bg-primary/10 text-primary border-none text-[9px] font-black uppercase tracking-widest">{selectedStaff.role}</Badge>
+                    <h3 className="text-4xl font-black font-headline tracking-tighter uppercase leading-none mb-2">{selectedStaff.name || 'Staff Member'}</h3>
+                    <div className="flex items-center gap-4">
+                      <Badge className="bg-primary/10 text-primary border-none text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-md">{selectedStaff.role}</Badge>
                       {getOnlineStatus(selectedStaff.onlineStatus)}
                     </div>
                   </div>
-                  <div className="bg-secondary/30 p-3 rounded-2xl text-right">
-                    <p className="text-[8px] font-black uppercase text-muted-foreground mb-1">Internal Reference UID</p>
-                    <p className="text-[10px] font-mono font-bold flex items-center gap-2">
-                      {selectedStaff.id}
-                      <Copy className="w-3 h-3 cursor-pointer hover:text-primary transition-colors" onClick={() => copyText(selectedStaff.id)} />
+                  <div className="bg-zinc-50 dark:bg-zinc-800 p-4 rounded-2xl text-right border">
+                    <p className="text-[8px] font-black uppercase text-muted-foreground mb-1 tracking-widest">Internal ID Registry</p>
+                    <p className="text-[10px] font-mono font-bold flex items-center gap-3">
+                      {selectedStaff.id.slice(0, 20)}...
+                      <Copy className="w-3.5 h-3.5 cursor-pointer hover:text-primary transition-colors" onClick={() => copyText(selectedStaff.id)} />
                     </p>
                   </div>
                 </div>
                 
-                <div className="p-4 bg-orange-50 dark:bg-orange-900/10 border border-orange-100 dark:border-orange-800 rounded-2xl flex items-start gap-4">
-                  {selectedStaff.id.startsWith('staff-') ? (
-                    <>
-                      <UserCog className="w-6 h-6 text-orange-500 shrink-0 mt-1" />
-                      <div>
-                        <p className="text-[10px] font-black uppercase text-orange-700">Account Type: Placeholder</p>
-                        <p className="text-[11px] font-medium leading-relaxed">This record was created via a manual invite. It will automatically merge with a real account when the user logs in for the first time.</p>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <UserCircle2 className="w-6 h-6 text-green-600 shrink-0 mt-1" />
-                      <div>
-                        <p className="text-[10px] font-black uppercase text-green-700">Account Type: Verified</p>
-                        <p className="text-[11px] font-medium leading-relaxed">This is a confirmed operational account linked to a unique Firebase identifier.</p>
-                      </div>
-                    </>
-                  )}
-                </div>
-
                 <div className="grid md:grid-cols-3 gap-6">
                   <div className={cn(
-                    "p-6 rounded-3xl space-y-1 transition-all",
-                    selectedStaff.role === 'cashier' ? "bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-100" : "bg-secondary/30 dark:bg-zinc-800"
+                    "p-8 rounded-[2rem] space-y-2 transition-all border",
+                    selectedStaff.role === 'cashier' ? "bg-blue-50/50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800" : "bg-zinc-50/50 dark:bg-zinc-800/50 border-zinc-100 dark:border-zinc-800"
                   )}>
-                    <p className="text-[9px] font-black uppercase opacity-40">Orders Handled</p>
-                    <p className={cn("text-2xl font-black italic", selectedStaff.role === 'cashier' && "text-blue-600")}>{selectedStaff.stats?.ordersHandled || 0}</p>
+                    <p className="text-[9px] font-black uppercase opacity-40 tracking-widest">Ticket Load</p>
+                    <p className={cn("text-3xl font-black italic", selectedStaff.role === 'cashier' && "text-blue-600")}>{selectedStaff.stats?.ordersHandled || 0}</p>
                   </div>
                   <div className={cn(
-                    "p-6 rounded-3xl space-y-1 transition-all",
-                    selectedStaff.role === 'cashier' ? "bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-100" : "bg-secondary/30 dark:bg-zinc-800"
+                    "p-8 rounded-[2rem] space-y-2 transition-all border",
+                    selectedStaff.role === 'cashier' ? "bg-blue-50/50 dark:bg-blue-900/10 border-blue-100 dark:border-blue-800" : "bg-zinc-50/50 dark:bg-zinc-800/50 border-zinc-100 dark:border-zinc-800"
                   )}>
-                    <p className="text-[9px] font-black uppercase opacity-40">Bills Generated</p>
-                    <p className={cn("text-2xl font-black italic", selectedStaff.role === 'cashier' && "text-blue-600")}>{selectedStaff.stats?.billsGenerated || 0}</p>
+                    <p className="text-[9px] font-black uppercase opacity-40 tracking-widest">Settlements</p>
+                    <p className={cn("text-3xl font-black italic", selectedStaff.role === 'cashier' && "text-blue-600")}>{selectedStaff.stats?.billsGenerated || 0}</p>
                   </div>
                   <div className={cn(
-                    "p-6 rounded-3xl space-y-1 transition-all",
-                    selectedStaff.role === 'kitchen' ? "bg-orange-50 dark:bg-orange-900/20 border-2 border-orange-100" : "bg-secondary/30 dark:bg-zinc-800"
+                    "p-8 rounded-[2rem] space-y-2 transition-all border",
+                    selectedStaff.role === 'kitchen' ? "bg-orange-50/50 dark:bg-orange-900/10 border-orange-100 dark:border-orange-800" : "bg-zinc-50/50 dark:bg-zinc-800/50 border-zinc-100 dark:border-zinc-800"
                   )}>
-                    <p className="text-[9px] font-black uppercase opacity-40">Kitchen Updates</p>
-                    <p className={cn("text-2xl font-black italic", selectedStaff.role === 'kitchen' && "text-orange-600")}>{selectedStaff.stats?.kitchenUpdates || 0}</p>
+                    <p className="text-[9px] font-black uppercase opacity-40 tracking-widest">Prep Ops</p>
+                    <p className={cn("text-3xl font-black italic", selectedStaff.role === 'kitchen' && "text-orange-600")}>{selectedStaff.stats?.kitchenUpdates || 0}</p>
                   </div>
                 </div>
-                <div className="space-y-4 pt-4 border-t border-dashed">
+
+                <div className="space-y-4 pt-4 border-t-2 border-dashed">
                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
-                      <span className="opacity-40">Registered Email</span>
+                      <span className="opacity-40">Identity Email</span>
                       <span className="font-bold">{selectedStaff.email}</span>
                    </div>
                    <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
-                      <span className="opacity-40">Joining Date</span>
+                      <span className="opacity-40">Registry Date</span>
                       <span className="font-bold">{selectedStaff.createdAt?.toDate ? selectedStaff.createdAt.toDate().toLocaleDateString() : 'Active Member'}</span>
                    </div>
                 </div>
@@ -563,21 +551,22 @@ export const StaffManagement = () => {
         </DialogContent>
       </Dialog>
 
+      {/* ALERT DIALOG */}
       <AlertDialog open={isAlertDialogOpen} onOpenChange={setIsAlertDialogOpen}>
-        <AlertDialogContent className="rounded-[2.5rem] p-10 border-none shadow-3xl bg-white dark:bg-zinc-900">
+        <AlertDialogContent className="rounded-[3rem] p-12 border-none shadow-3xl bg-white dark:bg-zinc-900">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-2xl font-black font-headline uppercase tracking-tighter flex items-center gap-3">
-              <AlertCircle className="w-8 h-8 text-destructive" /> Security Check
+            <AlertDialogTitle className="text-3xl font-black font-headline uppercase tracking-tighter flex items-center gap-4 mb-2">
+              <AlertCircle className="w-10 h-10 text-rose-600" /> Security Node
             </AlertDialogTitle>
-            <AlertDialogDescription className="font-medium text-base mt-4 leading-relaxed">
-              {alertAction?.type === 'delete' && "Are you sure? This will permanently remove the staff member from the database."}
-              {alertAction?.type === 'disable' && "This will block the staff member from logging in until re-enabled."}
-              {alertAction?.type === 'enable' && "This will restore system access for this staff member."}
+            <AlertDialogDescription className="font-medium text-lg leading-relaxed opacity-70">
+              {alertAction?.type === 'delete' && "Are you sure? This will permanently terminate the staff member from the ecosystem. This action is irreversible."}
+              {alertAction?.type === 'disable' && "This will restrict the staff member from hub entry until manually re-enabled by an administrator."}
+              {alertAction?.type === 'enable' && "This will restore full system access and operational permissions for this staff member."}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="mt-8 gap-3">
-            <AlertDialogCancel className="h-14 rounded-2xl font-black uppercase text-[10px] tracking-widest border-2">Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleAlertConfirm} className={cn("h-14 rounded-2xl font-black uppercase text-[10px] tracking-widest", alertAction?.type === 'delete' ? "bg-destructive text-white" : "bg-primary text-white")}>Confirm Action</AlertDialogAction>
+          <AlertDialogFooter className="mt-10 gap-4">
+            <AlertDialogCancel className="h-16 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] border-2 px-8">Return</AlertDialogCancel>
+            <AlertDialogAction onClick={handleAlertConfirm} className={cn("h-16 rounded-2xl font-black uppercase text-[10px] tracking-[0.2em] px-8", alertAction?.type === 'delete' ? "bg-rose-600 text-white" : "bg-zinc-950 text-white")}>Commit Change</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

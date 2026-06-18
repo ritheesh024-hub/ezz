@@ -1,8 +1,7 @@
-
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -10,8 +9,7 @@ import {
   Users, Search, Loader2, 
   CalendarDays, Mail, Phone,
   Clock, ShieldCheck, UserCircle2,
-  Download, Filter, ArrowUpDown,
-  UserCheck
+  Download
 } from 'lucide-react';
 import { useFirestore, useCollection } from '@/firebase';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
@@ -51,7 +49,7 @@ export const UserManagement = () => {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `EzzyBites_CustomerAudit_${format(new Date(), 'yyyy-MM-dd')}.csv`);
+    link.setAttribute("download", `EzzyBites_CRM_Audit_${format(new Date(), 'yyyy-MM-dd')}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -96,8 +94,8 @@ export const UserManagement = () => {
           ) : (
             <div className="overflow-x-auto scrollbar-hide">
               <table className="w-full">
-                <thead className="bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-100">
-                  <tr className="text-[10px] font-black uppercase text-muted-foreground text-left tracking-widest">
+                <thead className="bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-100 dark:border-zinc-800">
+                  <tr className="text-[10px] font-black uppercase text-muted-foreground text-left tracking-[0.2em]">
                     <th className="px-10 py-6">Identity Registry</th>
                     <th className="px-10 py-6">Verification Node</th>
                     <th className="px-10 py-6">Behavioral Metrics</th>
@@ -109,21 +107,21 @@ export const UserManagement = () => {
                     <tr>
                       <td colSpan={4} className="py-24 text-center opacity-10">
                         <UserCircle2 className="w-16 h-16 mx-auto mb-4" />
-                        <p className="font-black uppercase tracking-widest text-sm italic">No entries found</p>
+                        <p className="font-black uppercase tracking-[0.4em] text-sm italic">No entries found</p>
                       </td>
                     </tr>
                   ) : filteredUsers.map((u) => (
                     <tr key={u.id} className="hover:bg-primary/5 transition-all group">
                       <td className="px-10 py-6">
                         <div className="flex items-center gap-5">
-                          <Avatar className="h-14 w-14 rounded-2xl shadow-xl border-4 border-white dark:border-zinc-800 shrink-0 group-hover:scale-110 transition-transform">
+                          <Avatar className="h-14 w-14 rounded-2xl shadow-xl border-4 border-white dark:border-zinc-800 shrink-0 group-hover:scale-110 transition-transform duration-700">
                             <AvatarImage src={u.photoUrl} alt={u.name} />
                             <AvatarFallback className="bg-zinc-950 text-white font-black text-base">
                               {(u.name || 'EB').slice(0, 2).toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
                           <div className="flex flex-col min-w-0">
-                            <span className="font-black text-base uppercase tracking-tighter group-hover:text-primary transition-colors truncate">{u.name || 'Standard Guest'}</span>
+                            <span className="font-black text-base uppercase tracking-tighter group-hover:text-primary transition-colors truncate">{u.name || 'Guest'}</span>
                             <span className="text-[10px] font-medium opacity-50 truncate flex items-center gap-2 mt-0.5">
                                <Mail className="w-3.5 h-3.5" /> {u.email}
                             </span>
@@ -161,7 +159,7 @@ export const UserManagement = () => {
                          </div>
                       </td>
                       <td className="px-10 py-6">
-                        <div className="flex items-center gap-2 text-[10px] font-black uppercase text-muted-foreground opacity-30 italic tracking-widest">
+                        <div className="flex items-center gap-2 text-[10px] font-black uppercase text-muted-foreground opacity-30 italic tracking-[0.2em]">
                            <CalendarDays className="w-4 h-4" />
                            {u.createdAt?.toDate ? format(u.createdAt.toDate(), 'MMM dd, yyyy') : 'Pre-Launch'}
                         </div>

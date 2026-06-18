@@ -1,4 +1,3 @@
-
 "use client"
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -6,8 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { 
   ChefHat, 
-  Clock, 
-  CheckCircle2, 
   Timer,
   Package,
   Utensils,
@@ -15,8 +12,7 @@ import {
   Truck,
   AlertCircle,
   Flame,
-  Activity,
-  ArrowRight
+  Activity
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -38,7 +34,7 @@ export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) =>
   return (
     <div className="space-y-10 animate-in fade-in duration-700">
       {/* KITCHEN HUD */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
         <Card className="rounded-[2.5rem] border-none shadow-xl bg-orange-gradient text-white p-10 relative overflow-hidden group">
            <div className="absolute -right-8 -bottom-8 opacity-10 group-hover:scale-125 transition-transform duration-1000 rotate-12">
              <Flame className="w-48 h-48" />
@@ -68,7 +64,7 @@ export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) =>
            </div>
         </Card>
 
-        <Card className="rounded-[2.5rem] border-none shadow-xl bg-zinc-900 text-white p-10 relative overflow-hidden group">
+        <Card className="rounded-[2.5rem] border-none shadow-xl bg-zinc-900 text-white p-10 relative overflow-hidden group sm:col-span-2 lg:col-span-1">
            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-transparent opacity-50" />
            <div className="relative z-10 flex flex-col h-full justify-between gap-8">
               <div className="flex items-center gap-3 bg-white/10 w-fit px-4 py-2 rounded-full border border-white/10">
@@ -113,7 +109,7 @@ export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) =>
                     {order.orderType === 'Dine-In' ? <Utensils className="w-6 h-6" /> : <Package className="w-6 h-6" />}
                   </div>
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.15em] opacity-80">Ticker ID</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.15em] opacity-80">Ticket ID</p>
                     <h4 className="font-black text-2xl uppercase tracking-tighter leading-none italic">#{order.orderId}</h4>
                   </div>
                 </div>

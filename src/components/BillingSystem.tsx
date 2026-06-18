@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogTitle, DialogHeader } from "@/components/ui/dialog";
 import { 
-  Calculator, Receipt, History, 
+  Calculator, History, 
   Search, Plus, Minus, Trash2, Printer, 
   ShoppingBag, Utensils, 
   Package,
@@ -97,7 +97,6 @@ export const BillingSystem = ({ products, orders }: BillingSystemProps) => {
     const billRef = doc(db, 'orders', billId);
     setDoc(billRef, billData)
       .then(() => {
-        // Increment stats for the staff member who processed the bill
         const staffRef = doc(db, 'admins', user.uid);
         updateDoc(staffRef, {
           'stats.billsGenerated': increment(1),
@@ -121,53 +120,53 @@ export const BillingSystem = ({ products, orders }: BillingSystemProps) => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 animate-in fade-in duration-700">
       <Tabs defaultValue="pos" className="w-full">
-        <TabsList className="bg-white dark:bg-zinc-900 p-1 rounded-2xl border mb-6 flex w-fit shadow-sm">
-          <TabsTrigger value="pos" className="px-8 py-3 rounded-xl gap-2 font-black uppercase text-[10px] tracking-widest"><Calculator className="w-4 h-4" /> POS Counter</TabsTrigger>
-          <TabsTrigger value="history" className="px-8 py-3 rounded-xl gap-2 font-black uppercase text-[10px] tracking-widest"><History className="w-4 h-4" /> Bill History</TabsTrigger>
+        <TabsList className="bg-white dark:bg-zinc-900 p-1.5 rounded-2xl border mb-8 flex w-fit shadow-sm overflow-hidden">
+          <TabsTrigger value="pos" className="px-10 py-3.5 rounded-xl gap-2 font-black uppercase text-[10px] tracking-widest transition-all data-[state=active]:bg-primary data-[state=active]:text-white shadow-none border-none"><Calculator className="w-4 h-4" /> POS Counter</TabsTrigger>
+          <TabsTrigger value="history" className="px-10 py-3.5 rounded-xl gap-2 font-black uppercase text-[10px] tracking-widest transition-all data-[state=active]:bg-primary data-[state=active]:text-white shadow-none border-none"><History className="w-4 h-4" /> Bill History</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="pos">
-          <div className="grid grid-cols-2 gap-4 mb-6">
+        <TabsContent value="pos" className="outline-none">
+          <div className="grid grid-cols-2 gap-4 mb-8">
             {[ { id: 'Dine-In', icon: Utensils }, { id: 'Take Away', icon: Package } ].map(type => (
-              <button key={type.id} onClick={() => setOrderType(type.id)} className={cn("flex flex-col items-center justify-center p-6 rounded-2xl border-2 transition-all gap-3", orderType === type.id ? "border-primary bg-primary/5 text-primary shadow-lg" : "border-muted bg-white dark:bg-zinc-900 text-muted-foreground hover:border-primary/20")}>
+              <button key={type.id} onClick={() => setOrderType(type.id)} className={cn("flex items-center justify-center p-6 rounded-[2rem] border-2 transition-all gap-4", orderType === type.id ? "border-primary bg-primary/5 text-primary shadow-xl" : "border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-muted-foreground hover:border-primary/20")}>
                 <type.icon className="w-6 h-6" />
-                <span className="text-xs font-black uppercase">{type.id}</span>
+                <span className="text-sm font-black uppercase tracking-widest">{type.id}</span>
               </button>
             ))}
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-6">
+          <div className="grid lg:grid-cols-3 gap-8 items-start">
             <div className="lg:col-span-2 space-y-6">
-              <Card className="rounded-[2rem] border-none shadow-xl bg-white dark:bg-zinc-900 overflow-hidden">
-                <CardHeader className="p-6 border-b">
+              <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-zinc-900 overflow-hidden">
+                <CardHeader className="p-8 border-b bg-muted/5">
                   <div className="relative w-full">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                    <Input placeholder="Search dishes..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="h-12 pl-12 rounded-xl border-muted bg-secondary/30 font-bold" />
+                    <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground opacity-40" />
+                    <Input placeholder="Search dishes by name..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="h-14 pl-14 rounded-2xl border-none bg-secondary/30 dark:bg-zinc-800 font-bold text-base" />
                   </div>
                 </CardHeader>
-                <CardContent className="p-6">
-                  <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+                <CardContent className="p-8">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-6">
                     {filteredProducts.map(p => {
                       const cartItem = activeBill.find(i => i.id === p.id);
                       return (
-                        <div key={p.id} className="bg-secondary/20 dark:bg-zinc-800 rounded-[1.5rem] p-3 transition-all hover:shadow-md flex flex-col h-full group">
-                          <div className="aspect-square rounded-xl overflow-hidden mb-3 relative bg-white">
-                            <Image src={p.imageUrl} alt={p.name} fill className="object-cover group-hover:scale-110 transition-all" unoptimized />
+                        <div key={p.id} className="bg-secondary/20 dark:bg-zinc-800/50 rounded-[1.8rem] p-4 transition-all hover:shadow-xl flex flex-col h-full group border border-transparent hover:border-primary/10">
+                          <div className="aspect-square rounded-2xl overflow-hidden mb-4 relative bg-white">
+                            <Image src={p.imageUrl} alt={p.name} fill className="object-cover group-hover:scale-110 transition-all duration-700" unoptimized />
                           </div>
-                          <h4 className="font-bold text-[11px] truncate leading-tight mb-1">{p.name}</h4>
-                          <p className="text-primary font-black text-xs mb-3">₹{p.price}</p>
+                          <h4 className="font-black text-xs uppercase truncate leading-none mb-1 group-hover:text-primary transition-colors">{p.name}</h4>
+                          <p className="text-primary font-black text-base italic mb-4">₹{p.price}</p>
                           <div className="mt-auto">
                             {cartItem ? (
-                              <div className="flex items-center justify-between w-full bg-primary text-white rounded-xl h-10 px-2 gap-2">
-                                <button onClick={() => updateQuantity(p, -1)} className="p-1 hover:bg-white/20 rounded-md transition-colors"><Minus className="w-3.5 h-3.5" /></button>
-                                <span className="font-black text-xs w-4 text-center">{cartItem.quantity}</span>
-                                <button onClick={() => updateQuantity(p, 1)} className="p-1 hover:bg-white/20 rounded-md transition-colors"><Plus className="w-3.5 h-3.5" /></button>
+                              <div className="flex items-center justify-between w-full bg-primary text-white rounded-xl h-11 px-2 gap-2 shadow-lg shadow-primary/20">
+                                <button onClick={() => updateQuantity(p, -1)} className="p-1.5 hover:bg-white/20 rounded-md transition-colors"><Minus className="w-4 h-4" /></button>
+                                <span className="font-black text-sm w-4 text-center">{cartItem.quantity}</span>
+                                <button onClick={() => updateQuantity(p, 1)} className="p-1.5 hover:bg-white/20 rounded-md transition-colors"><Plus className="w-4 h-4" /></button>
                               </div>
                             ) : (
-                              <Button onClick={() => updateQuantity(p, 1)} variant="outline" className="w-full h-10 rounded-xl border-primary/30 text-primary font-black uppercase text-[9px] hover:bg-primary hover:text-white transition-all">
-                                <Plus className="w-3 h-3 mr-1" /> Add
+                              <Button onClick={() => updateQuantity(p, 1)} variant="outline" className="w-full h-11 rounded-xl border-primary/20 text-primary font-black uppercase text-[10px] tracking-widest hover:bg-primary hover:text-white transition-all">
+                                <Plus className="w-4 h-4 mr-1" /> Add
                               </Button>
                             )}
                           </div>
@@ -181,53 +180,53 @@ export const BillingSystem = ({ products, orders }: BillingSystemProps) => {
 
             <div className="space-y-6">
               <Card className="rounded-[2.5rem] border-none shadow-2xl bg-white dark:bg-zinc-900 sticky top-24">
-                <CardHeader className="p-6 border-b flex items-center justify-between">
-                  <CardTitle className="text-lg font-black font-headline">Bill Summary</CardTitle>
-                  <Badge variant="outline" className="text-[9px] font-black uppercase">{orderType}</Badge>
+                <CardHeader className="p-8 border-b bg-muted/5 flex flex-row items-center justify-between">
+                  <CardTitle className="text-xl font-black font-headline uppercase tracking-tighter italic">Settlement</CardTitle>
+                  <Badge variant="outline" className="text-[9px] font-black uppercase px-3 py-1 rounded-full">{orderType}</Badge>
                 </CardHeader>
-                <CardContent className="p-6 space-y-6">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <Label className="text-[9px] font-black uppercase opacity-40">Mobile</Label>
-                      <Input value={customerInfo.phone} onChange={e => setCustomerInfo({...customerInfo, phone: e.target.value.replace(/\D/g, '').slice(0, 10)})} placeholder="Mobile" className="h-10 rounded-xl bg-secondary/30 dark:bg-zinc-800 border-none text-xs" />
+                <CardContent className="p-8 space-y-8">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label className="text-[9px] font-black uppercase opacity-40 ml-1">Phone Node</Label>
+                      <Input value={customerInfo.phone} onChange={e => setCustomerInfo({...customerInfo, phone: e.target.value.replace(/\D/g, '').slice(0, 10)})} placeholder="00000 00000" className="h-11 rounded-xl bg-secondary/30 dark:bg-zinc-800 border-none font-bold" />
                     </div>
-                    <div className="space-y-1">
-                      <Label className="text-[9px] font-black uppercase opacity-40">Name</Label>
-                      <Input value={customerInfo.name} onChange={e => setCustomerInfo({...customerInfo, name: e.target.value})} placeholder="Guest" className="h-10 rounded-xl bg-secondary/30 dark:bg-zinc-800 border-none text-xs" />
+                    <div className="space-y-2">
+                      <Label className="text-[9px] font-black uppercase opacity-40 ml-1">Identity</Label>
+                      <Input value={customerInfo.name} onChange={e => setCustomerInfo({...customerInfo, name: e.target.value})} placeholder="Guest" className="h-11 rounded-xl bg-secondary/30 dark:bg-zinc-800 border-none font-bold" />
                     </div>
                   </div>
 
-                  <div className="max-h-[300px] overflow-y-auto space-y-3 pr-1 scrollbar-hide">
+                  <div className="max-h-[300px] overflow-y-auto space-y-4 pr-1 scrollbar-hide">
                     {activeBill.length === 0 ? (
-                      <div className="text-center py-10 opacity-30">
+                      <div className="text-center py-12 opacity-20 bg-secondary/10 rounded-[2rem] border-2 border-dashed">
                         <ShoppingBag className="w-10 h-10 mx-auto mb-2" />
-                        <p className="text-[9px] font-black uppercase">No items selected</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest">Cart Reserved</p>
                       </div>
                     ) : (
                       activeBill.map(item => (
-                        <div key={item.id} className="flex items-center justify-between bg-secondary/10 dark:bg-zinc-800 p-3 rounded-xl">
-                          <div className="flex-1 truncate mr-2">
-                            <h5 className="font-bold text-[10px] truncate">{item.name}</h5>
-                            <p className="text-[9px] font-black text-primary">₹{item.price * item.quantity}</p>
+                        <div key={item.id} className="flex items-center justify-between bg-zinc-50 dark:bg-zinc-800/50 p-4 rounded-2xl border border-transparent hover:border-primary/10 transition-all">
+                          <div className="flex-1 truncate mr-4">
+                            <h5 className="font-black text-[10px] uppercase truncate group-hover:text-primary transition-colors mb-0.5">{item.name}</h5>
+                            <p className="text-[11px] font-black text-primary italic">₹{item.price * item.quantity}</p>
                           </div>
-                          <div className="flex items-center gap-2 bg-white dark:bg-zinc-700 rounded-lg p-1">
-                            <button onClick={() => updateQuantity(item, -1)} className="p-1 hover:bg-secondary/20 rounded transition-colors dark:text-white"><Minus className="w-3 h-3" /></button>
-                            <span className="text-[10px] font-black w-4 text-center dark:text-white">{item.quantity}</span>
-                            <button onClick={() => updateQuantity(item, 1)} className="p-1 hover:bg-secondary/20 rounded transition-colors dark:text-white"><Plus className="w-3 h-3" /></button>
+                          <div className="flex items-center gap-3 bg-white dark:bg-zinc-700 rounded-xl p-1.5 shadow-sm">
+                            <button onClick={() => updateQuantity(item, -1)} className="p-1 hover:bg-secondary/20 rounded transition-colors dark:text-white"><Minus className="w-3.5 h-3.5" /></button>
+                            <span className="text-xs font-black w-4 text-center dark:text-white">{item.quantity}</span>
+                            <button onClick={() => updateQuantity(item, 1)} className="p-1 hover:bg-secondary/20 rounded transition-colors dark:text-white"><Plus className="w-3.5 h-3.5" /></button>
                           </div>
-                          <button onClick={() => removeFromBill(item.id)} className="ml-2 text-destructive/40 hover:text-destructive transition-colors"><Trash2 className="w-4 h-4" /></button>
+                          <button onClick={() => removeFromBill(item.id)} className="ml-3 text-destructive/30 hover:text-destructive transition-colors"><Trash2 className="w-4.5 h-4.5" /></button>
                         </div>
                       ))
                     )}
                   </div>
 
-                  <div className="space-y-3 pt-4 border-t border-dashed">
-                    <div className="flex justify-between items-center text-xs font-black uppercase">
-                      <span>Grand Total</span>
-                      <span className="text-2xl text-primary italic">₹{total}</span>
+                  <div className="space-y-4 pt-6 border-t-2 border-dashed">
+                    <div className="flex justify-between items-end">
+                      <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Gross Total</span>
+                      <span className="text-4xl font-black font-headline text-primary italic leading-none">₹{total}</span>
                     </div>
-                    <Button onClick={generateBill} disabled={loading} className="w-full h-14 rounded-2xl text-base font-black bg-primary">
-                      {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Generate Bill'}
+                    <Button onClick={generateBill} disabled={loading || activeBill.length === 0} className="w-full h-16 rounded-[1.5rem] text-base font-black uppercase tracking-[0.2em] bg-primary shadow-2xl shadow-primary/20 hover:scale-[1.02] transition-all">
+                      {loading ? <Loader2 className="w-6 h-6 animate-spin" /> : 'Settle & Print'}
                     </Button>
                   </div>
                 </CardContent>
@@ -236,30 +235,41 @@ export const BillingSystem = ({ products, orders }: BillingSystemProps) => {
           </div>
         </TabsContent>
 
-        <TabsContent value="history">
-          <Card className="rounded-[2rem] border-none shadow-xl bg-white dark:bg-zinc-900 p-8">
-            <div className="overflow-x-auto">
+        <TabsContent value="history" className="outline-none">
+          <Card className="rounded-[3rem] border-none shadow-xl bg-white dark:bg-zinc-900 p-8 md:p-12">
+            <div className="overflow-x-auto scrollbar-hide">
               <table className="w-full text-left">
-                <thead className="bg-muted/10 border-b">
-                  <tr className="text-[9px] font-black uppercase text-muted-foreground">
-                    <th className="px-6 py-4">ID</th>
-                    <th className="px-6 py-4">Customer</th>
-                    <th className="px-6 py-4">Type</th>
-                    <th className="px-6 py-4">Total</th>
-                    <th className="px-6 py-4">Action</th>
+                <thead className="bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-100 dark:border-zinc-800">
+                  <tr className="text-[10px] font-black uppercase text-muted-foreground tracking-[0.2em]">
+                    <th className="px-10 py-6">Identity Ticker</th>
+                    <th className="px-10 py-6">Entity Details</th>
+                    <th className="px-10 py-6">Node Type</th>
+                    <th className="px-10 py-6">Gross Amount</th>
+                    <th className="px-10 py-6 text-right">Ledger Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y">
-                  {orders.filter(o => o.isStoreBill).map(inv => (
-                    <tr key={inv.orderId} className="hover:bg-secondary/10 transition-colors">
-                      <td className="px-6 py-4 font-black text-primary">#{inv.orderId}</td>
-                      <td className="px-6 py-4">
-                        <p className="font-bold text-xs">{inv.customerName}</p>
-                        <p className="text-[9px] text-muted-foreground">{inv.customerPhone}</p>
+                <tbody className="divide-y divide-zinc-50 dark:divide-zinc-800">
+                  {orders.filter(o => o.isStoreBill).length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-24 text-center opacity-10">
+                        <Calculator className="w-16 h-16 mx-auto mb-4" />
+                        <p className="font-black uppercase tracking-[0.4em] text-sm italic">No Settlement Records</p>
                       </td>
-                      <td className="px-6 py-4"><Badge variant="outline" className="text-[8px] uppercase">{inv.orderType}</Badge></td>
-                      <td className="px-6 py-4 font-black text-primary">₹{inv.total}</td>
-                      <td className="px-6 py-4"><Button variant="ghost" size="sm" onClick={() => setViewingInvoice(inv)}><Printer className="w-4 h-4 mr-2" /> Print</Button></td>
+                    </tr>
+                  ) : orders.filter(o => o.isStoreBill).map(inv => (
+                    <tr key={inv.orderId} className="hover:bg-primary/5 transition-all group">
+                      <td className="px-10 py-6 font-black text-primary italic">#{inv.orderId}</td>
+                      <td className="px-10 py-6">
+                        <p className="font-black text-sm uppercase tracking-tight truncate max-w-[150px] group-hover:text-primary transition-colors">{inv.customerName}</p>
+                        <p className="text-[10px] font-bold opacity-40">+91 {inv.customerPhone}</p>
+                      </td>
+                      <td className="px-10 py-6"><Badge variant="outline" className="text-[8px] uppercase font-black px-3 py-1 rounded-full bg-secondary/50 border-none">{inv.orderType}</Badge></td>
+                      <td className="px-10 py-6 font-black text-lg text-primary italic">₹{inv.total}</td>
+                      <td className="px-10 py-6 text-right">
+                        <Button variant="ghost" size="sm" className="rounded-xl font-black uppercase text-[9px] tracking-widest gap-2 hover:bg-primary/10 hover:text-primary transition-all px-4 h-10" onClick={() => setViewingInvoice(inv)}>
+                          <Printer className="w-4 h-4" /> Manifest
+                        </Button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -269,53 +279,62 @@ export const BillingSystem = ({ products, orders }: BillingSystemProps) => {
         </TabsContent>
       </Tabs>
 
+      {/* INVOICE PREVIEW DIALOG */}
       <Dialog open={!!viewingInvoice} onOpenChange={() => setViewingInvoice(null)}>
-        <DialogContent className="max-w-md p-0 rounded-[2.5rem] overflow-hidden border-none shadow-3xl bg-white text-black">
+        <DialogContent className="max-w-md p-0 rounded-[3rem] overflow-hidden border-none shadow-3xl bg-white text-black">
           <DialogHeader className="sr-only">
              <DialogTitle>Invoice Preview for #{viewingInvoice?.orderId}</DialogTitle>
           </DialogHeader>
           <div id="print-area" className="p-10">
-            <div className="text-center mb-8 pb-8 border-b-2 border-dashed border-zinc-200">
-              <h2 className="text-2xl font-black font-headline tracking-tighter uppercase">EZZY BITES</h2>
-              <p className="text-[9px] font-black uppercase opacity-40">Invoice # {viewingInvoice?.orderId}</p>
-              <Badge className="bg-primary/10 text-primary mt-3 uppercase font-black text-[8px] px-4 py-1 border-none">{viewingInvoice?.orderType}</Badge>
+            <div className="text-center mb-8 pb-8 border-b-4 border-double border-zinc-200">
+              <h2 className="text-3xl font-black font-headline tracking-tighter uppercase leading-none">EZZY BITES</h2>
+              <p className="text-[10px] font-black uppercase tracking-[0.4em] mt-2 opacity-50">Premium Fast Food-Tech</p>
+              <div className="mt-4 flex justify-center">
+                 <Badge className="bg-zinc-950 text-white uppercase font-black text-[9px] px-5 py-1.5 rounded-full border-none tracking-widest">{viewingInvoice?.orderType}</Badge>
+              </div>
             </div>
-            <div className="grid grid-cols-2 gap-6 text-[11px] font-bold mb-8">
+            
+            <div className="grid grid-cols-2 gap-8 text-[11px] font-bold mb-10">
               <div>
-                <p className="uppercase text-[8px] opacity-40 mb-1">Customer</p>
-                <p>{viewingInvoice?.customerName}</p>
-                <p>+91 {viewingInvoice?.customerPhone}</p>
+                <p className="uppercase text-[8px] font-black opacity-30 tracking-widest mb-1.5">RECIPIENT</p>
+                <p className="uppercase text-sm leading-none mb-1">{viewingInvoice?.customerName}</p>
+                <p className="opacity-60">+91 {viewingInvoice?.customerPhone}</p>
               </div>
               <div className="text-right">
-                <p className="uppercase text-[8px] opacity-40 mb-1">Date</p>
-                <p>{viewingInvoice?.createdAt ? new Date(viewingInvoice.createdAt).toLocaleString() : 'Recent'}</p>
+                <p className="uppercase text-[8px] font-black opacity-30 tracking-widest mb-1.5">SETTLED ON</p>
+                <p className="uppercase text-sm leading-none mb-1">#{viewingInvoice?.orderId}</p>
+                <p className="opacity-60">{viewingInvoice?.createdAt ? new Date(viewingInvoice.createdAt).toLocaleDateString() : 'Syncing'}</p>
               </div>
             </div>
-            <div className="space-y-4 mb-8">
-              <div className="grid grid-cols-4 text-[9px] font-black uppercase opacity-40 border-b pb-2 border-zinc-100">
-                <span className="col-span-2">Item</span>
-                <span className="text-center">Qty</span>
-                <span className="text-right">Price</span>
+
+            <div className="space-y-4 mb-10">
+              <div className="grid grid-cols-4 text-[9px] font-black uppercase opacity-30 border-b pb-3 border-zinc-100 tracking-widest">
+                <span className="col-span-2">MANIFEST ITEM</span>
+                <span className="text-center">QTY</span>
+                <span className="text-right">SUM</span>
               </div>
               {viewingInvoice?.items.map((item: any, i: number) => (
-                <div key={i} className="grid grid-cols-4 text-xs font-black">
-                  <span className="col-span-2">{item.name}</span>
-                  <span className="text-center">x{item.quantity}</span>
-                  <span className="text-right">₹{item.price * item.quantity}</span>
+                <div key={i} className="grid grid-cols-4 text-xs font-black uppercase tracking-tight">
+                  <span className="col-span-2 truncate pr-2">{item.name}</span>
+                  <span className="text-center opacity-60">x{item.quantity}</span>
+                  <span className="text-right italic">₹{item.price * item.quantity}</span>
                 </div>
               ))}
             </div>
-            <div className="pt-6 border-t-2 border-dashed border-zinc-200 flex justify-between items-end">
-              <span className="text-sm font-black uppercase tracking-widest">Total Amount</span>
-              <span className="text-3xl font-black text-primary italic">₹{viewingInvoice?.total}</span>
+
+            <div className="pt-8 border-t-4 border-double border-zinc-200 flex justify-between items-end">
+              <span className="text-[10px] font-black uppercase tracking-[0.3em] opacity-40">Final Settlement</span>
+              <span className="text-5xl font-black text-primary italic leading-none">₹{viewingInvoice?.total}</span>
             </div>
-            <div className="mt-8 text-center opacity-40">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em]">Visit Again • Stay Ezzy</p>
+            
+            <div className="mt-12 text-center opacity-40">
+               <p className="text-[9px] font-black uppercase tracking-[0.3em]">Visit Again • Stay Ezzy</p>
+               <p className="text-[8px] font-bold mt-1 opacity-50">Authorized Hub Generated Invoice</p>
             </div>
           </div>
-          <div className="p-6 bg-secondary/20 flex gap-4">
-            <Button variant="outline" className="flex-1 h-14 rounded-2xl font-black text-[10px] uppercase border-zinc-300" onClick={() => window.print()}><Printer className="w-4 h-4 mr-2" /> Print</Button>
-            <Button className="flex-1 h-14 rounded-2xl font-black text-[10px] uppercase bg-primary text-white" onClick={() => setViewingInvoice(null)}>Close</Button>
+          <div className="p-8 bg-zinc-50 flex gap-4">
+            <Button variant="outline" className="flex-1 h-14 rounded-2xl font-black text-[10px] uppercase border-zinc-200 hover:bg-white transition-all tracking-widest" onClick={() => window.print()}><Printer className="w-4 h-4 mr-2" /> Local Print</Button>
+            <Button className="flex-1 h-14 rounded-2xl font-black text-[10px] uppercase bg-primary text-white shadow-xl shadow-primary/20 tracking-widest" onClick={() => setViewingInvoice(null)}>Dismiss</Button>
           </div>
         </DialogContent>
       </Dialog>

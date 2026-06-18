@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useMemo, useState, useEffect } from 'react';
@@ -7,27 +6,15 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
   IndianRupee,
-  ShoppingBag,
-  Clock,
   Zap,
-  Package,
   Loader2,
   Users,
-  Target,
-  ArrowUpRight,
-  BarChart3,
-  RefreshCw,
-  ShieldCheck,
-  History,
-  Activity,
-  Calendar,
-  TrendingUp,
   CreditCard,
-  ArrowDownRight,
   Fingerprint,
-  PieChart,
-  Boxes,
-  UserCheck
+  TrendingUp,
+  Activity,
+  ArrowUpRight,
+  ShieldCheck
 } from 'lucide-react';
 import {
   XAxis,
@@ -43,7 +30,6 @@ import {
   format,
   isToday,
   isThisWeek,
-  isThisMonth,
   subDays
 } from 'date-fns';
 import { useFirestore, useCollection } from '@/firebase';
@@ -72,7 +58,6 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
   const metrics = useMemo(() => {
     const delivered = orders.filter(o => o.status === 'Delivered');
     const todayRev = delivered.filter(o => o.createdAt?.toDate && isToday(o.createdAt.toDate())).reduce((acc, o) => acc + (Number(o.total) || 0), 0);
-    const weeklyRev = delivered.filter(o => o.createdAt?.toDate && isThisWeek(o.createdAt.toDate())).reduce((acc, o) => acc + (Number(o.total) || 0), 0);
     const totalRev = delivered.reduce((acc, o) => acc + (Number(o.total) || 0), 0);
     
     // Status Aggregation
@@ -95,7 +80,7 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
 
     const chartData = Object.entries(chartMap).map(([name, val]) => ({ name, val }));
 
-    return { todayRev, weeklyRev, totalRev, status, chartData, avgOrder: delivered.length ? Math.round(totalRev / delivered.length) : 0 };
+    return { todayRev, totalRev, status, chartData, avgOrder: delivered.length ? Math.round(totalRev / delivered.length) : 0 };
   }, [orders]);
 
   if (!mounted) return (
@@ -108,16 +93,16 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
   return (
     <div className="space-y-10 animate-in fade-in duration-700 pb-20">
       {/* KPI GRID */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <KPICard label="Gross Today" value={`₹${metrics.todayRev}`} icon={IndianRupee} trend="+12%" color="text-emerald-500" bg="bg-emerald-50" />
         <KPICard label="Active Tickets" value={metrics.status.active} icon={Zap} trend="Live" color="text-orange-500" bg="bg-orange-50" />
         <KPICard label="Registered Users" value={allUsers.length} icon={Users} trend="+3 New" color="text-blue-500" bg="bg-blue-50" />
-        <KPICard label="Avg. Order Value" value={`₹${metrics.avgOrder}`} icon={CreditCard} trend="Stable" color="text-primary" bg="bg-primary/5" />
+        <KPICard label="Avg. Ticket" value={`₹${metrics.avgOrder}`} icon={CreditCard} trend="Stable" color="text-primary" bg="bg-primary/5" />
       </div>
 
       <div className="grid lg:grid-cols-3 gap-8">
         {/* REVENUE VELOCITY */}
-        <Card className="lg:col-span-2 rounded-[3rem] border-none shadow-xl bg-white dark:bg-zinc-900 p-10 flex flex-col h-full overflow-hidden relative">
+        <Card className="lg:col-span-2 rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-zinc-900 p-8 md:p-10 flex flex-col h-full overflow-hidden relative">
           <CardHeader className="px-0 pt-0 pb-10 flex flex-row items-center justify-between border-b border-dashed mb-10">
             <div className="space-y-1">
               <CardTitle className="text-2xl font-black font-headline uppercase tracking-tighter italic">Business <span className="text-primary">Velocity</span></CardTitle>
@@ -125,7 +110,7 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
             </div>
             <Badge className="bg-primary/10 text-primary border-none px-4 py-1.5 font-black text-[9px] uppercase tracking-widest rounded-full">Real-time Feed</Badge>
           </CardHeader>
-          <div className="flex-1 min-h-[380px]">
+          <div className="flex-1 min-h-[350px]">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={metrics.chartData}>
                 <defs>
@@ -149,24 +134,24 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
         </Card>
 
         {/* SECURITY AUDIT */}
-        <Card className="rounded-[3rem] border-none shadow-xl bg-white dark:bg-zinc-900 flex flex-col overflow-hidden">
-          <CardHeader className="p-10 border-b bg-muted/5 flex flex-row items-center justify-between">
+        <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-zinc-900 flex flex-col overflow-hidden">
+          <CardHeader className="p-8 border-b bg-muted/5 flex flex-row items-center justify-between">
              <div className="flex items-center gap-4">
                <div className="w-12 h-12 bg-zinc-950 rounded-2xl flex items-center justify-center text-white shadow-xl rotate-3"><Fingerprint className="w-6 h-6" /></div>
                <div className="space-y-0.5">
-                 <CardTitle className="text-sm font-black uppercase tracking-widest leading-none">Security Audit</CardTitle>
-                 <p className="text-[8px] font-black uppercase text-muted-foreground opacity-40">Identity Entry Logs</p>
+                 <CardTitle className="text-sm font-black uppercase tracking-widest leading-none">Identity Audit</CardTitle>
+                 <p className="text-[8px] font-black uppercase text-muted-foreground opacity-40">Live Entrance Logs</p>
                </div>
              </div>
              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 text-[8px] font-black uppercase">
                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Live
              </div>
           </CardHeader>
-          <div className="flex-1 overflow-y-auto p-6 space-y-3 scrollbar-hide max-h-[520px]">
+          <div className="flex-1 overflow-y-auto p-6 space-y-3 scrollbar-hide max-h-[480px]">
             {logsLoading ? (
-              <div className="h-full flex items-center justify-center opacity-10"><Loader2 className="animate-spin w-8 h-8" /></div>
+              <div className="h-full flex items-center justify-center opacity-10 py-20"><Loader2 className="animate-spin w-8 h-8" /></div>
             ) : securityLogs.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center opacity-20 text-center px-10">
+              <div className="h-full flex flex-col items-center justify-center opacity-20 text-center px-10 py-20">
                 <ShieldCheck className="w-12 h-12 mb-4 opacity-10" />
                 <p className="text-[10px] font-black uppercase tracking-widest">No Signals Recorded</p>
               </div>
@@ -180,7 +165,7 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
                 </div>
                 <div className="min-w-0 flex-1">
                    <div className="flex justify-between items-start mb-0.5">
-                     <p className="text-[11px] font-black uppercase truncate group-hover:text-primary transition-colors">{log.name || 'Anonymous'}</p>
+                     <p className="text-[11px] font-black uppercase truncate group-hover:text-primary transition-colors">{log.name || 'Staff'}</p>
                      <span className="text-[8px] font-black text-muted-foreground opacity-40 uppercase">
                        {log.timestamp?.toDate ? format(log.timestamp.toDate(), 'hh:mm a') : 'Now'}
                      </span>
@@ -199,7 +184,7 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
 
       {/* OPERATIONAL INSIGHTS */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        <Card className="rounded-[3rem] border-none shadow-xl bg-white dark:bg-zinc-900 p-10 space-y-10">
+        <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-zinc-900 p-8 space-y-10">
           <div className="space-y-1">
             <h4 className="text-xl font-black font-headline uppercase tracking-tighter italic">Operational <span className="text-primary">Accuracy</span></h4>
             <p className="text-[10px] font-black uppercase text-muted-foreground opacity-40 tracking-widest">Status Distribution Ledger</p>
@@ -211,10 +196,10 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
           </div>
         </Card>
 
-        <Card className="lg:col-span-2 rounded-[3rem] border-none shadow-xl bg-white dark:bg-zinc-900 p-10 overflow-hidden relative">
-          <div className="flex items-center justify-between mb-10">
+        <Card className="lg:col-span-2 rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-zinc-900 p-8 overflow-hidden relative">
+          <div className="flex items-center justify-between mb-8">
             <div className="space-y-1">
-              <h4 className="text-xl font-black font-headline uppercase tracking-tighter italic flex items-center gap-3"><Target className="w-6 h-6 text-primary" /> Demand Performance</h4>
+              <h4 className="text-xl font-black font-headline uppercase tracking-tighter italic flex items-center gap-3">High <span className="text-primary">Demand</span></h4>
               <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-40">Top Converting Catalog Items</p>
             </div>
             <Button variant="ghost" className="h-10 px-6 rounded-xl font-black text-[9px] uppercase tracking-widest text-primary hover:bg-primary/5 gap-2">Full Report <ArrowUpRight className="w-4 h-4" /></Button>
@@ -222,7 +207,7 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
           
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
             {products.slice(0, 6).map((item, i) => (
-              <div key={i} className="p-6 bg-zinc-50 dark:bg-zinc-800/50 rounded-[2rem] flex flex-col justify-between h-40 hover:bg-white dark:hover:bg-zinc-800 transition-all border border-transparent hover:border-primary/20 group hover:shadow-2xl shadow-soft">
+              <div key={i} className="p-6 bg-zinc-50 dark:bg-zinc-800/50 rounded-[2rem] flex flex-col justify-between h-40 hover:bg-white dark:hover:bg-zinc-800 transition-all border border-transparent hover:border-primary/20 group hover:shadow-2xl">
                  <div className="flex justify-between items-start">
                     <span className="w-8 h-8 rounded-xl bg-primary text-white flex items-center justify-center font-black text-[10px] shadow-lg shadow-primary/20 rotate-3">#{i+1}</span>
                     <div className="text-right">
@@ -250,7 +235,7 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
 };
 
 const KPICard = ({ label, value, icon: Icon, trend, color, bg }: any) => (
-  <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-zinc-900 p-8 group hover:scale-[1.03] transition-all duration-500 overflow-hidden relative">
+  <Card className="rounded-[2rem] border-none shadow-xl bg-white dark:bg-zinc-900 p-8 group hover:scale-[1.03] transition-all duration-500 overflow-hidden relative">
     <div className="absolute -right-4 -top-4 w-20 h-20 bg-secondary/30 rounded-full blur-2xl group-hover:bg-primary/5 transition-colors" />
     <div className="flex justify-between items-start mb-8">
       <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner relative z-10", bg, color)}>

@@ -18,7 +18,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel
 } from '@/components/ui/dropdown-menu';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 export type StaffRole = 'admin' | 'cashier' | 'kitchen';
 
@@ -115,7 +115,7 @@ function DashboardContent() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center bg-zinc-50 dark:bg-zinc-950 p-6 text-center">
         <motion.div 
-          initial={{ opacity: 0, scale: 0.9 }}
+          initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           className="flex flex-col items-center"
         >
@@ -132,8 +132,8 @@ function DashboardContent() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <nav className="border-b bg-white dark:bg-zinc-900 sticky top-0 z-[60] h-20">
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
+      <nav className="border-b bg-white dark:bg-zinc-900 sticky top-0 z-[60] h-20 shadow-sm">
         <div className="container mx-auto px-4 h-full flex items-center justify-between">
           <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-3 group">
@@ -141,7 +141,7 @@ function DashboardContent() {
                 <ShoppingBag className="w-5 h-5 text-white" />
               </div>
               <div className="flex flex-col">
-                <span className="text-xl font-headline font-black tracking-tight leading-none">Ezzy<span className="text-primary italic">Ops</span></span>
+                <span className="text-xl font-headline font-black tracking-tight leading-none uppercase">Ezzy<span className="text-primary italic">Ops</span></span>
                 <span className="text-[9px] font-black uppercase tracking-widest text-muted-foreground opacity-40">Staff Control</span>
               </div>
             </Link>
@@ -156,28 +156,28 @@ function DashboardContent() {
           <div className="flex items-center gap-4">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="rounded-xl h-12 px-6 gap-2 font-black uppercase text-[10px] tracking-widest border-2">
+                <Button variant="outline" className="rounded-xl h-12 px-6 gap-2 font-black uppercase text-[10px] tracking-widest border-2 hover:bg-secondary">
                   <UserCog className="w-4 h-4" /> Account
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-64 rounded-2xl p-2 shadow-3xl">
-                <DropdownMenuLabel className="text-[9px] font-black uppercase opacity-40 px-2 py-1.5">Staff Identity</DropdownMenuLabel>
-                <div className="px-2 py-3 bg-secondary/30 rounded-xl mb-2">
+              <DropdownMenuContent align="end" className="w-64 rounded-2xl p-2 shadow-3xl border-none mt-2">
+                <DropdownMenuLabel className="text-[9px] font-black uppercase opacity-40 px-3 py-2">Staff Identity</DropdownMenuLabel>
+                <div className="px-3 py-3 bg-secondary/30 rounded-xl mb-2">
                   <p className="text-xs font-black truncate">{user?.email}</p>
                 </div>
                 
                 {assignedRole === 'admin' && (
                   <>
                     <DropdownMenuSeparator />
-                    <DropdownMenuLabel className="text-[9px] font-black uppercase opacity-40 px-2 py-1.5">Switch Mode</DropdownMenuLabel>
-                    <DropdownMenuItem onClick={() => switchView('admin')} className="rounded-xl gap-3 py-3 font-bold"><ShieldCheck className="w-4 h-4 text-primary" /> Admin View</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => switchView('cashier')} className="rounded-xl gap-3 py-3 font-bold"><Receipt className="w-4 h-4 text-blue-500" /> Cashier View</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => switchView('kitchen')} className="rounded-xl gap-3 py-3 font-bold"><ChefHat className="w-4 h-4 text-orange-500" /> Kitchen View</DropdownMenuItem>
+                    <DropdownMenuLabel className="text-[9px] font-black uppercase opacity-40 px-3 py-2">Switch Mode</DropdownMenuLabel>
+                    <DropdownMenuItem onClick={() => switchView('admin')} className="rounded-xl gap-3 py-3 font-bold cursor-pointer transition-all"><ShieldCheck className="w-4 h-4 text-primary" /> Admin View</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => switchView('cashier')} className="rounded-xl gap-3 py-3 font-bold cursor-pointer transition-all"><Receipt className="w-4 h-4 text-blue-500" /> Cashier View</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => switchView('kitchen')} className="rounded-xl gap-3 py-3 font-bold cursor-pointer transition-all"><ChefHat className="w-4 h-4 text-orange-500" /> Kitchen View</DropdownMenuItem>
                   </>
                 )}
                 
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout} className="rounded-xl gap-3 py-3 font-bold text-destructive">
+                <DropdownMenuItem onClick={handleLogout} className="rounded-xl gap-3 py-3 font-bold text-destructive cursor-pointer hover:bg-destructive/5">
                   <LogOut className="w-4 h-4" /> Sign Out
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -186,7 +186,7 @@ function DashboardContent() {
         </div>
       </nav>
 
-      <main>
+      <main className="container mx-auto px-4 py-8 md:py-12">
         <AdminSection assignedRole={assignedRole as StaffRole} activeView={activeView as StaffRole} />
       </main>
     </div>

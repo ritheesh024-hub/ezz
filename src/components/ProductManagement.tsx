@@ -169,36 +169,32 @@ export const ProductManagement = () => {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+    <div className="space-y-10 animate-in fade-in duration-700">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
         <div className="space-y-1">
-          <h2 className="text-4xl font-black font-headline uppercase tracking-tighter">Kitchen <span className="text-primary italic">Ledger</span></h2>
-          <p className="text-muted-foreground text-sm font-medium">Provision menu items and optimize visibility parameters.</p>
+          <h2 className="text-4xl font-black font-headline uppercase tracking-tighter italic">Kitchen <span className="text-primary">Ledger</span></h2>
+          <p className="text-muted-foreground text-sm font-medium tracking-tight">Provision menu items and optimize visibility parameters.</p>
         </div>
-        <Button onClick={() => handleOpenModal()} className="h-14 px-10 rounded-2xl font-black uppercase text-[10px] tracking-widest gap-2 bg-primary shadow-xl shadow-primary/20">
-          <Plus className="w-5 h-5" /> Provision New Dish
+        <Button onClick={() => handleOpenModal()} className="h-16 px-10 rounded-2xl font-black uppercase text-[10px] tracking-widest gap-3 bg-primary text-white shadow-3xl hover:scale-[1.02] transition-all">
+          <Plus className="w-5 h-5" /> Provision Dish
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
         <StatsCard label="Total Catalog" value={stats.total} icon={LayoutGrid} color="bg-blue-50 text-blue-600" />
-        <StatsCard label="Live Listings" value={stats.active} icon={Package} color="bg-green-50 text-green-600" />
-        <StatsCard label="Featured Showcase" value={stats.featured} icon={Star} color="bg-orange-50 text-orange-600" />
+        <StatsCard label="Live Listings" value={stats.active} icon={Package} color="bg-emerald-50 text-emerald-600" />
+        <StatsCard label="Featured Board" value={stats.featured} icon={Star} color="bg-orange-50 text-orange-600" />
       </div>
 
       {loading ? (
-        <div className="py-40 text-center space-y-6">
-          <div className="relative inline-block">
-             <div className="w-20 h-20 bg-primary/10 rounded-[2.5rem] animate-pulse" />
-             <Loader2 className="animate-spin absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 text-primary" />
-          </div>
-          <p className="font-black uppercase tracking-[0.4em] text-[10px] text-muted-foreground animate-pulse">Syncing Cloud Catalog...</p>
+        <div className="py-48 text-center space-y-6">
+          <Loader2 className="animate-spin mx-auto w-12 h-12 text-primary opacity-20" />
+          <p className="font-black uppercase tracking-[0.3em] text-[10px] text-muted-foreground animate-pulse">Syncing Cloud Catalog...</p>
         </div>
       ) : displayProducts.length === 0 ? (
-        <div className="py-32 text-center bg-white dark:bg-zinc-900 rounded-[4rem] border-2 border-dashed">
-          <Package className="w-20 h-20 mx-auto mb-6 opacity-10" />
-          <h3 className="text-2xl font-black uppercase tracking-tighter">Null Result</h3>
-          <p className="text-sm font-medium text-muted-foreground mt-2 max-w-xs mx-auto">No products found in your database.</p>
+        <div className="py-48 text-center bg-white dark:bg-zinc-900 rounded-[4rem] border-2 border-dashed flex flex-col items-center justify-center gap-6">
+          <Package className="w-20 h-20 opacity-10" />
+          <h3 className="text-2xl font-black uppercase tracking-widest italic">Registry Void</h3>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
@@ -207,7 +203,7 @@ export const ProductManagement = () => {
               <div className="aspect-[4/3] relative overflow-hidden bg-secondary/30">
                 <Image src={item.imageUrl} alt={item.name} fill className="object-cover group-hover:scale-110 transition-transform duration-700" unoptimized />
                 <div className="absolute top-4 right-4 flex flex-col gap-2">
-                   <Badge className={cn("border-none px-4 py-1 rounded-full font-black text-[8px] uppercase tracking-widest shadow-xl", item.isAvailable ? "bg-green-500 text-white" : "bg-zinc-500 text-white")}>
+                   <Badge className={cn("border-none px-4 py-1.5 rounded-full font-black text-[8px] uppercase tracking-widest shadow-xl", item.isAvailable ? "bg-emerald-500 text-white" : "bg-zinc-500 text-white")}>
                      {item.isAvailable ? 'LIVE' : 'IDLE'}
                    </Badge>
                 </div>
@@ -219,12 +215,12 @@ export const ProductManagement = () => {
                 </div>
                 <div className="flex items-center justify-between pt-6 border-t border-dashed">
                    <div>
-                      <p className="text-[8px] font-black uppercase text-muted-foreground mb-1 tracking-widest">Pricing</p>
+                      <p className="text-[8px] font-black uppercase text-muted-foreground mb-1 tracking-widest">Base Rate</p>
                       <span className="text-2xl font-black text-primary italic">₹{item.price}</span>
                    </div>
                    <div className="flex gap-2">
                       <Button onClick={() => handleOpenModal(item)} variant="outline" size="icon" className="h-12 w-12 rounded-2xl bg-secondary/30 border-none hover:bg-primary hover:text-white transition-all"><Edit2 className="w-4 h-4" /></Button>
-                      <Button onClick={() => handleDelete(item.id)} variant="outline" size="icon" className="h-12 w-12 rounded-2xl bg-destructive/10 border-none hover:bg-destructive hover:text-white transition-all text-destructive"><Trash2 className="w-4 h-4" /></Button>
+                      <Button onClick={() => handleDelete(item.id)} variant="outline" size="icon" className="h-12 w-12 rounded-2xl bg-rose-50 border-none hover:bg-rose-600 hover:text-white transition-all text-rose-600"><Trash2 className="w-4 h-4" /></Button>
                    </div>
                 </div>
               </CardContent>
@@ -233,49 +229,50 @@ export const ProductManagement = () => {
         </div>
       )}
 
+      {/* PRODUCT DIALOG */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-w-2xl rounded-[3rem] p-0 overflow-hidden border-none shadow-3xl bg-white dark:bg-zinc-950 max-h-[90vh] flex flex-col">
+        <DialogContent className="max-w-2xl rounded-[3rem] p-0 overflow-hidden border-none shadow-3xl bg-white dark:bg-zinc-950">
           <div className="p-10 bg-primary text-white shrink-0 relative overflow-hidden">
              <div className="absolute -right-20 -top-20 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
              <DialogHeader className="relative z-10">
                 <DialogTitle className="text-4xl font-black font-headline uppercase tracking-tighter leading-none">{editingItem ? 'Edit Provision' : 'New Creation'}</DialogTitle>
-                <DialogDescription className="text-white/70 font-medium text-xs uppercase tracking-[0.2em] mt-2">Operational Registry Sync</DialogDescription>
+                <p className="text-white/70 font-medium text-xs uppercase tracking-widest mt-2">Syncing with Operational Registry</p>
              </DialogHeader>
           </div>
 
-          <div className="p-10 space-y-10 overflow-y-auto scrollbar-hide flex-1">
+          <div className="p-10 space-y-10 max-h-[60vh] overflow-y-auto scrollbar-hide">
              <div className="grid md:grid-cols-2 gap-10">
                 <div className="space-y-6">
-                  <h5 className="text-[10px] font-black uppercase text-primary tracking-[0.3em] border-b pb-2">Manifest Identity</h5>
+                  <h5 className="text-[10px] font-black uppercase text-primary tracking-[0.4em] border-b pb-2">Manifest Identity</h5>
                   <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Dish Name</Label>
-                    <Input value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="h-14 rounded-2xl bg-secondary/30 dark:bg-zinc-800 border-none font-bold" />
+                    <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Entity Name</Label>
+                    <Input value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="h-14 rounded-2xl bg-secondary/30 dark:bg-zinc-800 border-none font-bold px-6" />
                   </div>
                   <div className="space-y-2">
-                    <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Provision Category</Label>
+                    <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Assigned Group</Label>
                     <Select value={formData.category} onValueChange={v => setFormData({...formData, category: v})}>
-                      <SelectTrigger className="h-14 rounded-2xl bg-secondary/30 dark:bg-zinc-800 border-none font-bold"><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="h-14 rounded-2xl bg-secondary/30 dark:bg-zinc-800 border-none font-bold px-6 uppercase text-[10px] tracking-widest"><SelectValue /></SelectTrigger>
                       <SelectContent className="rounded-2xl">{CATEGORIES.filter(c => c !== 'All').map(c => <SelectItem key={c} value={c} className="font-bold">{c}</SelectItem>)}</SelectContent>
                     </Select>
                   </div>
                 </div>
 
                 <div className="space-y-6">
-                  <h5 className="text-[10px] font-black uppercase text-primary tracking-[0.3em] border-b pb-2">Economics & Logistics</h5>
+                  <h5 className="text-[10px] font-black uppercase text-primary tracking-[0.4em] border-b pb-2">Logistics Control</h5>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Base Price (₹)</Label>
-                      <Input type="number" value={formData.price} onChange={e => setFormData({...formData, price: Number(e.target.value)})} className="h-14 rounded-2xl bg-secondary/30 dark:bg-zinc-800 border-none font-bold" />
+                      <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Unit Rate (₹)</Label>
+                      <Input type="number" value={formData.price} onChange={e => setFormData({...formData, price: Number(e.target.value)})} className="h-14 rounded-2xl bg-secondary/30 dark:bg-zinc-800 border-none font-bold px-6" />
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Prep Time (M)</Label>
-                      <Input type="number" value={formData.prepTime} onChange={e => setFormData({...formData, prepTime: Number(e.target.value)})} className="h-14 rounded-2xl bg-secondary/30 dark:bg-zinc-800 border-none font-bold" />
+                      <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Prep Window (M)</Label>
+                      <Input type="number" value={formData.prepTime} onChange={e => setFormData({...formData, prepTime: Number(e.target.value)})} className="h-14 rounded-2xl bg-secondary/30 dark:bg-zinc-800 border-none font-bold px-6" />
                     </div>
                   </div>
-                  <div className="flex items-center justify-between p-4 bg-secondary/30 dark:bg-zinc-800 rounded-2xl">
-                     <div className="flex gap-3 items-center">
-                        <Power className="w-4 h-4 text-primary" />
-                        <span className="text-[11px] font-black uppercase">Live Active</span>
+                  <div className="flex items-center justify-between p-5 bg-secondary/30 dark:bg-zinc-800 rounded-3xl">
+                     <div className="flex gap-4 items-center">
+                        <Power className="w-5 h-5 text-primary" />
+                        <span className="text-[10px] font-black uppercase tracking-widest">Broadcast Live</span>
                      </div>
                      <Switch checked={formData.isAvailable} onCheckedChange={v => setFormData({...formData, isAvailable: v})} />
                   </div>
@@ -283,15 +280,15 @@ export const ProductManagement = () => {
              </div>
 
              <div className="space-y-4">
-                <h5 className="text-[10px] font-black uppercase text-primary tracking-[0.3em] border-b pb-2">Digital Asset (Image URL)</h5>
-                <Input value={formData.imageUrl} onChange={e => setFormData({...formData, imageUrl: e.target.value})} placeholder="https://cloud.ezzybites.com/image.jpg" className="h-14 rounded-2xl bg-secondary/30 dark:bg-zinc-800 border-none font-bold" />
+                <h5 className="text-[10px] font-black uppercase text-primary tracking-[0.4em] border-b pb-2">Digital Asset Node</h5>
+                <Input value={formData.imageUrl} onChange={e => setFormData({...formData, imageUrl: e.target.value})} placeholder="https://media.ezzybites.com/image.jpg" className="h-14 rounded-2xl bg-secondary/30 dark:bg-zinc-800 border-none font-bold px-6" />
              </div>
           </div>
 
-          <DialogFooter className="p-10 bg-secondary/30 shrink-0 flex gap-4">
-             <Button variant="outline" className="h-16 flex-1 rounded-2xl font-black uppercase text-[10px] tracking-widest border-2" onClick={() => setIsModalOpen(false)}>Cancel</Button>
-             <Button className="h-16 flex-1 rounded-2xl font-black uppercase text-[10px] tracking-widest bg-primary text-white shadow-2xl shadow-primary/30" onClick={handleSave} disabled={saveLoading}>
-               {saveLoading ? <Loader2 className="animate-spin w-5 h-5" /> : 'Commit to Cloud'}
+          <DialogFooter className="p-10 bg-secondary/30 flex gap-4">
+             <Button variant="outline" className="h-16 flex-1 rounded-2xl font-black uppercase text-[10px] tracking-widest border-2" onClick={() => setIsModalOpen(false)}>Abandon</Button>
+             <Button className="h-16 flex-1 rounded-2xl font-black uppercase text-[10px] tracking-widest bg-primary text-white shadow-2xl shadow-primary/30 hover:scale-[1.02] transition-all" onClick={handleSave} disabled={saveLoading}>
+               {saveLoading ? <Loader2 className="animate-spin w-5 h-5" /> : 'Commit Sync'}
              </Button>
           </DialogFooter>
         </DialogContent>
@@ -301,12 +298,12 @@ export const ProductManagement = () => {
 };
 
 const StatsCard = ({ label, value, icon: Icon, color }: any) => (
-  <Card className="rounded-[2.5rem] border-none shadow-sm bg-white dark:bg-zinc-900 p-8 flex justify-between items-start group hover:scale-[1.02] transition-transform">
+  <Card className="rounded-[2.5rem] border-none shadow-sm bg-white dark:bg-zinc-900 p-8 flex justify-between items-start group hover:scale-[1.02] transition-all duration-500">
     <div className="space-y-1">
       <p className="text-[9px] font-black uppercase tracking-widest opacity-40 mb-1">{label}</p>
       <h4 className="text-4xl font-black italic">{value}</h4>
     </div>
-    <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center transition-all group-hover:shadow-lg shadow-inner", color)}>
+    <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center transition-all group-hover:shadow-xl shadow-inner", color)}>
       <Icon className="w-7 h-7" />
     </div>
   </Card>
