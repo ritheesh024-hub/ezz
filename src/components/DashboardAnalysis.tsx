@@ -22,7 +22,8 @@ import {
   Calendar,
   TrendingUp,
   CreditCard,
-  ArrowDownRight
+  ArrowDownRight,
+  Fingerprint
 } from 'lucide-react';
 import {
   XAxis,
