@@ -29,11 +29,11 @@ import { cn } from '@/lib/utils';
 import { 
   format,
   isToday,
-  isThisWeek,
   subDays
 } from 'date-fns';
 import { useFirestore, useCollection } from '@/firebase';
 import { collection, query, orderBy, limit } from 'firebase/firestore';
+import { motion } from 'framer-motion';
 
 interface DashboardAnalysisProps {
   orders: any[];
