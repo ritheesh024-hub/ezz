@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { onSnapshot, Query, DocumentData, QuerySnapshot } from 'firebase/firestore';
 import { errorEmitter } from '../error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '../errors';
@@ -9,6 +9,9 @@ export function useCollection<T = DocumentData>(query: Query<T> | null) {
   const [data, setData] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  
+  // Track query stability to avoid redundant re-subscriptions
+  const queryPath = (query as any)?._query?.path?.toString() || '';
 
   useEffect(() => {
     if (!query) {
@@ -29,7 +32,7 @@ export function useCollection<T = DocumentData>(query: Query<T> | null) {
       },
       async (serverError) => {
         const permissionError = new FirestorePermissionError({
-          path: (query as any)._query?.path?.toString() || 'unknown',
+          path: queryPath || 'unknown',
           operation: 'list',
         } satisfies SecurityRuleContext);
 
@@ -39,8 +42,9 @@ export function useCollection<T = DocumentData>(query: Query<T> | null) {
       }
     );
 
-    return unsubscribe;
-  }, [query]);
+    // Critical: Unsubscribe on unmount or query change
+    return () => unsubscribe();
+  }, [queryPath]); // Depend on path rather than object reference
 
   return { data, loading, error };
 }

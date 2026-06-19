@@ -1,4 +1,3 @@
-
 "use client"
 import React, { useState, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
@@ -26,7 +25,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection } from '@/firebase';
-import { collection, query, limit, doc, updateDoc, orderBy, increment, serverTimestamp, addDoc, getDoc, getDocs, where } from 'firebase/firestore';
+import { collection, query, limit, doc, updateDoc, orderBy, increment, serverTimestamp, addDoc, getDocs, where } from 'firebase/firestore';
 import { DashboardAnalysis } from './DashboardAnalysis';
 import { BillingSystem } from './BillingSystem';
 import { StoreSettings } from './StoreSettings';
@@ -57,7 +56,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
   const { playSound, isAdminMuted, toggleAdminMute } = useSound();
   const { logStaffAction } = useAnalytics();
   
-  // Real-time Data Listeners
+  // Memoize queries to prevent infinite re-renders in useCollection
   const ordersQuery = useMemo(() => {
     if (!db) return null;
     return query(collection(db, 'orders'), orderBy('createdAt', 'desc'), limit(500));

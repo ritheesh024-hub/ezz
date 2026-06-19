@@ -65,6 +65,7 @@ export default function CheckoutPage() {
     paymentMethod: 'cod'
   });
 
+  // Critical: Stabilize random state in useEffect to prevent hydration mismatches
   useEffect(() => {
     setMounted(true);
     setOrderId(`EB-${Math.floor(10000 + Math.random() * 90000)}`);
