@@ -30,7 +30,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { toast } from '@/hooks/use-toast';
 import { useFirestore, useUser } from '@/firebase';
-import { doc, setDoc, getDoc, serverTimestamp, increment, collection, addDoc, query, where, getDocs } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp, increment, collection, addDoc, query, where, getDocs, updateDoc } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 import { cn } from '@/lib/utils';
@@ -49,6 +49,7 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [orderId, setOrderId] = useState<string>('');
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
   
   const [couponInput, setCouponInput] = useState('');
   const [referralInput, setReferralInput] = useState('');
@@ -67,6 +68,7 @@ export default function CheckoutPage() {
   });
 
   useEffect(() => {
+    setMounted(true);
     setOrderId(`EB-${Math.floor(10000 + Math.random() * 90000)}`);
   }, []);
 
@@ -131,7 +133,6 @@ export default function CheckoutPage() {
 
     setCouponLoading(true);
     try {
-      // Find user who owns this code: EB-{UID.slice(0,6)}
       const usersRef = collection(db, 'users');
       const snap = await getDocs(usersRef);
       const referrerDoc = snap.docs.find(d => `EB-${d.id.slice(0, 6).toUpperCase()}` === code);
@@ -224,7 +225,6 @@ export default function CheckoutPage() {
           orderCount: increment(1)
         }, { merge: true });
 
-        // Referral Logging
         if (appliedReferral) {
            await addDoc(collection(db, 'referrals'), {
               newUserId: user.uid,
@@ -235,7 +235,6 @@ export default function CheckoutPage() {
            });
         }
 
-        // Coupon increment
         if (appliedCoupon) {
            await updateDoc(doc(db, 'coupons', appliedCoupon.code), {
               usageCount: increment(1)
@@ -259,6 +258,17 @@ export default function CheckoutPage() {
   };
 
   const qrImage = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent('upi://pay?pa=8639366800@ybl&pn=Ezzy%20Bites&cu=INR')}`;
+
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center">
+          <Loader2 className="w-10 h-10 animate-spin text-primary" />
+        </div>
+      </div>
+    );
+  }
 
   if (cart.length === 0 && step < 4) {
     return (
@@ -343,7 +353,7 @@ export default function CheckoutPage() {
                     <div className="grid md:grid-cols-2 gap-6">
                       <div className="space-y-2">
                         <Label className="text-[10px] font-black uppercase tracking-widest opacity-60 ml-1">Full Name</Label>
-                        <Input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="h-14 rounded-xl font-bold bg-secondary/20 border-none" />
+                        <Input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="h-14 rounded-xl font-bold bg-secondary/20 border-none" suppressHydrationWarning />
                       </div>
                       <div className="space-y-2">
                         <Label className="text-[10px] font-black uppercase tracking-widest opacity-60 ml-1">Mobile Node</Label>
@@ -351,13 +361,13 @@ export default function CheckoutPage() {
                           <div className="absolute left-4 top-1/2 -translate-y-1/2 flex items-center gap-2 border-r pr-3 border-muted">
                             <span className="text-xs font-black">+91</span>
                           </div>
-                          <Input value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value.replace(/\D/g, '').slice(0, 10)})} className="h-14 pl-20 rounded-xl font-black bg-secondary/20 border-none" placeholder="00000 00000" />
+                          <Input value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value.replace(/\D/g, '').slice(0, 10)})} className="h-14 pl-20 rounded-xl font-black bg-secondary/20 border-none" placeholder="00000 00000" suppressHydrationWarning />
                         </div>
                       </div>
                     </div>
                     <div className="space-y-2">
                       <Label className="text-[10px] font-black uppercase tracking-widest opacity-60 ml-1">Sanctuary Address</Label>
-                      <Textarea value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} className="rounded-xl min-h-[120px] font-medium bg-secondary/20 border-none px-6 py-4" placeholder="Building, Street, Area..." />
+                      <Textarea value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} className="rounded-xl min-h-[120px] font-medium bg-secondary/20 border-none px-6 py-4" placeholder="Building, Street, Area..." suppressHydrationWarning />
                     </div>
                   </CardContent>
                 </Card>
@@ -440,7 +450,6 @@ export default function CheckoutPage() {
 
           {step < 4 && (
             <div className="space-y-6 sticky top-24 h-fit">
-              {/* GROWTH BOX (Coupons & Referrals) */}
               <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-zinc-900 overflow-hidden">
                 <CardHeader className="p-6 border-b bg-muted/5 flex flex-row items-center justify-between">
                   <p className="text-[10px] font-black uppercase tracking-widest text-primary">Bounty Engine</p>
@@ -466,6 +475,7 @@ export default function CheckoutPage() {
                             value={couponInput} 
                             onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
                             className="rounded-xl h-12 uppercase font-black bg-secondary/20 border-none px-4"
+                            suppressHydrationWarning
                           />
                           <Button onClick={handleApplyCoupon} disabled={couponLoading || !couponInput} className="h-12 rounded-xl font-black text-[9px] uppercase px-6 bg-primary">Apply</Button>
                        </div>
@@ -481,6 +491,7 @@ export default function CheckoutPage() {
                                     value={referralInput} 
                                     onChange={(e) => setReferralInput(e.target.value.toUpperCase())}
                                     className="rounded-xl h-11 uppercase font-bold bg-secondary/10 border-none pl-9"
+                                    suppressHydrationWarning
                                   />
                                </div>
                                <Button onClick={handleApplyReferral} disabled={couponLoading || !referralInput} variant="outline" className="h-11 rounded-xl font-black text-[8px] uppercase px-4 border-2">Unlock</Button>
@@ -493,7 +504,6 @@ export default function CheckoutPage() {
                 </CardContent>
               </Card>
 
-              {/* SETTLEMENT CARD */}
               <Card className="rounded-[2.5rem] border-none shadow-2xl bg-white dark:bg-zinc-900 overflow-hidden">
                 <CardHeader className="p-6 border-b bg-muted/5">
                   <p className="text-[10px] font-black uppercase tracking-widest text-primary">Settlement Summary</p>

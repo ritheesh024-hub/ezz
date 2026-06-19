@@ -63,6 +63,7 @@ export const Navbar = () => {
   const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [navSearch, setNavSearch] = useState('');
+  const [mounted, setMounted] = useState(false);
   
   const { user, loading: userLoading } = useUser();
   const auth = useAuth();
@@ -72,6 +73,13 @@ export const Navbar = () => {
   const router = useRouter();
   const pathname = usePathname();
 
+  useEffect(() => {
+    setMounted(true);
+    const handleScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   const userDocRef = useMemo(() => user && db ? doc(db, 'users', user.uid) : null, [user, db]);
   const adminDocRef = useMemo(() => user && db ? doc(db, 'admins', user.uid) : null, [user, db]);
   
@@ -79,12 +87,6 @@ export const Navbar = () => {
   const { data: adminProfile } = useDoc(adminDocRef);
 
   const isStaff = !!adminProfile;
-
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
 
   useEffect(() => {
     setIsMenuOpen(false);
@@ -122,7 +124,11 @@ export const Navbar = () => {
       <div className="container mx-auto px-4">
         <div className="h-10 md:h-12 flex items-center justify-between gap-4">
           <Link href="/" className="transition-transform active:scale-95">
-            <Logo variant={scrolled ? 'dark' : (isDarkMode ? 'dark' : 'light')} size="sm" className="shrink-0 scale-90 md:scale-100 origin-left" />
+            <Logo 
+              variant={scrolled ? 'dark' : (mounted && isDarkMode ? 'dark' : 'light')} 
+              size="sm" 
+              className="shrink-0 scale-90 md:scale-100 origin-left" 
+            />
           </Link>
 
           <div className="flex-1 max-w-md hidden md:block">
@@ -135,6 +141,7 @@ export const Navbar = () => {
                 value={navSearch}
                 onChange={(e) => setNavSearch(e.target.value)}
                 placeholder="Search premium bites..." 
+                suppressHydrationWarning
                 className={cn(
                   "w-full h-9 pl-10 pr-4 rounded-xl border-none transition-all font-black text-[10px] uppercase tracking-widest focus:ring-4 focus:ring-primary/20",
                   scrolled 
@@ -153,7 +160,7 @@ export const Navbar = () => {
                   scrolled ? "hover:bg-primary/5 text-foreground" : "hover:bg-white/10 text-white"
                 )}>
                   <Bell className="w-5 h-5" />
-                  {unreadCount > 0 && (
+                  {mounted && unreadCount > 0 && (
                     <span className="absolute top-0 right-0 w-3.5 h-3.5 bg-primary text-white text-[7px] font-black rounded-full flex items-center justify-center border-2 border-background shadow-xl animate-in zoom-in">
                       {unreadCount}
                     </span>
@@ -222,7 +229,7 @@ export const Navbar = () => {
                 scrolled ? "hover:bg-primary/5 text-foreground" : "hover:bg-white/10 text-white"
               )}>
                 <ShoppingBag className="w-5 h-5" />
-                {cart.length > 0 && (
+                {mounted && cart.length > 0 && (
                   <span className="absolute top-0 right-0 w-4 h-4 bg-primary text-white text-[8px] font-black rounded-full flex items-center justify-center border-2 border-background shadow-xl animate-in zoom-in">
                     {cart.reduce((acc, i) => acc + i.quantity, 0)}
                   </span>
@@ -235,7 +242,7 @@ export const Navbar = () => {
                 <SheetTrigger asChild>
                   <Button variant="ghost" size="icon" className={cn(
                     "rounded-full w-9 h-9 transition-transform active:scale-90",
-                    scrolled ? "text-foreground" : (isDarkMode ? "text-foreground" : "text-white")
+                    scrolled ? "text-foreground" : (mounted && isDarkMode ? "text-foreground" : "text-white")
                   )}>
                     <Menu className="w-5 h-5" />
                   </Button>
@@ -327,19 +334,19 @@ export const Navbar = () => {
                        >
                          <div className="flex items-center gap-4">
                            <div className="w-10 h-10 rounded-xl bg-background flex items-center justify-center border shadow-sm group-active:scale-90 transition-all">
-                             {isDarkMode ? <Sun className="w-5 h-5 text-yellow-500" /> : <Moon className="w-5 h-5 text-indigo-500" />}
+                             {mounted && isDarkMode ? <Sun className="w-5 h-5 text-yellow-500" /> : <Moon className="w-5 h-5 text-indigo-500" />}
                            </div>
                            <span className="font-black text-[10px] uppercase tracking-widest">
-                             Appearance: {isDarkMode ? 'Light' : 'Dark'}
+                             Appearance: {mounted && isDarkMode ? 'Light' : 'Dark'}
                            </span>
                          </div>
                          <div className={cn(
                            "w-12 h-6 rounded-full relative transition-colors duration-500",
-                           isDarkMode ? "bg-primary" : "bg-zinc-300 dark:bg-zinc-700"
+                           mounted && isDarkMode ? "bg-primary" : "bg-zinc-300 dark:bg-zinc-700"
                          )}>
                            <div className={cn(
                              "absolute top-1 w-4 h-4 rounded-full bg-white shadow-lg transition-transform duration-500",
-                             isDarkMode ? "translate-x-7" : "translate-x-1"
+                             mounted && isDarkMode ? "translate-x-7" : "translate-x-1"
                            )} />
                          </div>
                        </button>

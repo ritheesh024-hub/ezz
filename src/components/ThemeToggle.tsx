@@ -1,6 +1,5 @@
-
 "use client"
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Moon, Sun } from 'lucide-react';
 import { useStore } from '@/app/lib/store';
 import { Button } from '@/components/ui/button';
@@ -12,6 +11,23 @@ interface ThemeToggleProps {
 
 export const ThemeToggle = ({ className }: ThemeToggleProps) => {
   const { isDarkMode, toggleDarkMode } = useStore();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return (
+      <Button
+        variant="ghost"
+        size="icon"
+        className={cn("rounded-full w-10 h-10 transition-all opacity-0", className)}
+      >
+        <Moon className="w-5 h-5" />
+      </Button>
+    );
+  }
 
   return (
     <Button
