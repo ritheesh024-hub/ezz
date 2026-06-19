@@ -26,7 +26,6 @@ export function initializeFirebase(): {
 
   // 2. Validate configuration
   if (!firebaseConfig.apiKey || firebaseConfig.apiKey.includes('your_')) {
-    console.warn('Firebase configuration is missing or invalid.');
     return { app: null, db: null, auth: null };
   }
 
@@ -51,7 +50,6 @@ export function initializeFirebase(): {
       auth: firebaseAuth
     };
   } catch (error) {
-    // Return nulls rather than throwing to prevent app-wide crashes during boot
     console.error('Failed to initialize Firebase services:', error);
     return { app: null, db: null, auth: null };
   }

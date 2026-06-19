@@ -153,14 +153,14 @@ export const Navbar = () => {
           </div>
 
           <div className="flex items-center gap-2 md:gap-4">
-            {user && (
+            {mounted && user && (
               <NotificationCenter>
                 <Button variant="ghost" size="icon" className={cn(
                   "rounded-full w-9 h-9 transition-all relative",
                   scrolled ? "hover:bg-primary/5 text-foreground" : "hover:bg-white/10 text-white"
                 )}>
                   <Bell className="w-5 h-5" />
-                  {mounted && unreadCount > 0 && (
+                  {unreadCount > 0 && (
                     <span className="absolute top-0 right-0 w-3.5 h-3.5 bg-primary text-white text-[7px] font-black rounded-full flex items-center justify-center border-2 border-background shadow-xl animate-in zoom-in">
                       {unreadCount}
                     </span>
@@ -172,7 +172,7 @@ export const Navbar = () => {
             <ThemeToggle className="hidden md:flex h-8 w-8" />
             
             <div className="hidden md:flex items-center gap-4">
-              {!userLoading && (
+              {mounted && !userLoading && (
                 user ? (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -223,19 +223,21 @@ export const Navbar = () => {
               )}
             </div>
 
-            <CartDrawer>
-              <Button variant="ghost" size="icon" className={cn(
-                "rounded-full w-9 h-9 transition-all relative",
-                scrolled ? "hover:bg-primary/5 text-foreground" : "hover:bg-white/10 text-white"
-              )}>
-                <ShoppingBag className="w-5 h-5" />
-                {mounted && cart.length > 0 && (
-                  <span className="absolute top-0 right-0 w-4 h-4 bg-primary text-white text-[8px] font-black rounded-full flex items-center justify-center border-2 border-background shadow-xl animate-in zoom-in">
-                    {cart.reduce((acc, i) => acc + i.quantity, 0)}
-                  </span>
-                )}
-              </Button>
-            </CartDrawer>
+            {mounted && (
+              <CartDrawer>
+                <Button variant="ghost" size="icon" className={cn(
+                  "rounded-full w-9 h-9 transition-all relative",
+                  scrolled ? "hover:bg-primary/5 text-foreground" : "hover:bg-white/10 text-white"
+                )}>
+                  <ShoppingBag className="w-5 h-5" />
+                  {cart.length > 0 && (
+                    <span className="absolute top-0 right-0 w-4 h-4 bg-primary text-white text-[8px] font-black rounded-full flex items-center justify-center border-2 border-background shadow-xl animate-in zoom-in">
+                      {cart.reduce((acc, i) => acc + i.quantity, 0)}
+                    </span>
+                  )}
+                </Button>
+              </CartDrawer>
+            )}
 
             <div className="md:hidden">
               <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
@@ -250,7 +252,7 @@ export const Navbar = () => {
                 <SheetContent side="right" className="w-[320px] p-0 border-none bg-background flex flex-col z-[60] shadow-3xl">
                   <SheetHeader className="p-6 text-left border-b bg-secondary/20">
                     <SheetTitle className="sr-only">User Menu</SheetTitle>
-                    {user ? (
+                    {mounted && user ? (
                       <div 
                         onClick={() => { setIsMenuOpen(false); setIsEditProfileOpen(true); }}
                         className="flex items-center gap-5 cursor-pointer group"
@@ -280,7 +282,7 @@ export const Navbar = () => {
                   </SheetHeader>
 
                   <div className="flex-1 overflow-y-auto py-6 px-4 space-y-1 scrollbar-hide">
-                    {user && (
+                    {mounted && user && (
                       <div className="mb-8">
                         <div className="bg-orange-gradient p-6 rounded-[2rem] text-white shadow-2xl relative overflow-hidden group">
                            <div className="absolute -right-6 -bottom-6 w-24 h-24 bg-white/10 rounded-full blur-2xl transition-transform duration-1000 group-hover:scale-150" />
@@ -299,8 +301,8 @@ export const Navbar = () => {
                     )}
 
                     {menuItems.map((item) => {
-                      if (item.authRequired && !user) return null;
-                      if (item.staffOnly && !isStaff) return null;
+                      if (item.authRequired && (!mounted || !user)) return null;
+                      if (item.staffOnly && (!mounted || !isStaff)) return null;
                       
                       return (
                         <Link 
@@ -333,7 +335,7 @@ export const Navbar = () => {
                   </div>
 
                   <div className="p-8 border-t shrink-0">
-                    {user ? (
+                    {mounted && user ? (
                       <Button 
                         variant="ghost" 
                         onClick={handleLogout}
