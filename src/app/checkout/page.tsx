@@ -1,4 +1,3 @@
-
 "use client"
 import React, { useState, useEffect } from 'react';
 import { Navbar } from '@/components/Navbar';
@@ -84,7 +83,7 @@ export default function CheckoutPage() {
 
   const subtotal = getTotal();
   const deliveryFee = subtotal >= 149 ? 0 : 40;
-  const total = subtotal - discount + deliveryFee;
+  const total = Math.max(0, subtotal - discount + deliveryFee);
 
   const handleApplyCoupon = async () => {
     if (!db) return;
@@ -122,14 +121,17 @@ export default function CheckoutPage() {
   };
 
   const handleApplyReferral = async () => {
-    if (!db || !isFirstOrder) return;
+    if (!db) return;
+    if (!isFirstOrder) {
+      toast({ variant: "destructive", title: "Ineligible", description: "Referral codes are only for first-time orders." });
+      return;
+    }
     const code = referralInput.trim().toUpperCase();
     if (!code) return;
 
     setCouponLoading(true);
     try {
       // Find user who owns this code: EB-{UID.slice(0,6)}
-      // This is a simplified check. Real production would use a specific collection.
       const usersRef = collection(db, 'users');
       const snap = await getDocs(usersRef);
       const referrerDoc = snap.docs.find(d => `EB-${d.id.slice(0, 6).toUpperCase()}` === code);
@@ -230,6 +232,13 @@ export default function CheckoutPage() {
               orderId: finalOrderId,
               status: 'pending',
               createdAt: serverTimestamp()
+           });
+        }
+
+        // Coupon increment
+        if (appliedCoupon) {
+           await updateDoc(doc(db, 'coupons', appliedCoupon.code), {
+              usageCount: increment(1)
            });
         }
 
@@ -502,7 +511,7 @@ export default function CheckoutPage() {
                   )}
                   <div className="flex justify-between text-xs font-black uppercase tracking-widest text-muted-foreground">
                     <span>Delivery</span>
-                    <span className="text-green-600 italic">{deliveryFee === 0 ? "FREE" : `₹${deliveryFee}`}</span>
+                    <span className={deliveryFee === 0 ? "text-green-600 italic" : "text-foreground"}>{deliveryFee === 0 ? "FREE" : `₹${deliveryFee}`}</span>
                   </div>
                   <div className="border-t-2 border-dashed pt-6 flex justify-between items-end">
                     <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Final Amount</span>
@@ -519,4 +528,3 @@ export default function CheckoutPage() {
     </div>
   );
 }
-

@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useMemo, useState, useEffect } from 'react';
@@ -18,7 +17,10 @@ import {
   ShieldCheck,
   Heart,
   MessageSquare,
-  Star
+  Star,
+  Gift,
+  TicketPercent,
+  TrendingDown
 } from 'lucide-react';
 import {
   XAxis,
@@ -62,6 +64,9 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
   const reviewsQuery = useMemo(() => db ? query(collection(db, 'reviews')) : null, [db]);
   const { data: allReviews = [] } = useCollection<any>(reviewsQuery);
 
+  const growthQuery = useMemo(() => db ? query(collection(db, 'referrals')) : null, [db]);
+  const { data: allReferrals = [] } = useCollection<any>(growthQuery);
+
   const metrics = useMemo(() => {
     const delivered = orders.filter(o => o.status === 'Delivered');
     const todayRev = delivered.filter(o => o.createdAt?.toDate && isToday(o.createdAt.toDate())).reduce((acc, o) => acc + (Number(o.total) || 0), 0);
@@ -87,15 +92,21 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
 
     const chartData = Object.entries(chartMap).map(([name, val]) => ({ name, val }));
 
+    // Growth Metrics
+    const referralCount = allReferrals.length;
+    const couponImpact = orders.filter(o => !!o.couponCode).length;
+
     return { 
       todayRev, 
       totalRev, 
       status, 
       chartData, 
+      referralCount,
+      couponImpact,
       avgOrder: delivered.length ? Math.round(totalRev / delivered.length) : 0,
       avgRating: allReviews.length ? (allReviews.reduce((acc, r) => acc + r.rating, 0) / allReviews.length).toFixed(1) : '0.0'
     };
-  }, [orders, allReviews]);
+  }, [orders, allReviews, allReferrals]);
 
   if (!mounted) return (
     <div className="h-[600px] flex flex-col items-center justify-center gap-4">
@@ -112,6 +123,53 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
         <KPICard label="Active Tickets" value={metrics.status.active} icon={Zap} trend="Live" color="text-orange-500" bg="bg-orange-50" />
         <KPICard label="Customer Pulse" value={metrics.avgRating} icon={Star} trend={`${allReviews.length} Reviews`} color="text-yellow-500" bg="bg-yellow-50" />
         <KPICard label="Avg. Ticket" value={`₹${metrics.avgOrder}`} icon={CreditCard} trend="Stable" color="text-primary" bg="bg-primary/5" />
+      </div>
+
+      {/* GROWTH & LOYALTY HUD */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+         <Card className="rounded-[2.5rem] border-none shadow-xl bg-zinc-950 text-white p-10 relative overflow-hidden group">
+            <div className="absolute -right-8 -bottom-8 opacity-10 group-hover:scale-110 transition-transform duration-1000 rotate-12">
+               <Gift className="w-48 h-48" />
+            </div>
+            <div className="relative z-10 flex items-center justify-between">
+               <div className="space-y-4">
+                  <div className="flex items-center gap-3 bg-white/10 w-fit px-3 py-1 rounded-full border border-white/10">
+                     <TrendingUp className="w-3 h-3 text-emerald-400" />
+                     <span className="text-[9px] font-black uppercase tracking-widest">Referral Velocity</span>
+                  </div>
+                  <div>
+                    <h3 className="text-6xl font-black font-headline italic leading-none">{metrics.referralCount}</h3>
+                    <p className="text-[10px] font-black uppercase tracking-[0.4em] mt-3 opacity-40">Total Nodes Recruited</p>
+                  </div>
+               </div>
+               <div className="hidden sm:block text-right">
+                  <p className="text-[8px] font-black uppercase tracking-widest opacity-30 mb-2">Growth impact</p>
+                  <Badge className="bg-emerald-500/20 text-emerald-400 border-none font-black text-[10px] px-3">High Conversion</Badge>
+               </div>
+            </div>
+         </Card>
+
+         <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-zinc-900 p-10 border border-primary/10 relative overflow-hidden group">
+            <div className="absolute -right-8 -bottom-8 opacity-5 group-hover:scale-110 transition-transform duration-1000 rotate-12">
+               <TicketPercent className="w-48 h-48" />
+            </div>
+            <div className="relative z-10 flex items-center justify-between">
+               <div className="space-y-4">
+                  <div className="flex items-center gap-3 bg-primary/10 text-primary w-fit px-3 py-1 rounded-full border border-primary/10">
+                     <Zap className="w-3 h-3" />
+                     <span className="text-[9px] font-black uppercase tracking-widest">Coupon Impact</span>
+                  </div>
+                  <div>
+                    <h3 className="text-6xl font-black font-headline text-primary italic leading-none">{metrics.couponImpact}</h3>
+                    <p className="text-[10px] font-black uppercase tracking-[0.4em] mt-3 opacity-40">Orders using Bounties</p>
+                  </div>
+               </div>
+               <div className="hidden sm:block text-right">
+                  <p className="text-[8px] font-black uppercase tracking-widest opacity-30 mb-2">Retention Rate</p>
+                  <Badge className="bg-primary text-white border-none font-black text-[10px] px-3">Aggressive</Badge>
+               </div>
+            </div>
+         </Card>
       </div>
 
       <div className="grid lg:grid-cols-3 gap-8">
