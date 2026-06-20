@@ -65,8 +65,8 @@ export const BillingSystem = ({ products, orders }: BillingSystemProps) => {
   };
 
   const subtotal = activeBill.reduce((acc, curr) => acc + (curr.price * curr.quantity), 0);
-  const tax = Math.round(subtotal * 0.05); // 5% GST
-  const total = subtotal - discount + tax;
+  // Tax removed as requested
+  const total = subtotal - discount;
 
   const generateBill = async () => {
     if (activeBill.length === 0) {
@@ -89,7 +89,6 @@ export const BillingSystem = ({ products, orders }: BillingSystemProps) => {
       instructions: customerInfo.notes,
       items: activeBill.map(i => ({ id: i.id, name: i.name, price: i.price, quantity: i.quantity })),
       subtotal,
-      tax,
       discount,
       total,
       paymentMethod,
@@ -233,7 +232,6 @@ export const BillingSystem = ({ products, orders }: BillingSystemProps) => {
                   <div className="space-y-4 pt-6 border-t-2 border-dashed">
                     <div className="space-y-2 text-xs font-black uppercase tracking-widest text-muted-foreground">
                        <div className="flex justify-between"><span>Subtotal</span><span>₹{subtotal}</span></div>
-                       <div className="flex justify-between text-emerald-600"><span>Tax (5% GST)</span><span>+ ₹{tax}</span></div>
                     </div>
                     <div className="flex justify-between items-end">
                       <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40">Gross Total</span>
@@ -366,12 +364,6 @@ export const BillingSystem = ({ products, orders }: BillingSystemProps) => {
                  <span>Subtotal</span>
                  <span>₹{viewingInvoice?.subtotal}</span>
               </div>
-              {viewingInvoice?.tax > 0 && (
-                <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-emerald-600">
-                   <span>Tax (5% GST)</span>
-                   <span>₹{viewingInvoice?.tax}</span>
-                </div>
-              )}
               {viewingInvoice?.discount > 0 && (
                 <div className="flex justify-between text-[10px] font-black uppercase tracking-widest text-rose-600">
                    <span>Discount</span>
