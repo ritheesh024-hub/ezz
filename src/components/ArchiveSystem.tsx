@@ -146,7 +146,11 @@ export const ArchiveSystem = ({ orders, onViewDetails }: ArchiveSystemProps) => 
                 </tr>
               ) : (
                 filteredOrders.map((order) => (
-                  <tr key={order.id} className="hover:bg-primary/5 transition-all group">
+                  <tr 
+                    key={order.id} 
+                    className="hover:bg-primary/5 transition-all group cursor-pointer"
+                    onClick={() => onViewDetails(order)}
+                  >
                     <td className="px-10 py-6">
                       <div className="flex flex-col">
                         <span className="font-black text-primary italic">#{order.orderId}</span>
@@ -191,7 +195,10 @@ export const ArchiveSystem = ({ orders, onViewDetails }: ArchiveSystemProps) => 
                        <Button 
                          variant="ghost" 
                          size="sm" 
-                         onClick={() => onViewDetails(order)}
+                         onClick={(e) => {
+                           e.stopPropagation();
+                           onViewDetails(order);
+                         }}
                          className="h-10 px-6 rounded-xl font-black uppercase text-[9px] tracking-widest gap-2 hover:bg-primary hover:text-white transition-all"
                        >
                          <Eye className="w-4 h-4" /> Manifest

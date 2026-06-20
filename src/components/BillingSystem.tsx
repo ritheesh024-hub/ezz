@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -258,7 +257,11 @@ export const BillingSystem = ({ products, orders }: BillingSystemProps) => {
                       </td>
                     </tr>
                   ) : orders.filter(o => o.isStoreBill).map(inv => (
-                    <tr key={inv.orderId} className="hover:bg-primary/5 transition-all group">
+                    <tr 
+                      key={inv.orderId} 
+                      className="hover:bg-primary/5 transition-all group cursor-pointer"
+                      onClick={() => setViewingInvoice(inv)}
+                    >
                       <td className="px-10 py-6 font-black text-primary italic">#{inv.orderId}</td>
                       <td className="px-10 py-6">
                         <p className="font-black text-sm uppercase tracking-tight truncate max-w-[150px] group-hover:text-primary transition-colors">{inv.customerName}</p>
@@ -267,7 +270,15 @@ export const BillingSystem = ({ products, orders }: BillingSystemProps) => {
                       <td className="px-10 py-6"><Badge variant="outline" className="text-[8px] uppercase font-black px-3 py-1 rounded-full bg-secondary/50 border-none">{inv.orderType}</Badge></td>
                       <td className="px-10 py-6 font-black text-lg text-primary italic">₹{inv.total}</td>
                       <td className="px-10 py-6 text-right">
-                        <Button variant="ghost" size="sm" className="rounded-xl font-black uppercase text-[9px] tracking-widest gap-2 hover:bg-primary/10 hover:text-primary transition-all px-4 h-10" onClick={() => setViewingInvoice(inv)}>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="rounded-xl font-black uppercase text-[9px] tracking-widest gap-2 hover:bg-primary/10 hover:text-primary transition-all px-4 h-10" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setViewingInvoice(inv);
+                          }}
+                        >
                           <Printer className="w-4 h-4" /> Manifest
                         </Button>
                       </td>
