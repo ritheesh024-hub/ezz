@@ -1,4 +1,3 @@
-
 "use client"
 import React, { useState, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
@@ -21,7 +20,8 @@ import {
   Megaphone,
   MessageSquare,
   TrendingUp,
-  Gift
+  Gift,
+  History
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
@@ -38,6 +38,7 @@ import { UserManagement } from './UserManagement';
 import { ProductManagement } from './ProductManagement';
 import { AdminNotificationManager } from './AdminNotificationManager';
 import { ReviewManager } from './ReviewManager';
+import { ArchiveSystem } from './ArchiveSystem';
 import { cn } from '@/lib/utils';
 import { useSound } from '@/hooks/use-sound';
 import { StaffRole } from '@/app/admin/dashboard/page';
@@ -59,7 +60,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
   
   const ordersQuery = useMemo(() => {
     if (!db) return null;
-    return query(collection(db, 'orders'), orderBy('createdAt', 'desc'), limit(500));
+    return query(collection(db, 'orders'), orderBy('createdAt', 'desc'), limit(1000));
   }, [db]);
   const { data: realOrders } = useCollection<any>(ordersQuery);
 
@@ -75,7 +76,6 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
     const groups = { pending: [] as any[], processing: [] as any[] };
     if (!realOrders) return groups;
     realOrders.forEach(o => {
-      // Terminal states (delivered, Cancelled) are excluded from the live grid
       if (o.status === 'orderPlaced') groups.pending.push(o);
       else if (['confirmed', 'outForDelivery'].includes(o.status)) groups.processing.push(o);
     });
@@ -169,8 +169,8 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
 
   const availableTabs = useMemo(() => {
     if (activeView === 'kitchen') return ['kitchen'];
-    if (activeView === 'cashier') return ['overview', 'billing', 'orders'];
-    return ['overview', 'users', 'billing', 'orders', 'products', 'reviews', 'coupons', 'notifications', 'staff', 'settings'];
+    if (activeView === 'cashier') return ['overview', 'billing', 'orders', 'archive'];
+    return ['overview', 'users', 'billing', 'orders', 'products', 'reviews', 'coupons', 'notifications', 'archive', 'staff', 'settings'];
   }, [activeView]);
 
   return (
@@ -204,6 +204,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
                         )}
                       </div>
                     )}
+                    {tab === 'archive' && <History className="w-4 h-4" />}
                     {tab === 'products' && <Layers className="w-4 h-4" />}
                     {tab === 'reviews' && <MessageSquare className="w-4 h-4" />}
                     {tab === 'coupons' && <TicketPercent className="w-4 h-4" />}
@@ -253,6 +254,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
                   {tab === 'notifications' && <AdminNotificationManager />}
                   {tab === 'staff' && <StaffManagement />}
                   {tab === 'settings' && <StoreSettings />}
+                  {tab === 'archive' && <ArchiveSystem orders={realOrders || []} onViewDetails={(o) => setSelectedOrderForView(o)} />}
                   {tab === 'orders' && <OrderGrid orderGroups={orderGroups} onOrderClick={setSelectedOrderForView} />}
                 </motion.div>
               </TabsContent>
@@ -271,17 +273,13 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
             <div className="flex flex-col">
               <div className={cn("p-10 text-white relative overflow-hidden", selectedOrderForView.status === 'Cancelled' ? "bg-rose-600" : "bg-primary")}>
                 <div className="absolute inset-0 bg-black/5" />
-                <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                  <div>
-                    <div className="flex items-center gap-3 bg-white/20 w-fit px-3 py-1 rounded-full mb-3 backdrop-blur-md border border-white/10">
-                      <span className="text-[10px] font-black uppercase tracking-widest">{selectedOrderForView.orderType || 'Order'}</span>
-                    </div>
-                    <h2 className="text-4xl font-black font-headline uppercase tracking-tighter italic leading-none">#{selectedOrderForView.orderId}</h2>
-                  </div>
-                  <div className="md:text-right">
-                    <p className="text-[9px] font-black uppercase opacity-70 tracking-[0.2em] mb-1">Settlement</p>
-                    <p className="text-4xl font-black font-headline italic leading-none">₹{selectedOrderForView.total}</p>
-                  </div>
+                <div className="relative z-10 space-y-2">
+                   <Badge className="bg-white/20 border-none font-black text-[9px] uppercase px-3 py-1 rounded-full">{selectedOrderForView.orderType || 'Online'}</Badge>
+                   <h2 className="text-4xl font-black font-headline uppercase tracking-tighter italic leading-none">#{selectedOrderForView.orderId}</h2>
+                </div>
+                <div className="absolute bottom-10 right-10 text-right">
+                  <p className="text-[9px] font-black uppercase opacity-70 tracking-[0.2em] mb-1">Settlement</p>
+                  <p className="text-5xl font-black font-headline italic leading-none">₹{selectedOrderForView.total}</p>
                 </div>
               </div>
 
@@ -297,12 +295,6 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
                           <div className="flex justify-between items-center mb-1">
                              <span className="text-sm font-black uppercase tracking-tight truncate flex-1 pr-4">{item.name}</span>
                              <span className="w-8 h-8 rounded-lg bg-white dark:bg-zinc-700 flex items-center justify-center font-black text-xs shadow-sm text-primary">x{item.quantity}</span>
-                          </div>
-                          <div className="flex justify-between items-end">
-                             <div className="flex flex-wrap gap-1">
-                                {item.customization && <Badge variant="outline" className="text-[7px] font-black uppercase border-none bg-white/40">{item.customization.size}</Badge>}
-                             </div>
-                             <span className="font-bold text-[11px] opacity-60">₹{item.price * item.quantity}</span>
                           </div>
                         </div>
                       ))}
@@ -322,13 +314,6 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
                             <p className="text-[10px] font-bold opacity-60">{selectedOrderForView.customerPhone}</p>
                           </div>
                         </div>
-                        <div className="flex gap-4">
-                          <div className="w-10 h-10 rounded-xl bg-white dark:bg-zinc-700 flex items-center justify-center shrink-0 shadow-sm"><MapPin className="w-5 h-5 text-primary" /></div>
-                          <div className="flex-1">
-                            <p className="text-[10px] font-black uppercase opacity-40 mb-0.5">Drop-off</p>
-                            <p className="text-[11px] font-medium leading-relaxed italic text-muted-foreground line-clamp-2">"{selectedOrderForView.address || 'Standard Pickup'}"</p>
-                          </div>
-                        </div>
                     </div>
                   </div>
                 </div>
@@ -341,22 +326,6 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
                     onClick={() => handleUpdateStatus(selectedOrderForView.id, 'confirmed')}
                   >
                     Confirm Order
-                  </Button>
-                )}
-                {selectedOrderForView.status === 'confirmed' && (assignedRole === 'admin' || assignedRole === 'cashier') && (
-                   <Button 
-                    className="flex-1 rounded-[1.5rem] h-16 bg-blue-600 text-white font-black uppercase text-[10px] tracking-widest shadow-2xl shadow-blue-500/20" 
-                    onClick={() => handleUpdateStatus(selectedOrderForView.id, 'outForDelivery')}
-                  >
-                    Mark Out For Delivery
-                  </Button>
-                )}
-                {selectedOrderForView.status === 'outForDelivery' && (assignedRole === 'admin' || assignedRole === 'cashier') && (
-                   <Button 
-                    className="flex-1 rounded-[1.5rem] h-16 bg-emerald-600 text-white font-black uppercase text-[10px] tracking-widest shadow-2xl shadow-emerald-500/20" 
-                    onClick={() => handleUpdateStatus(selectedOrderForView.id, 'delivered')}
-                  >
-                    Mark Delivered
                   </Button>
                 )}
                 <Button 
