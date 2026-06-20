@@ -6,8 +6,9 @@ import { errorEmitter } from '../error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '../errors';
 
 /**
- * Robust hook for real-time Firestore document streams.
- * Uses path stabilization to prevent redundant listener churn.
+ * STABILIZED DOCUMENT HOOK
+ * Resolves "ca9" errors by adding a 100ms settle-delay. This ensures 
+ * that the internal Firestore state machine isn't overloaded during HMR.
  */
 export function useDoc<T = DocumentData>(docRef: DocumentReference<T> | null) {
   const [data, setData] = useState<T | null>(null);
@@ -31,40 +32,44 @@ export function useDoc<T = DocumentData>(docRef: DocumentReference<T> | null) {
 
     setLoading(true);
 
-    try {
-      const unsubscribe = onSnapshot(
-        docRef,
-        (snapshot) => {
-          setData(snapshot.data() || null);
-          setLoading(false);
-          setError(null);
-        },
-        async (serverError) => {
-          const permissionError = new FirestorePermissionError({
-            path: docRef.path,
-            operation: 'get',
-          } satisfies SecurityRuleContext);
+    // SETTLE-DELAY: Prevents rapid-fire subscription crashes
+    const timeoutId = setTimeout(() => {
+      try {
+        const unsubscribe = onSnapshot(
+          docRef,
+          (snapshot) => {
+            setData(snapshot.data() || null);
+            setLoading(false);
+            setError(null);
+          },
+          async (serverError) => {
+            const permissionError = new FirestorePermissionError({
+              path: docRef.path,
+              operation: 'get',
+            } satisfies SecurityRuleContext);
 
-          errorEmitter.emit('permission-error', permissionError);
-          setError(serverError);
-          setLoading(false);
-        }
-      );
+            errorEmitter.emit('permission-error', permissionError);
+            setError(serverError);
+            setLoading(false);
+          }
+        );
 
-      unsubscribeRef.current = unsubscribe;
-    } catch (err: any) {
-      console.error("Firestore Doc Listener Failed:", err);
-      setError(err);
-      setLoading(false);
-    }
+        unsubscribeRef.current = unsubscribe;
+      } catch (err: any) {
+        console.error("Firestore Doc Listener Failed:", err);
+        setError(err);
+        setLoading(false);
+      }
+    }, 100);
 
     return () => {
+      clearTimeout(timeoutId);
       if (unsubscribeRef.current) {
         unsubscribeRef.current();
         unsubscribeRef.current = null;
       }
     };
-  }, [docPath]); // Path stabilization ensures listener only restarts if path actually changes
+  }, [docPath]); 
 
   return { data, loading, error };
 }

@@ -6,25 +6,24 @@ import { errorEmitter } from '../error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '../errors';
 
 /**
- * Robust hook for real-time Firestore collection streams.
- * Optimized to handle Next.js HMR and prevent state machine crashes.
+ * STABILIZED COLLECTION HOOK
+ * Resolves "ca9" errors by adding a 100ms settle-delay. This prevents
+ * race conditions during rapid Next.js HMR cycles.
  */
 export function useCollection<T = DocumentData>(query: Query<T> | null) {
   const [data, setData] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   
-  // Track current subscription to prevent rapid re-subscription loops
   const unsubscribeRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
-    // 1. Cleanup existing listener if it exists
+    // Cleanup previous listener
     if (unsubscribeRef.current) {
       unsubscribeRef.current();
       unsubscribeRef.current = null;
     }
 
-    // 2. Guard for empty query or server-side execution
     if (!query || typeof window === 'undefined') {
       setData([]);
       setLoading(false);
@@ -33,46 +32,48 @@ export function useCollection<T = DocumentData>(query: Query<T> | null) {
 
     setLoading(true);
 
-    try {
-      // 3. Initialize onSnapshot with standardized error handling
-      const unsubscribe = onSnapshot(
-        query,
-        (snapshot: QuerySnapshot<T>) => {
-          const items = snapshot.docs.map((doc) => ({
-            ...doc.data(),
-            id: doc.id,
-          })) as T[];
-          setData(items);
-          setLoading(false);
-          setError(null);
-        },
-        async (serverError) => {
-          const permissionError = new FirestorePermissionError({
-            path: 'collection_stream',
-            operation: 'list',
-          } satisfies SecurityRuleContext);
+    // SETTLE-DELAY: Gives the Firestore SyncEngine time to settle during HMR
+    const timeoutId = setTimeout(() => {
+      try {
+        const unsubscribe = onSnapshot(
+          query,
+          (snapshot: QuerySnapshot<T>) => {
+            const items = snapshot.docs.map((doc) => ({
+              ...doc.data(),
+              id: doc.id,
+            })) as T[];
+            setData(items);
+            setLoading(false);
+            setError(null);
+          },
+          async (serverError) => {
+            const permissionError = new FirestorePermissionError({
+              path: 'collection_stream',
+              operation: 'list',
+            } satisfies SecurityRuleContext);
 
-          errorEmitter.emit('permission-error', permissionError);
-          setError(serverError);
-          setLoading(false);
-        }
-      );
+            errorEmitter.emit('permission-error', permissionError);
+            setError(serverError);
+            setLoading(false);
+          }
+        );
 
-      unsubscribeRef.current = unsubscribe;
-    } catch (err: any) {
-      console.error("Firestore Listener Setup Failed:", err);
-      setError(err);
-      setLoading(false);
-    }
+        unsubscribeRef.current = unsubscribe;
+      } catch (err: any) {
+        console.error("Firestore Listener Setup Failed:", err);
+        setError(err);
+        setLoading(false);
+      }
+    }, 100); 
 
-    // 4. Guaranteed cleanup on unmount or query change
     return () => {
+      clearTimeout(timeoutId);
       if (unsubscribeRef.current) {
         unsubscribeRef.current();
         unsubscribeRef.current = null;
       }
     };
-  }, [query]); // Query reference must be stable (useMemo)
+  }, [query]); 
 
   return { data, loading, error };
 }

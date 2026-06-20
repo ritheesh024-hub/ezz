@@ -11,12 +11,10 @@ import {
   Send, 
   Users, 
   Smartphone, 
-  CheckCircle2, 
   Loader2,
   TicketPercent,
   Megaphone,
-  History,
-  Trash2
+  History
 } from 'lucide-react';
 import { useFirestore, useCollection } from '@/firebase';
 import { collection, query, orderBy, limit, addDoc, serverTimestamp, writeBatch, doc, getDocs } from 'firebase/firestore';

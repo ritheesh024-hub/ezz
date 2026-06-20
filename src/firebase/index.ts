@@ -1,13 +1,14 @@
 'use client';
 
-import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
+import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
 import { getFirestore, Firestore } from 'firebase/firestore';
 import { getAuth, Auth } from 'firebase/auth';
 import { firebaseConfig } from './config';
 
 /**
- * IDEMPOTENT FIREBASE INITIALIZATION (HARDENED SINGLETON)
- * Uses a global registry to survive Next.js module re-evaluations during HMR.
+ * HARDENED FIREBASE SINGLETON
+ * Prevents "ca9" Unexpected State errors by ensuring exactly one instance 
+ * of each service exists globally, surviving Next.js HMR.
  */
 
 interface FirebaseInstances {
@@ -25,28 +26,25 @@ export function initializeFirebase(): {
   db: Firestore | null; 
   auth: Auth | null;
 } {
-  // 1. Strict browser check
   if (typeof window === 'undefined') {
     return { app: null, db: null, auth: null };
   }
 
   try {
-    // 2. Check global cache first to prevent "Unexpected state (ID: ca9)" errors during HMR
+    // 1. Return cached instances if they exist
     if (globalThis.__FIREBASE_INSTANCES__) {
       return globalThis.__FIREBASE_INSTANCES__;
     }
 
-    // 3. Initialize or retrieve the App Registry
+    // 2. Initialize App and Services
     const apps = getApps();
     const app = apps.length === 0 ? initializeApp(firebaseConfig) : apps[0];
-
-    // 4. Retrieve Services (Singletons for this app instance)
     const db = getFirestore(app);
     const auth = getAuth(app);
     
     const instances: FirebaseInstances = { app, db, auth };
     
-    // 5. Cache globally to survive Next.js module re-evaluations
+    // 3. Cache globally to prevent re-initialization during HMR
     globalThis.__FIREBASE_INSTANCES__ = instances;
     
     return instances;
