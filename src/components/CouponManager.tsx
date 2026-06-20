@@ -128,7 +128,7 @@ export const CouponManager = () => {
         path: couponRef.path,
         operation: editingCoupon ? 'update' : 'create',
         requestResourceData: couponData
-      }));
+      } as any));
     } finally {
       setSubmitting(false);
     }
@@ -142,7 +142,7 @@ export const CouponManager = () => {
         path: couponRef.path,
         operation: 'update',
         requestResourceData: { isActive: !currentState }
-      }));
+      } as any));
     });
   };
 
@@ -153,7 +153,7 @@ export const CouponManager = () => {
       errorEmitter.emit('permission-error', new FirestorePermissionError({
         path: couponRef.path,
         operation: 'delete'
-      }));
+      } as any));
     });
   };
 
@@ -165,7 +165,7 @@ export const CouponManager = () => {
           <p className="text-muted-foreground text-sm font-medium tracking-tight">Provision promotional codes and scale your growth velocity.</p>
         </div>
         <Button onClick={() => handleOpenModal()} className="h-16 px-10 rounded-2xl font-black uppercase text-[10px] tracking-widest gap-3 bg-primary text-white shadow-3xl hover:scale-[1.02] transition-all">
-          <Plus className="w-5 h-5" /> Provision Bounty
+          Add Coupon +
         </Button>
       </div>
 
