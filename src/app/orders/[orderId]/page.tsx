@@ -43,7 +43,7 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ orderI
 
   // Cancellation Timer Logic (5 Minute Window)
   useEffect(() => {
-    if (!order?.createdAt || (order.status !== 'Pending' && order.status !== 'Confirmed')) {
+    if (!order?.createdAt || (order.status !== 'orderPlaced' && order.status !== 'confirmed')) {
       setCanCancel(false);
       return;
     }
@@ -96,22 +96,20 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ orderI
   };
 
   const statusMap: Record<string, number> = {
-    'Pending': 1,
-    'Confirmed': 2,
-    'Preparing': 3,
-    'Out for Delivery': 4,
-    'Delivered': 5,
+    'orderPlaced': 1,
+    'confirmed': 2,
+    'outForDelivery': 3,
+    'delivered': 4,
     'Cancelled': 0
   };
 
   const statusLevel = order ? statusMap[order.status] || 1 : 1;
 
   const steps = [
-    { id: 1, title: 'Order Placed', icon: PackageCheck, desc: 'We have received your request.' },
-    { id: 2, title: 'Accepted', icon: CheckCircle2, desc: 'Kitchen is reviewing your items.' },
-    { id: 3, title: 'Preparing Food', icon: ChefHat, desc: 'Chef is crafting your gourmet bites.' },
-    { id: 4, title: 'Out for Delivery', icon: Truck, desc: 'Our rider is heading to your sanctuary.' },
-    { id: 5, title: 'Delivered', icon: CheckCircle2, desc: 'Bites received. Enjoy your meal!' }
+    { id: 1, title: 'Order Placed', statusKey: 'orderPlaced', icon: PackageCheck, desc: 'We have received your request.' },
+    { id: 2, title: 'Confirmed', statusKey: 'confirmed', icon: CheckCircle2, desc: 'Kitchen is reviewing your items.' },
+    { id: 3, title: 'Out for Delivery', statusKey: 'outForDelivery', icon: Truck, desc: 'Our rider is heading to your sanctuary.' },
+    { id: 4, title: 'Delivered', statusKey: 'delivered', icon: CheckCircle2, desc: 'Bites received. Enjoy your meal!' }
   ];
 
   if (loading) {
@@ -160,7 +158,7 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ orderI
             </p>
           </div>
           <div className="flex gap-3 w-full md:w-auto">
-             {order.status === 'Delivered' && !order.isReviewed && (
+             {order.status === 'delivered' && !order.isReviewed && (
                 <Button onClick={() => setIsReviewOpen(true)} className="flex-1 md:flex-none rounded-full h-14 px-8 gap-2 font-black uppercase text-[10px] tracking-widest bg-orange-gradient shadow-xl shadow-primary/20">
                    <Star className="w-4 h-4 fill-current" /> Rate items
                 </Button>
@@ -241,20 +239,20 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ orderI
                         )}>
                           <div className={cn(
                             "w-12 h-12 md:w-14 md:h-14 rounded-2xl flex items-center justify-center shadow-lg transition-all shrink-0 border-4 border-white dark:border-zinc-900",
-                            isActive ? 'bg-primary text-white scale-110' : 'bg-muted text-muted-foreground'
+                            isCurrent ? 'bg-orange-500 text-white scale-110' : isActive ? 'bg-primary text-white' : 'bg-muted text-muted-foreground'
                           )}>
-                            <Icon className="w-6 h-6" />
+                            {isActive && !isCurrent ? <CheckCircle2 className="w-6 h-6" /> : <Icon className="w-6 h-6" />}
                           </div>
                           <div className="flex-1 pt-1">
                             <h4 className={cn(
                               "text-lg md:text-2xl font-black uppercase tracking-tight leading-none",
-                              isActive ? 'text-foreground' : 'text-muted-foreground'
+                              isCurrent ? 'text-orange-600' : isActive ? 'text-foreground' : 'text-muted-foreground'
                             )}>{step.title}</h4>
                             <p className="text-xs md:text-sm font-medium text-muted-foreground mt-1">{step.desc}</p>
                             {isCurrent && (
-                              <div className="mt-4 flex gap-2 items-center bg-primary/10 w-fit px-3 py-1 rounded-full border border-primary/20">
-                                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-ping" />
-                                <span className="text-[8px] font-black uppercase tracking-widest text-primary">Live Status</span>
+                              <div className="mt-4 flex gap-2 items-center bg-orange-500/10 w-fit px-3 py-1 rounded-full border border-orange-500/20">
+                                <span className="w-1.5 h-1.5 rounded-full bg-orange-500 animate-ping" />
+                                <span className="text-[8px] font-black uppercase tracking-widest text-orange-600">LIVE NOW</span>
                               </div>
                             )}
                           </div>

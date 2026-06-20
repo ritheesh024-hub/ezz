@@ -1,3 +1,4 @@
+
 "use client"
 import React, { useState, useEffect } from 'react';
 import { Navbar } from '@/components/Navbar';
@@ -207,7 +208,7 @@ export default function CheckoutPage() {
       deliveryFee: Number(deliveryFee),
       total: Number(total),
       totalAmount: Number(total),
-      status: 'Pending',
+      status: 'orderPlaced',
       paymentMethod: formData.paymentMethod,
       orderType: 'Online',
       createdAt: serverTimestamp()

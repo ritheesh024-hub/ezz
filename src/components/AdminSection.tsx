@@ -1,3 +1,4 @@
+
 "use client"
 import React, { useState, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
@@ -75,9 +76,9 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
     const groups = { pending: [] as any[], preparing: [] as any[], completed: [] as any[] };
     if (!realOrders) return groups;
     realOrders.forEach(o => {
-      if (o.status === 'Pending') groups.pending.push(o);
-      else if (['Confirmed', 'Preparing', 'Out for Delivery'].includes(o.status)) groups.preparing.push(o);
-      else if (['Delivered', 'Cancelled'].includes(o.status)) groups.completed.push(o);
+      if (o.status === 'orderPlaced') groups.pending.push(o);
+      else if (['confirmed', 'outForDelivery'].includes(o.status)) groups.preparing.push(o);
+      else if (['delivered', 'Cancelled'].includes(o.status)) groups.completed.push(o);
     });
     return groups;
   }, [realOrders]);
@@ -86,7 +87,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
     if (!db || !user) return;
     const orderRef = doc(db, 'orders', id);
     const updateData: any = { status: newStatus };
-    if (newStatus === 'Confirmed') updateData.acceptedAt = serverTimestamp();
+    if (newStatus === 'confirmed') updateData.acceptedAt = serverTimestamp();
 
     updateDoc(orderRef, updateData)
       .then(async () => {
@@ -104,17 +105,15 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
         if (orderSnap?.userId) {
           const notifRef = collection(db, 'users', orderSnap.userId, 'notifications');
           const titles: Record<string, string> = {
-            'Confirmed': 'Order Confirmed! ✅',
-            'Preparing': 'Chef is Cooking 🍳',
-            'Out for Delivery': 'Rider is Dispatched 🛵',
-            'Delivered': 'Enjoy your Bites! 🍱',
+            'confirmed': 'Order Confirmed! ✅',
+            'outForDelivery': 'Rider is Dispatched 🛵',
+            'delivered': 'Enjoy your Bites! 🍱',
             'Cancelled': 'Order Cancelled ❌'
           };
           const bodies: Record<string, string> = {
-            'Confirmed': 'Your order has been accepted by the station.',
-            'Preparing': 'Fresh ingredients are being prepared for your meal.',
-            'Out for Delivery': 'Your premium bites are on the way to your sanctuary.',
-            'Delivered': 'Your order was successfully handed over. Thank you!',
+            'confirmed': 'Your order has been accepted by the station.',
+            'outForDelivery': 'Your premium bites are on the way to your sanctuary.',
+            'delivered': 'Your order was successfully handed over. Thank you!',
             'Cancelled': 'We regret that your order was revoked. Contact support if needed.'
           };
 
@@ -128,8 +127,8 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
             createdAt: serverTimestamp()
           });
 
-          // Referral Reward Check: If order is DELIVERED and has a referral code
-          if (newStatus === 'Delivered' && orderSnap.referralCode) {
+          // Referral Reward Check: If order is delivered and has a referral code
+          if (newStatus === 'delivered' && orderSnap.referralCode) {
              const refQuery = query(collection(db, 'referrals'), where('orderId', '==', id), where('status', '==', 'pending'));
              const refSnap = await getDocs(refQuery);
              
@@ -164,7 +163,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
         }
 
         playSound('success');
-        toast({ title: `Order ${newStatus}` });
+        toast({ title: `Order Updated` });
         if (selectedOrderForView?.id === id) setSelectedOrderForView(null);
       })
       .catch(async (error) => {
@@ -347,12 +346,28 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
               </div>
 
               <DialogFooter className="p-8 bg-zinc-50 dark:bg-zinc-900 border-t flex gap-3">
-                {selectedOrderForView.status === 'Pending' && (
+                {selectedOrderForView.status === 'orderPlaced' && (
                   <Button 
                     className="flex-1 rounded-[1.5rem] h-16 bg-primary text-white font-black uppercase text-[10px] tracking-widest shadow-2xl shadow-primary/20" 
-                    onClick={() => handleUpdateStatus(selectedOrderForView.id, 'Confirmed')}
+                    onClick={() => handleUpdateStatus(selectedOrderForView.id, 'confirmed')}
                   >
                     Confirm Order
+                  </Button>
+                )}
+                {selectedOrderForView.status === 'confirmed' && (assignedRole === 'admin' || assignedRole === 'cashier') && (
+                   <Button 
+                    className="flex-1 rounded-[1.5rem] h-16 bg-blue-600 text-white font-black uppercase text-[10px] tracking-widest shadow-2xl shadow-blue-500/20" 
+                    onClick={() => handleUpdateStatus(selectedOrderForView.id, 'outForDelivery')}
+                  >
+                    Mark Out For Delivery
+                  </Button>
+                )}
+                {selectedOrderForView.status === 'outForDelivery' && (assignedRole === 'admin' || assignedRole === 'cashier') && (
+                   <Button 
+                    className="flex-1 rounded-[1.5rem] h-16 bg-emerald-600 text-white font-black uppercase text-[10px] tracking-widest shadow-2xl shadow-emerald-500/20" 
+                    onClick={() => handleUpdateStatus(selectedOrderForView.id, 'delivered')}
+                  >
+                    Mark Delivered
                   </Button>
                 )}
                 <Button 
@@ -373,7 +388,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
 
 const OrderGrid = ({ orderGroups, onOrderClick }: any) => {
   const categories = [
-    { id: 'pending', label: 'Queued', icon: BellRing, color: 'text-primary', bg: 'bg-primary/5', border: 'border-primary/20' },
+    { id: 'pending', label: 'Placed', icon: BellRing, color: 'text-primary', bg: 'bg-primary/5', border: 'border-primary/20' },
     { id: 'preparing', label: 'Processing', icon: ChefHat, color: 'text-orange-500', bg: 'bg-orange-500/5', border: 'border-orange-500/20' },
     { id: 'completed', label: 'Finalized', icon: BoxSelect, color: 'text-emerald-500', bg: 'bg-emerald-500/5', border: 'border-emerald-500/20' }
   ];
@@ -404,7 +419,7 @@ const OrderGrid = ({ orderGroups, onOrderClick }: any) => {
                   <Card 
                     className="rounded-[2rem] border-none shadow-sm hover:shadow-xl transition-all cursor-pointer bg-white dark:bg-zinc-900 overflow-hidden group active:scale-[0.98] border-l-4 border-l-transparent" 
                     onClick={() => onOrderClick(order)} 
-                    style={{ borderLeftColor: order.status === 'Pending' ? '#ef4444' : order.status === 'Preparing' ? '#f97316' : '#10b981' }}
+                    style={{ borderLeftColor: order.status === 'orderPlaced' ? '#ef4444' : (order.status === 'confirmed' || order.status === 'outForDelivery') ? '#f97316' : '#10b981' }}
                   >
                     <div className="p-6 space-y-4">
                       <div className="flex justify-between items-start">
@@ -421,7 +436,7 @@ const OrderGrid = ({ orderGroups, onOrderClick }: any) => {
                       <div className="flex items-center justify-between pt-4 border-t border-dashed opacity-60">
                         <Badge className={cn(
                           "px-2 py-0.5 text-[7px] uppercase font-black border-none",
-                          order.status === 'Delivered' ? 'bg-emerald-100 text-emerald-700' : 
+                          order.status === 'delivered' ? 'bg-emerald-100 text-emerald-700' : 
                           order.status === 'Cancelled' ? 'bg-rose-100 text-rose-700' : 'bg-orange-100 text-orange-700'
                         )}>{order.status}</Badge>
                         <div className="flex items-center gap-1.5 text-[8px] font-black uppercase">

@@ -1,3 +1,4 @@
+
 "use client"
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -24,18 +25,18 @@ interface KitchenSystemProps {
 }
 
 export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) => {
-  // Focus only on active operational orders
+  // Kitchen focuses on placed orders (to confirm) and confirmed orders (to prep/view)
   const kitchenOrders = orders.filter(o => 
-    o.status === 'Confirmed' || o.status === 'Preparing'
+    o.status === 'orderPlaced' || o.status === 'confirmed'
   ).sort((a, b) => {
-    // Preparing orders always come first (higher urgency)
-    if (a.status === 'Preparing' && b.status !== 'Preparing') return -1;
-    if (a.status !== 'Preparing' && b.status === 'Preparing') return 1;
+    // Placed orders come first for kitchen to "Accept"
+    if (a.status === 'orderPlaced' && b.status !== 'orderPlaced') return -1;
+    if (a.status !== 'orderPlaced' && b.status === 'orderPlaced') return 1;
     return 0;
   });
 
-  const preparingCount = kitchenOrders.filter(o => o.status === 'Preparing').length;
-  const pendingCount = kitchenOrders.filter(o => o.status === 'Confirmed').length;
+  const confirmedCount = kitchenOrders.filter(o => o.status === 'confirmed').length;
+  const placedCount = kitchenOrders.filter(o => o.status === 'orderPlaced').length;
 
   return (
     <div className="space-y-10 animate-in fade-in duration-700">
@@ -48,11 +49,11 @@ export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) =>
            <div className="relative z-10 flex flex-col h-full justify-between gap-8">
               <div className="flex items-center gap-3 bg-white/20 w-fit px-4 py-2 rounded-full border border-white/20 backdrop-blur-md">
                  <ChefHat className="w-4 h-4" />
-                 <span className="text-[10px] font-black uppercase tracking-[0.2em]">Live Prep</span>
+                 <span className="text-[10px] font-black uppercase tracking-[0.2em]">In Cooking</span>
               </div>
               <div>
-                <h3 className="text-7xl font-black font-headline tracking-tighter italic leading-none">{preparingCount}</h3>
-                <p className="text-[10px] font-black uppercase tracking-[0.4em] mt-3 opacity-80 italic">In-Progress Station</p>
+                <h3 className="text-7xl font-black font-headline tracking-tighter italic leading-none">{confirmedCount}</h3>
+                <p className="text-[10px] font-black uppercase tracking-[0.4em] mt-3 opacity-80 italic">Confirmed Station</p>
               </div>
            </div>
         </Card>
@@ -64,8 +65,8 @@ export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) =>
                  <span className="text-[10px] font-black uppercase tracking-[0.2em]">Queue</span>
               </div>
               <div>
-                <h3 className="text-7xl font-black font-headline tracking-tighter italic leading-none text-primary">{pendingCount}</h3>
-                <p className="text-[10px] font-black uppercase tracking-[0.4em] mt-3 opacity-40 italic">Tickets Awaiting Provision</p>
+                <h3 className="text-7xl font-black font-headline tracking-tighter italic leading-none text-primary">{placedCount}</h3>
+                <p className="text-[10px] font-black uppercase tracking-[0.4em] mt-3 opacity-40 italic">New Arrivals</p>
               </div>
            </div>
         </Card>
@@ -94,7 +95,7 @@ export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) =>
             </div>
             <div className="space-y-1">
               <h3 className="text-3xl font-black uppercase tracking-tighter italic">Station Clear</h3>
-              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground opacity-40">All orders dispatched & settled</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground opacity-40">All orders confirmed</p>
             </div>
           </div>
         ) : (
@@ -103,12 +104,12 @@ export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) =>
               key={order.id} 
               className={cn(
                 "rounded-[3rem] border-none shadow-2xl overflow-hidden bg-white dark:bg-zinc-900 transition-all duration-700",
-                order.status === 'Confirmed' ? "ring-8 ring-primary/5 border-2 border-primary/20" : "border-2 border-orange-500/20 shadow-orange-500/10"
+                order.status === 'orderPlaced' ? "ring-8 ring-primary/5 border-2 border-primary/20" : "border-2 border-orange-500/20 shadow-orange-500/10"
               )}
             >
               <div className={cn(
                 "p-8 flex justify-between items-center",
-                order.status === 'Confirmed' ? "bg-primary text-white" : "bg-orange-gradient text-white shadow-lg"
+                order.status === 'orderPlaced' ? "bg-primary text-white" : "bg-orange-gradient text-white shadow-lg"
               )}>
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md border border-white/20">
@@ -163,20 +164,15 @@ export const KitchenSystem = ({ orders, onUpdateStatus }: KitchenSystemProps) =>
                     </div>
                   </div>
                   
-                  {order.status === 'Confirmed' ? (
+                  {order.status === 'orderPlaced' ? (
                     <Button 
-                      onClick={() => onUpdateStatus(order.id, 'Preparing')}
+                      onClick={() => onUpdateStatus(order.id, 'confirmed')}
                       className="rounded-[1.5rem] h-18 px-10 bg-zinc-950 text-white font-black uppercase text-[11px] tracking-widest gap-3 shadow-3xl transition-all hover:bg-primary group"
                     >
-                      <ChefHat className="w-5 h-5 group-hover:rotate-12 transition-transform" /> Prep Dish
+                      <CheckCircle2 className="w-5 h-5 group-hover:rotate-12 transition-transform" /> Confirm
                     </Button>
                   ) : (
-                    <Button 
-                      onClick={() => onUpdateStatus(order.id, 'Out for Delivery')}
-                      className="rounded-[1.5rem] h-18 px-10 bg-emerald-600 text-white font-black uppercase text-[11px] tracking-widest gap-3 shadow-3xl transition-all hover:bg-emerald-500"
-                    >
-                      <Truck className="w-5 h-5" /> Dispatch
-                    </Button>
+                    <Badge className="bg-orange-50 text-orange-600 border-none font-black text-[10px] uppercase px-4 py-2 rounded-xl">In Kitchen</Badge>
                   )}
                 </div>
               </CardContent>

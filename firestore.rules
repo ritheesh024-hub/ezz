@@ -1,3 +1,4 @@
+
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -8,17 +9,29 @@ service cloud.firestore {
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
     }
+    function getAdminData() {
+      return get(/databases/$(database)/documents/admins/$(request.auth.uid)).data;
+    }
     function isAdmin() {
       return isAuthenticated() && (
         exists(/databases/$(database)/documents/admins/$(request.auth.uid)) || 
         request.auth.token.email == "sunnyritheesh@gmail.com"
       );
     }
+    function isKitchen() {
+      return isAdmin() && (request.auth.token.email == "sunnyritheesh@gmail.com" || getAdminData().role == 'kitchen');
+    }
+    function isCashier() {
+      return isAdmin() && (request.auth.token.email == "sunnyritheesh@gmail.com" || getAdminData().role == 'cashier');
+    }
+    function isMasterAdmin() {
+      return isAdmin() && (request.auth.token.email == "sunnyritheesh@gmail.com" || getAdminData().role == 'admin');
+    }
 
     // ADMINS: Master access for setup, read for all authenticated nodes
     match /admins/{userId} {
       allow read: if isAuthenticated();
-      allow write: if isAdmin() || (isAuthenticated() && request.auth.token.email == "sunnyritheesh@gmail.com");
+      allow write: if isMasterAdmin() || (isAuthenticated() && request.auth.token.email == "sunnyritheesh@gmail.com");
     }
 
     // USERS: Identity protection
@@ -36,11 +49,14 @@ service cloud.firestore {
       }
     }
 
-    // ORDERS: Privacy for customer transactions
+    // ORDERS: Workflow-based permissions
     match /orders/{orderId} {
       allow read: if isAuthenticated() && (resource.data.userId == request.auth.uid || isAdmin());
       allow create: if isAuthenticated();
-      allow update: if isAdmin() || (isAuthenticated() && resource.data.userId == request.auth.uid && request.resource.data.status == 'Cancelled');
+      allow update: if isMasterAdmin() 
+                    || (isKitchen() && request.resource.data.status == 'confirmed' && resource.data.status == 'orderPlaced')
+                    || (isCashier() && request.resource.data.status in ['confirmed', 'outForDelivery', 'delivered'])
+                    || (isAuthenticated() && resource.data.userId == request.auth.uid && request.resource.data.status == 'Cancelled' && resource.data.status in ['orderPlaced', 'confirmed']);
     }
 
     // PRODUCTS & REVIEWS: Public assets

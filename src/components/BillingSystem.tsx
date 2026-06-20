@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -88,7 +89,7 @@ export const BillingSystem = ({ products, orders }: BillingSystemProps) => {
       discount,
       total,
       paymentMethod,
-      status: 'Delivered',
+      status: 'delivered',
       isStoreBill: true,
       processedBy: user.uid,
       createdAt: serverTimestamp()
