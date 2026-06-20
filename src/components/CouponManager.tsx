@@ -324,7 +324,7 @@ export const CouponManager = () => {
           <DialogFooter className="p-10 bg-secondary/30 flex gap-4">
              <Button variant="outline" className="h-18 flex-1 rounded-[1.8rem] font-black uppercase text-[10px] tracking-widest border-2" onClick={() => setIsModalOpen(false)}>Abandon</Button>
              <Button className="h-18 flex-1 rounded-[1.8rem] font-black uppercase text-[10px] tracking-widest bg-primary text-white shadow-2xl shadow-primary/30 hover:scale-[1.02] transition-all" onClick={handleSave} disabled={submitting}>
-               {submitting ? <Loader2 className="animate-spin w-5 h-5" /> : editingCoupon ? 'Commit Sync' : 'Launch Node'}
+               {submitting ? <Loader2 className="animate-spin w-5 h-5" /> : 'Save'}
              </Button>
           </DialogFooter>
         </DialogContent>

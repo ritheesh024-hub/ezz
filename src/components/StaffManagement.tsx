@@ -443,7 +443,7 @@ export const StaffManagement = () => {
               <div className="space-y-2">
                 <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Operational Assignment</Label>
                 <Select value={formData.role} onValueChange={(v: StaffRole) => setFormData({...formData, role: v})}>
-                  <SelectTrigger className="h-14 rounded-2xl border-none bg-secondary/30 dark:bg-zinc-800 font-bold px-6 uppercase text-[10px] tracking-widest"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-14 rounded-2xl bg-secondary/30 dark:bg-zinc-800 font-bold px-6 uppercase text-[10px] tracking-widest"><SelectValue /></SelectTrigger>
                   <SelectContent className="rounded-2xl">
                     <SelectItem value="admin" className="font-bold">Administrator</SelectItem>
                     <SelectItem value="cashier" className="font-bold">Billing Cashier</SelectItem>
@@ -458,6 +458,49 @@ export const StaffManagement = () => {
             </div>
             <Button className="w-full h-18 rounded-[1.8rem] font-black text-lg bg-primary text-white shadow-2xl shadow-primary/20 hover:scale-[1.02] transition-all uppercase tracking-widest mt-4" onClick={handleAddStaff} disabled={submitting}>
               {submitting ? <Loader2 className="animate-spin w-6 h-6" /> : 'Register Identity'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* EDIT STAFF DIALOG */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-xl rounded-[3rem] p-0 overflow-hidden border-none shadow-3xl bg-white dark:bg-zinc-950">
+          <div className="p-10 bg-primary text-white shrink-0 relative overflow-hidden">
+             <div className="absolute -right-16 -top-16 w-56 h-56 bg-white/10 rounded-full blur-3xl" />
+             <DialogHeader className="relative z-10">
+                <DialogTitle className="text-4xl font-black font-headline uppercase tracking-tighter leading-none">Modify <span className="italic opacity-80">Profile</span></DialogTitle>
+                <p className="text-white/70 font-medium text-xs uppercase tracking-widest mt-2">Updating Operational Identity</p>
+             </DialogHeader>
+          </div>
+          <div className="p-10 space-y-8">
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Full Legal Name</Label>
+                <Input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} className="h-14 rounded-2xl border-none bg-secondary/30 dark:bg-zinc-800 font-bold px-6" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Secure Contact</Label>
+                <Input value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} className="h-14 rounded-2xl border-none bg-secondary/30 dark:bg-zinc-800 font-bold px-6" />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Operational Assignment</Label>
+              <Select value={formData.role} onValueChange={(v: StaffRole) => setFormData({...formData, role: v})}>
+                <SelectTrigger className="h-14 rounded-2xl bg-secondary/30 dark:bg-zinc-800 border-none font-bold px-6 uppercase text-[10px] tracking-widest"><SelectValue /></SelectTrigger>
+                <SelectContent className="rounded-2xl">
+                  <SelectItem value="admin" className="font-bold">Administrator</SelectItem>
+                  <SelectItem value="cashier" className="font-bold">Billing Cashier</SelectItem>
+                  <SelectItem value="kitchen" className="font-bold">Kitchen Chef</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Avatar Asset URL</Label>
+              <Input value={formData.photoUrl} onChange={(e) => setFormData({...formData, photoUrl: e.target.value})} className="h-14 rounded-2xl border-none bg-secondary/30 dark:bg-zinc-800 font-bold px-6" />
+            </div>
+            <Button className="w-full h-16 rounded-2xl font-black uppercase text-[10px] tracking-widest bg-primary text-white shadow-2xl shadow-primary/30 hover:scale-[1.02] transition-all" onClick={handleUpdateStaff} disabled={submitting}>
+              {submitting ? <Loader2 className="animate-spin w-5 h-5" /> : 'Save'}
             </Button>
           </div>
         </DialogContent>

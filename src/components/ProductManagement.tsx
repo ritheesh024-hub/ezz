@@ -254,7 +254,7 @@ export const ProductManagement = () => {
                       <SelectTrigger className="h-14 rounded-2xl bg-secondary/30 dark:bg-zinc-800 border-none font-bold px-6 uppercase text-[10px] tracking-widest"><SelectValue /></SelectTrigger>
                       <SelectContent className="rounded-2xl">{CATEGORIES.filter(c => c !== 'All').map(c => <SelectItem key={c} value={c} className="font-bold">{c}</SelectItem>)}</SelectContent>
                     </Select>
-                  </div>
+                </div>
                 </div>
 
                 <div className="space-y-6">
@@ -288,7 +288,7 @@ export const ProductManagement = () => {
           <DialogFooter className="p-10 bg-secondary/30 flex gap-4">
              <Button variant="outline" className="h-16 flex-1 rounded-2xl font-black uppercase text-[10px] tracking-widest border-2" onClick={() => setIsModalOpen(false)}>Abandon</Button>
              <Button className="h-16 flex-1 rounded-2xl font-black uppercase text-[10px] tracking-widest bg-primary text-white shadow-2xl shadow-primary/30 hover:scale-[1.02] transition-all" onClick={handleSave} disabled={saveLoading}>
-               {saveLoading ? <Loader2 className="animate-spin w-5 h-5" /> : 'Commit Sync'}
+               {saveLoading ? <Loader2 className="animate-spin w-5 h-5" /> : 'Save'}
              </Button>
           </DialogFooter>
         </DialogContent>
