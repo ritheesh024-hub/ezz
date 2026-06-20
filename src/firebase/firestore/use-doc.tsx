@@ -45,7 +45,7 @@ export function useDoc<T = DocumentData>(docRef: DocumentReference<T> | null) {
     );
 
     return () => unsubscribe();
-  }, [docPath]); // Depend on path string to handle reference updates correctly without re-subscribing on every render
+  }, [docPath]); 
 
   return { data, loading, error };
 }
