@@ -1,23 +1,28 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { onSnapshot, DocumentReference, DocumentData } from 'firebase/firestore';
 import { errorEmitter } from '../error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '../errors';
 
 /**
  * Robust hook for real-time Firestore document streams.
- * Uses strict document path dependency to avoid redundant listener churn.
+ * Uses path stabilization to prevent redundant listener churn.
  */
 export function useDoc<T = DocumentData>(docRef: DocumentReference<T> | null) {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-
-  // We track the path string to stabilize the subscription
+  
+  const unsubscribeRef = useRef<(() => void) | null>(null);
   const docPath = docRef?.path || null;
 
   useEffect(() => {
+    if (unsubscribeRef.current) {
+      unsubscribeRef.current();
+      unsubscribeRef.current = null;
+    }
+
     if (!docRef || typeof window === 'undefined') {
       setData(null);
       setLoading(false);
@@ -26,27 +31,40 @@ export function useDoc<T = DocumentData>(docRef: DocumentReference<T> | null) {
 
     setLoading(true);
 
-    const unsubscribe = onSnapshot(
-      docRef,
-      (snapshot) => {
-        setData(snapshot.data() || null);
-        setLoading(false);
-        setError(null);
-      },
-      (serverError) => {
-        const permissionError = new FirestorePermissionError({
-          path: docRef.path,
-          operation: 'get',
-        } satisfies SecurityRuleContext);
+    try {
+      const unsubscribe = onSnapshot(
+        docRef,
+        (snapshot) => {
+          setData(snapshot.data() || null);
+          setLoading(false);
+          setError(null);
+        },
+        async (serverError) => {
+          const permissionError = new FirestorePermissionError({
+            path: docRef.path,
+            operation: 'get',
+          } satisfies SecurityRuleContext);
 
-        errorEmitter.emit('permission-error', permissionError);
-        setError(serverError);
-        setLoading(false);
+          errorEmitter.emit('permission-error', permissionError);
+          setError(serverError);
+          setLoading(false);
+        }
+      );
+
+      unsubscribeRef.current = unsubscribe;
+    } catch (err: any) {
+      console.error("Firestore Doc Listener Failed:", err);
+      setError(err);
+      setLoading(false);
+    }
+
+    return () => {
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+        unsubscribeRef.current = null;
       }
-    );
-
-    return () => unsubscribe();
-  }, [docPath]); // Use path string as dependency for stability
+    };
+  }, [docPath]); // Path stabilization ensures listener only restarts if path actually changes
 
   return { data, loading, error };
 }
