@@ -12,15 +12,11 @@ import {
   MapPin, User,
   Users, TicketPercent, BarChart3, Fingerprint,
   Settings2,
-  Zap,
   BoxSelect,
   Layers,
   Ban,
-  Bell,
   Megaphone,
   MessageSquare,
-  TrendingUp,
-  Gift,
   History,
   LayoutDashboard,
   Truck,
@@ -203,21 +199,21 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
       <NewOrderPopups pendingOrders={orderGroups.pending} onViewDetails={(order) => setSelectedOrderForView(order)} onUpdateStatus={handleUpdateStatus} />
       
       <Tabs defaultValue={availableTabs[0]} className="flex-1 flex flex-col lg:flex-row min-h-0">
-        <div className="lg:hidden sticky top-[70px] z-[90] bg-white/95 dark:bg-zinc-950/95 backdrop-blur-3xl border-b shadow-sm w-full overflow-hidden">
+        <div className="lg:hidden sticky top-[70px] z-[90] bg-white dark:bg-zinc-950 border-b shadow-sm w-full overflow-hidden shrink-0">
            <TabsList className="bg-transparent h-auto flex flex-row flex-nowrap justify-start p-3 space-x-2 overflow-x-auto scrollbar-hide snap-x w-full border-none">
               {availableTabs.map((tab) => (
                 <TabsTrigger 
                   key={tab}
                   value={tab} 
                   className={cn(
-                    "h-10 px-5 rounded-full font-black uppercase text-[9px] tracking-widest gap-2 transition-all shrink-0 snap-start bg-zinc-100 dark:bg-zinc-800 border-none whitespace-nowrap",
-                    "data-[state=active]:bg-primary data-[state=active]:text-white shadow-none"
+                    "h-10 px-5 rounded-full font-black uppercase text-[9px] tracking-widest gap-2 transition-all shrink-0 snap-start bg-secondary/50 border-none whitespace-nowrap",
+                    "data-[state=active]:bg-primary data-[state=active]:text-white shadow-lg shadow-primary/20"
                   )}
                 >
                   {getTabIcon(tab, "w-3.5 h-3.5")}
                   {getTabLabel(tab)}
                   {tab === 'orders' && orderGroups.pending.length > 0 && (
-                    <div className="w-1 h-1 rounded-full bg-white animate-ping" />
+                    <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
                   )}
                 </TabsTrigger>
               ))}
@@ -263,9 +259,9 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
                         <p className="text-[8px] font-black uppercase tracking-widest text-white/40">Audio Link</p>
                         <p className="text-[10px] font-black text-white/80 uppercase">{isAdminMuted ? 'Muted' : 'Live'}</p>
                       </div>
-                      <Button variant="ghost" size="icon" className="h-9 w-9 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all" onClick={toggleAdminMute}>
+                      <button onClick={toggleAdminMute} className="h-9 w-9 bg-white/5 hover:bg-white/10 text-white rounded-xl transition-all flex items-center justify-center">
                         {isAdminMuted ? <VolumeX className="w-3.5 h-3.5" /> : <Volume2 className="w-3.5 h-3.5" />}
-                      </Button>
+                      </button>
                     </div>
                   </div>
                 </Card>
@@ -303,10 +299,9 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
         </main>
       </Tabs>
 
-      {/* GLOBAL MODALS */}
       <Dialog open={!!selectedOrderForView} onOpenChange={(open) => !open && setSelectedOrderForView(null)}>
         <DialogContent className="max-w-3xl rounded-[3rem] p-0 overflow-hidden border-none shadow-3xl bg-white dark:bg-zinc-950">
-          <DialogHeader className="sr-only">
+          <DialogHeader className="p-8 border-b bg-muted/5 sr-only">
              <DialogTitle>Order Manifest: #{selectedOrderForView?.orderId}</DialogTitle>
              <DialogDescription>Detailed itemized view and customer logistics for order #{selectedOrderForView?.orderId}</DialogDescription>
           </DialogHeader>

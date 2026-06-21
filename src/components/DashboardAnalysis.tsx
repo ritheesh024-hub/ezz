@@ -22,12 +22,16 @@ import {
   Calendar as CalendarIcon,
   Download,
   Printer,
-  ChevronDown,
+  ChevronRight,
   ArrowUpRight,
   ArrowDownRight,
   Target,
   ShoppingBag,
-  Ban
+  Ban,
+  PieChart,
+  BarChart,
+  Activity,
+  Sparkles
 } from 'lucide-react';
 import {
   XAxis,
@@ -37,19 +41,20 @@ import {
   ResponsiveContainer,
   AreaChart,
   Area,
+  PieChart as RePieChart,
+  Pie,
+  Cell,
+  Cell as ReCell
 } from 'recharts';
 import { cn } from '@/lib/utils';
 import { 
   format,
-  isToday,
   isWithinInterval,
   subDays,
   startOfDay,
   endOfDay,
   startOfWeek,
-  endOfWeek,
   startOfMonth,
-  endOfMonth,
   subMonths,
   subWeeks,
   eachDayOfInterval,
@@ -78,7 +83,6 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
     setMounted(true);
   }, []);
 
-  // 1. Resolve Intervals based on Range Selection
   const intervals = useMemo(() => {
     const now = new Date();
     let current = { from: startOfDay(now), to: endOfDay(now) };
@@ -91,15 +95,15 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
         break;
       case 'week':
         current = { from: startOfWeek(now), to: endOfDay(now) };
-        previous = { from: startOfWeek(subWeeks(now, 1)), to: endOfWeek(subWeeks(now, 1)) };
+        previous = { from: startOfWeek(subWeeks(now, 1)), to: subWeeks(now, 1) };
         break;
       case 'month':
         current = { from: startOfMonth(now), to: endOfDay(now) };
-        previous = { from: startOfMonth(subMonths(now, 1)), to: endOfMonth(subMonths(now, 1)) };
+        previous = { from: startOfMonth(subMonths(now, 1)), to: subMonths(now, 1) };
         break;
       case 'last_month':
         current = { from: startOfMonth(subMonths(now, 1)), to: endOfMonth(subMonths(now, 1)) };
-        previous = { from: startOfMonth(subMonths(2)), to: endOfMonth(subMonths(2)) };
+        previous = { from: startOfMonth(subMonths(now, 2)), to: endOfMonth(subMonths(now, 2)) };
         break;
       case 'custom':
         current = { from: startOfDay(dateRange.from), to: endOfDay(dateRange.to) };
@@ -113,7 +117,6 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
     return { current, previous };
   }, [rangeType, dateRange]);
 
-  // 2. Data Crunching Node
   const metrics = useMemo(() => {
     const filterOrders = (start: Date, end: Date) => 
       orders.filter(o => {
@@ -148,7 +151,6 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
       return Math.round(((curr - prev) / prev) * 100);
     };
 
-    // Chart Data Construction
     let chartData: any[] = [];
     const isSingleDay = isSameDay(intervals.current.from, intervals.current.to);
 
@@ -161,7 +163,7 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
              return isSameHour(d, h) && o.status === 'delivered';
           })
           .reduce((acc, o) => acc + (Number(o.total) || 0), 0);
-        return { name: format(h, 'HH:mm'), val };
+        return { name: format(h, 'hh a'), val };
       });
     } else {
       const days = eachDayOfInterval({ start: intervals.current.from, end: intervals.current.to });
@@ -176,244 +178,262 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
       });
     }
 
+    const pieData = [
+      { name: 'Delivered', value: currStats.delivered, color: '#10b981' },
+      { name: 'Cancelled', value: currStats.cancelled, color: '#f43f5e' },
+      { name: 'Active Flow', value: currStats.pending + currStats.preparing, color: '#f97316' }
+    ].filter(d => d.value > 0);
+
     return {
       current: currStats,
       previous: prevStats,
+      recent: currOrders.slice(0, 5),
       trends: {
         revenue: calcTrend(currStats.revenue, prevStats.revenue),
         orders: calcTrend(currStats.total, prevStats.total),
         customers: calcTrend(currStats.customers, prevStats.customers),
         aov: calcTrend(currStats.aov, prevStats.aov)
       },
-      chartData
+      chartData,
+      pieData
     };
   }, [orders, intervals]);
 
   const handleExport = () => {
-    const headers = ["Identity", "Value"];
-    const rows = [
-      ["Platform", "Ezzy Bites Premium"],
-      ["Report Type", "Operational Audit"],
-      ["Range", `${format(intervals.current.from, 'PPP')} to ${format(intervals.current.to, 'PPP')}`],
-      ["Gross Revenue", `INR ${metrics.current.revenue}`],
-      ["Total Tickets", metrics.current.total],
-      ["Delivered Units", metrics.current.delivered],
-      ["Unique Node IDs", metrics.current.customers],
-      ["Average Order Density", metrics.current.aov]
-    ];
-
+    const headers = ["OrderID", "Customer", "Amount", "Status", "Date"];
+    const rows = metrics.recent.map(o => [
+      o.orderId,
+      o.customerName,
+      o.total,
+      o.status,
+      o.createdAt?.toDate ? format(o.createdAt.toDate(), 'yyyy-MM-dd') : 'N/A'
+    ]);
     const csvContent = "data:text/csv;charset=utf-8," + [headers, ...rows].map(e => e.join(",")).join("\n");
-    const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `EzzyBites_Audit_${rangeType}_${format(new Date(), 'yyyy-MM-dd')}.csv`);
-    document.body.appendChild(link);
+    link.setAttribute("href", encodeURI(csvContent));
+    link.setAttribute("download", `EzzyBites_Analytics_${rangeType}.csv`);
     link.click();
-    document.body.removeChild(link);
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
-
-  if (!mounted) return (
-    <div className="h-[400px] flex flex-col items-center justify-center gap-4">
-      <Loader2 className="animate-spin text-primary w-10 h-10" />
-      <p className="text-[10px] font-black uppercase tracking-[0.4em] opacity-40">Syncing Matrix...</p>
-    </div>
-  );
+  if (!mounted) return <div className="h-screen flex items-center justify-center"><Loader2 className="animate-spin w-10 h-10 text-primary" /></div>;
 
   return (
-    <div className="space-y-6 md:space-y-10 animate-in fade-in duration-700 pb-20 md:pb-32">
-      {/* STICKY FILTER BAR - Z-80 - POSITIONED TO PREVENT OVERLAP */}
-      <div className="sticky top-0 lg:static z-[80] bg-zinc-50/95 dark:bg-zinc-950/95 backdrop-blur-3xl -mx-4 md:-mx-10 px-4 md:px-10 py-4 md:py-6 border-b lg:border-none flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 md:gap-6 no-print">
-        <div className="flex flex-wrap gap-1.5 md:gap-2">
-          {(['today', 'yesterday', 'week', 'month', 'last_month'] as RangeType[]).map((r) => (
-            <Button
-              key={r}
-              onClick={() => setRangeType(r)}
-              variant={rangeType === r ? 'default' : 'outline'}
-              className={cn(
-                "h-8 md:h-10 px-3 md:px-6 rounded-full font-black uppercase text-[8px] md:text-[9px] tracking-widest transition-all",
-                rangeType === r ? "bg-primary shadow-lg shadow-primary/20 border-none" : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800"
-              )}
-            >
-              {r.replace('_', ' ')}
-            </Button>
-          ))}
-          
-          <Popover>
-            <PopoverTrigger asChild>
+    <div className="space-y-6 md:space-y-10 animate-in fade-in duration-700 pb-20 no-print">
+      {/* FILTER BAR - COMPACT PILLS */}
+      <div className="sticky top-0 lg:static z-[80] bg-zinc-50/95 dark:bg-zinc-950/95 backdrop-blur-3xl -mx-4 md:-mx-10 px-4 md:px-10 py-4 border-b lg:border-none">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div className="flex flex-wrap gap-2 overflow-x-auto scrollbar-hide pb-1">
+            {(['today', 'yesterday', 'week', 'month', 'last_month'] as RangeType[]).map((r) => (
               <Button
-                variant={rangeType === 'custom' ? 'default' : 'outline'}
+                key={r}
+                onClick={() => setRangeType(r)}
+                variant={rangeType === r ? 'default' : 'outline'}
                 className={cn(
-                  "h-8 md:h-10 px-3 md:px-6 rounded-full font-black uppercase text-[8px] md:text-[9px] tracking-widest gap-2",
-                  rangeType === 'custom' ? "bg-primary border-none shadow-lg shadow-primary/20" : "bg-white dark:bg-zinc-900"
+                  "h-9 px-4 rounded-full font-black uppercase text-[8px] md:text-[9px] tracking-widest transition-all",
+                  rangeType === r ? "bg-primary text-white shadow-lg shadow-primary/20 border-none" : "bg-white dark:bg-zinc-900"
                 )}
               >
-                <CalendarIcon className="w-3 h-3 md:w-3.5 md:h-3.5" />
-                Custom
+                {r.replace('_', ' ')}
               </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0 rounded-[2rem] border-none shadow-3xl" align="start">
-              <Calendar
-                mode="range"
-                selected={{ from: dateRange.from, to: dateRange.to }}
-                onSelect={(range: any) => {
-                  if (range?.from && range?.to) {
-                    setDateRange({ from: range.from, to: range.to });
-                    setRangeType('custom');
-                  }
-                }}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
+            ))}
+            
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={rangeType === 'custom' ? 'default' : 'outline'}
+                  className={cn(
+                    "h-9 px-4 rounded-full font-black uppercase text-[8px] md:text-[9px] tracking-widest gap-2",
+                    rangeType === 'custom' ? "bg-primary text-white border-none" : "bg-white dark:bg-zinc-900"
+                  )}
+                >
+                  <CalendarIcon className="w-3 h-3" />
+                  Custom
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0 rounded-[2rem] border-none shadow-3xl" align="start">
+                <Calendar
+                  mode="range"
+                  selected={{ from: dateRange.from, to: dateRange.to }}
+                  onSelect={(range: any) => { if (range?.from && range?.to) { setDateRange({ from: range.from, to: range.to }); setRangeType('custom'); }}}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
 
-        <div className="flex gap-2 w-full lg:w-auto pt-2 lg:pt-0 border-t lg:border-none">
-          <Button onClick={handlePrint} variant="outline" className="flex-1 lg:flex-none h-10 md:h-12 rounded-xl font-black uppercase text-[8px] md:text-[9px] tracking-widest gap-2 md:gap-3 border-2">
-            <Printer className="w-3.5 h-3.5 md:w-4 md:h-4" /> Print
-          </Button>
-          <Button onClick={handleExport} variant="outline" className="flex-1 lg:flex-none h-10 md:h-12 rounded-xl font-black uppercase text-[8px] md:text-[9px] tracking-widest gap-2 md:gap-3 border-2 bg-zinc-950 text-white hover:bg-zinc-800">
-            <Download className="w-3.5 h-3.5 md:w-4 md:h-4" /> Export
-          </Button>
+          <div className="flex gap-2 w-full md:w-auto">
+             <Button variant="outline" className="h-10 flex-1 md:flex-none rounded-xl font-black uppercase text-[8px] border-2 bg-white dark:bg-zinc-900" onClick={handleExport}>
+                <Download className="w-3.5 h-3.5 mr-2" /> Export
+             </Button>
+             <Button variant="outline" className="h-10 flex-1 md:flex-none rounded-xl font-black uppercase text-[8px] border-2 bg-white dark:bg-zinc-900" onClick={() => window.print()}>
+                <Printer className="w-3.5 h-3.5 mr-2" /> Print
+             </Button>
+          </div>
+        </div>
+        
+        <div className="mt-3 flex items-center gap-2">
+           <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+           <span className="text-[7px] font-black uppercase tracking-widest opacity-40">
+             Audit Range: {format(intervals.current.from, 'dd MMM')} — {format(intervals.current.to, 'dd MMM yyyy')}
+           </span>
         </div>
       </div>
 
-      {/* KPI GRID - MOBILE OPTIMIZED */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6">
-        <KPICard 
-          label="Gross Revenue" 
-          value={`₹${metrics.current.revenue.toLocaleString()}`} 
-          trend={metrics.trends.revenue} 
-          icon={IndianRupee} 
-          color="text-emerald-500" 
-          bg="bg-emerald-50" 
-        />
-        <KPICard 
-          label="Total Tickets" 
-          value={metrics.current.total} 
-          trend={metrics.trends.orders} 
-          icon={Zap} 
-          color="text-primary" 
-          bg="bg-primary/5" 
-        />
-        <KPICard 
-          label="Active Node IDs" 
-          value={metrics.current.customers} 
-          trend={metrics.trends.customers} 
-          icon={Users} 
-          color="text-blue-500" 
-          bg="bg-blue-50" 
-        />
-        <KPICard 
-          label="Avg. Density" 
-          value={`₹${metrics.current.aov}`} 
-          trend={metrics.trends.aov} 
-          icon={Target} 
-          color="text-orange-500" 
-          bg="bg-orange-50" 
-        />
+      {/* KPI GRID */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+        <KPICard label="Gross Revenue" value={`₹${metrics.current.revenue.toLocaleString()}`} trend={metrics.trends.revenue} icon={IndianRupee} color="text-emerald-500" bg="bg-emerald-50" period={rangeType} />
+        <KPICard label="Total Tickets" value={metrics.current.total} trend={metrics.trends.orders} icon={Zap} color="text-primary" bg="bg-primary/5" period={rangeType} />
+        <KPICard label="Active Entities" value={metrics.current.customers} trend={metrics.trends.customers} icon={Users} color="text-blue-500" bg="bg-blue-50" period={rangeType} />
+        <KPICard label="Avg. Order Den." value={`₹${metrics.current.aov}`} trend={metrics.trends.aov} icon={Target} color="text-orange-500" bg="bg-orange-50" period={rangeType} />
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6 md:gap-8">
-        {/* CHART NODE */}
-        <Card className="lg:col-span-2 rounded-[2rem] md:rounded-[3rem] border-none shadow-xl bg-white dark:bg-zinc-900 p-6 md:p-12 flex flex-col h-full overflow-hidden relative border">
-          <CardHeader className="px-0 pt-0 pb-6 md:pb-10 flex flex-row items-center justify-between border-b border-dashed mb-6 md:mb-10">
+        {/* REVENUE TREND CHART */}
+        <Card className="lg:col-span-2 rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-zinc-900 overflow-hidden relative border">
+          <CardHeader className="p-8 border-b border-dashed flex flex-row items-center justify-between">
             <div className="space-y-1">
-              <CardTitle className="text-xl md:text-2xl font-black font-headline uppercase tracking-tighter italic">Operational <span className="text-primary">Velocity</span></CardTitle>
-              <p className="text-[8px] md:text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-40">Period Performance</p>
+               <div className="flex items-center gap-2 text-primary">
+                 <Activity className="w-4 h-4" />
+                 <CardTitle className="text-xl font-black font-headline uppercase tracking-tighter italic">Revenue Velocity</CardTitle>
+               </div>
+               <p className="text-[8px] font-black uppercase text-muted-foreground opacity-40 tracking-widest">Performance Heatmap</p>
             </div>
-            <Badge className="bg-primary/10 text-primary border-none px-2 md:px-4 py-1 md:py-1.5 font-black text-[7px] md:text-[9px] uppercase tracking-widest rounded-full">Live Signal</Badge>
+            <Badge className="bg-primary/5 text-primary border-none px-3 py-1 rounded-full font-black text-[8px] uppercase tracking-widest">LIVE DATA</Badge>
           </CardHeader>
-          <div className="flex-1 min-h-[300px] md:min-h-[400px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={metrics.chartData}>
-                <defs>
-                  <linearGradient id="velocity" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#ef4444" stopOpacity={0.15}/>
-                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 8, fontWeight: 900, fill: '#94a3b8'}} dy={10} />
-                <YAxis axisLine={false} tickLine={false} tick={{fontSize: 8, fontWeight: 900, fill: '#94a3b8'}} tickFormatter={(val) => `₹${val}`} />
-                <Tooltip 
-                  cursor={{ stroke: '#ef4444', strokeWidth: 1, strokeDasharray: '4 4' }}
-                  contentStyle={{borderRadius: '1rem', border: 'none', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)', fontWeight: 900, fontSize: 10}}
-                  formatter={(v: any) => [`₹${v}`, 'Gross']}
-                />
-                <Area type="monotone" dataKey="val" stroke="#ef4444" strokeWidth={4} fill="url(#velocity)" animationDuration={1000} />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+          <CardContent className="p-8">
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={metrics.chartData}>
+                  <defs>
+                    <linearGradient id="colorVal" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#f97316" stopOpacity={0.2}/>
+                      <stop offset="95%" stopColor="#f97316" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{fontSize: 8, fontWeight: 900, fill: '#94a3b8'}} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{fontSize: 8, fontWeight: 900, fill: '#94a3b8'}} tickFormatter={(v) => `₹${v}`} />
+                  <Tooltip 
+                    contentStyle={{borderRadius: '1rem', border: 'none', boxShadow: '0 25px 50px -12px rgba(0,0,0,0.1)', fontWeight: 900, fontSize: 10}}
+                    formatter={(v: any) => [`₹${v}`, 'Revenue']}
+                  />
+                  <Area type="monotone" dataKey="val" stroke="#f97316" strokeWidth={4} fill="url(#colorVal)" animationDuration={1500} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
         </Card>
 
-        {/* STATUS LEDGER */}
-        <Card className="rounded-[2rem] md:rounded-[3rem] border-none shadow-xl bg-white dark:bg-zinc-900 p-6 md:p-10 space-y-8 md:space-y-12">
-          <div className="space-y-1">
-            <h4 className="text-xl md:text-2xl font-black font-headline uppercase tracking-tighter italic">Status <span className="text-primary">Ledger</span></h4>
-            <p className="text-[8px] md:text-[10px] font-black uppercase text-muted-foreground opacity-40 tracking-widest">Node Distribution</p>
+        {/* STATUS DISTRIBUTION CHART */}
+        <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-zinc-900 p-8 flex flex-col h-full border">
+          <div className="space-y-1 mb-8">
+            <h4 className="text-xl font-black font-headline uppercase tracking-tighter italic">Status <span className="text-primary">Ledger</span></h4>
+            <p className="text-[8px] font-black uppercase text-muted-foreground opacity-40 tracking-widest">Node Distribution</p>
           </div>
-          <div className="space-y-6 md:space-y-8">
-             <MetricBar label="Delivered" count={metrics.current.delivered} total={metrics.current.total} color="bg-emerald-500" icon={ShoppingBag} />
-             <MetricBar label="In Cooking" count={metrics.current.preparing} total={metrics.current.total} color="bg-orange-500" icon={ChefHat} />
-             <MetricBar label="Pending Hub" count={metrics.current.pending} total={metrics.current.total} color="bg-primary" icon={BellRing} />
-             <MetricBar label="Rejected" count={metrics.current.cancelled} total={metrics.current.total} color="bg-rose-500" icon={Ban} />
+          <div className="flex-1 flex flex-col items-center justify-center">
+            {metrics.pieData.length > 0 ? (
+              <>
+                <div className="h-[200px] w-full">
+                   <ResponsiveContainer width="100%" height="100%">
+                      <RePieChart>
+                         <Pie data={metrics.pieData} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
+                            {metrics.pieData.map((entry, index) => <ReCell key={`cell-${index}`} fill={entry.color} />)}
+                         </Pie>
+                         <Tooltip />
+                      </RePieChart>
+                   </ResponsiveContainer>
+                </div>
+                <div className="grid grid-cols-1 w-full gap-3 mt-6">
+                   {metrics.pieData.map((d, i) => (
+                     <div key={i} className="flex items-center justify-between p-3 bg-secondary/30 rounded-xl">
+                        <div className="flex items-center gap-3">
+                           <div className="w-2 h-2 rounded-full" style={{ background: d.color }} />
+                           <span className="text-[9px] font-black uppercase tracking-widest">{d.name}</span>
+                        </div>
+                        <span className="text-xs font-black">{d.value}</span>
+                     </div>
+                   ))}
+                </div>
+              </>
+            ) : (
+               <div className="py-20 text-center opacity-20"><PieChart className="w-12 h-12 mx-auto mb-3" /><p className="text-[9px] font-black uppercase">No Flow Detected</p></div>
+            )}
           </div>
         </Card>
+      </div>
+
+      {/* RECENT ORDERS SNIPPET */}
+      <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-zinc-900 overflow-hidden border">
+        <CardHeader className="p-8 border-b border-dashed flex flex-row items-center justify-between">
+           <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary"><ShoppingBag className="w-5 h-5" /></div>
+              <CardTitle className="text-xl font-black font-headline uppercase tracking-tighter italic">Recent <span className="text-primary">Signals</span></CardTitle>
+           </div>
+        </CardHeader>
+        <div className="overflow-x-auto scrollbar-hide">
+           <table className="w-full text-left">
+              <thead className="bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-100 dark:border-zinc-800">
+                 <tr className="text-[9px] font-black uppercase text-muted-foreground tracking-widest">
+                    <th className="px-8 py-4">Ticket</th>
+                    <th className="px-8 py-4">Identity</th>
+                    <th className="px-8 py-4">Gross</th>
+                    <th className="px-8 py-4">State</th>
+                    <th className="px-8 py-4 text-right">Node</th>
+                 </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-50 dark:divide-zinc-800">
+                 {metrics.recent.map((ord, i) => (
+                    <tr key={i} className="hover:bg-primary/[0.02] transition-colors">
+                       <td className="px-8 py-4 font-black text-[10px] text-primary italic">#{ord.orderId}</td>
+                       <td className="px-8 py-4 font-black text-[10px] uppercase truncate max-w-[120px]">{ord.customerName}</td>
+                       <td className="px-8 py-4 font-black text-[11px] italic">₹{ord.total}</td>
+                       <td className="px-8 py-4">
+                          <Badge variant="outline" className="text-[7px] font-black uppercase border-none bg-secondary/50 px-2 py-0.5 rounded-md">
+                             {ord.status}
+                          </Badge>
+                       </td>
+                       <td className="px-8 py-4 text-right">
+                          <ChevronRight className="w-3.5 h-3.5 ml-auto text-muted-foreground opacity-30" />
+                       </td>
+                    </tr>
+                 ))}
+                 {metrics.recent.length === 0 && (
+                   <tr><td colSpan={5} className="py-12 text-center text-[9px] font-black uppercase opacity-20">No orders in this range</td></tr>
+                 )}
+              </tbody>
+           </table>
+        </div>
+      </Card>
+      
+      <div className="pt-10 text-center">
+         <p className="text-[9px] font-black uppercase tracking-[0.4em] opacity-20">Ezzy Bites • Quantum Analytics Engine v3.0</p>
       </div>
     </div>
   );
 };
 
-const KPICard = ({ label, value, icon: Icon, trend, color, bg }: any) => {
+const KPICard = ({ label, value, icon: Icon, trend, color, bg, period }: any) => {
   const isPositive = trend >= 0;
   return (
-    <Card className="rounded-[1.5rem] md:rounded-[2.5rem] border-none shadow-sm bg-white dark:bg-zinc-900 p-4 md:p-8 group transition-all duration-500 overflow-hidden relative border">
-      <div className="absolute -right-4 -top-4 w-12 md:w-20 h-12 md:h-20 bg-secondary/30 rounded-full blur-2xl group-hover:bg-primary/5 transition-colors" />
-      <div className="flex justify-between items-start mb-4 md:mb-8">
-        <div className={cn("w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl flex items-center justify-center shadow-inner relative z-10", bg, color)}>
-          <Icon className="w-5 h-5 md:w-7 md:h-7" />
+    <Card className="rounded-[1.8rem] border-none shadow-sm bg-white dark:bg-zinc-900 p-6 group transition-all duration-500 overflow-hidden relative border hover:shadow-2xl">
+      <div className="absolute -right-4 -top-4 w-16 h-16 bg-secondary/30 rounded-full blur-2xl group-hover:bg-primary/5 transition-colors" />
+      <div className="flex justify-between items-start mb-6">
+        <div className={cn("w-12 h-12 rounded-2xl flex items-center justify-center shadow-inner relative z-10", bg, color)}>
+          <Icon className="w-6 h-6" />
         </div>
         <div className={cn(
-          "flex items-center gap-1 px-2 py-0.5 md:px-3 md:py-1 rounded-full border text-[7px] md:text-[9px] font-black uppercase tracking-tight",
+          "flex items-center gap-1 px-2.5 py-1 rounded-full border text-[9px] font-black uppercase tracking-tight",
           isPositive ? "bg-emerald-50 text-emerald-600 border-emerald-100" : "bg-rose-50 text-rose-600 border-rose-100"
         )}>
-          {isPositive ? <ArrowUpRight className="w-2.5 h-2.5 md:w-3 md:h-3" /> : <ArrowDownRight className="w-2.5 h-2.5 md:w-3 md:h-3" />}
+          {isPositive ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
           {Math.abs(trend)}%
         </div>
       </div>
-      <div className="relative z-10 space-y-0.5 md:space-y-1">
-        <p className="text-[7px] md:text-[10px] font-black text-muted-foreground uppercase tracking-widest opacity-40">{label}</p>
-        <h3 className="text-xl md:text-4xl font-black font-headline tracking-tighter italic leading-none">{value}</h3>
+      <div className="relative z-10 space-y-1">
+        <p className="text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-40">{label}</p>
+        <h3 className="text-3xl font-black font-headline tracking-tighter italic leading-none">{value}</h3>
+        <p className="text-[7px] font-black uppercase opacity-30 tracking-widest pt-1">vs Previous {period}</p>
       </div>
     </Card>
-  );
-};
-
-const MetricBar = ({ label, count, total, color, icon: Icon }: any) => {
-  const percentage = total > 0 ? Math.round((count / total) * 100) : 0;
-  return (
-    <div className="space-y-2 md:space-y-3">
-      <div className="flex justify-between items-end">
-        <div className="flex items-center gap-2 md:gap-3">
-          <div className={cn("w-7 h-7 md:w-8 md:h-8 rounded-lg flex items-center justify-center", color.replace('bg-', 'bg-') + '/10', color.replace('bg-', 'text-'))}>
-            <Icon className="w-3.5 h-3.5 md:w-4 md:h-4" />
-          </div>
-          <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest opacity-60">{label}</span>
-        </div>
-        <span className="font-mono text-[10px] md:text-xs font-black">{count} <span className="opacity-30 ml-0.5 md:ml-1 text-[8px] md:text-[9px]">({percentage}%)</span></span>
-      </div>
-      <div className="h-1.5 md:h-2 w-full bg-secondary dark:bg-zinc-800 rounded-full overflow-hidden shadow-inner">
-        <motion.div 
-          initial={{ width: 0 }}
-          animate={{ width: `${percentage}%` }}
-          transition={{ duration: 1.5, ease: "circOut" }}
-          className={cn("h-full rounded-full", color)} 
-        />
-      </div>
-    </div>
   );
 };
