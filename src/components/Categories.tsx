@@ -1,4 +1,3 @@
-
 "use client"
 import React from 'react';
 import Image from 'next/image';
@@ -28,7 +27,7 @@ export const Categories = () => {
   });
 
   return (
-    <div className="flex overflow-x-auto gap-4 md:gap-8 pb-4 pt-1 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
+    <div className="flex overflow-x-auto gap-3.5 md:gap-6 pb-3 pt-0.5 scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
       {categoryItems.map((item, idx) => (
         <button 
           key={idx} 
@@ -40,9 +39,9 @@ export const Categories = () => {
               router.push(`/menu?q=${item.name}`);
             }
           }}
-          className="flex flex-col items-center gap-2 shrink-0 group perspective-1000"
+          className="flex flex-col items-center gap-1.5 shrink-0 group perspective-1000"
         >
-          <div className="w-14 h-14 md:w-24 md:h-24 rounded-full bg-white dark:bg-zinc-900 shadow-lg group-hover:shadow-2xl transition-all duration-500 overflow-hidden relative border-2 border-transparent group-hover:border-primary/40 group-active:scale-90">
+          <div className="w-12 h-12 md:w-20 md:h-20 rounded-full bg-white dark:bg-zinc-900 shadow-md group-hover:shadow-xl transition-all duration-500 overflow-hidden relative border-2 border-transparent group-hover:border-primary/40 group-active:scale-90">
             <div className="absolute inset-0 bg-primary/5 group-hover:bg-primary/10 transition-colors z-10" />
             <div className="relative w-full h-full transform group-hover:scale-110 transition-transform duration-700">
               <Image 
@@ -54,7 +53,7 @@ export const Categories = () => {
               />
             </div>
           </div>
-          <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-muted-foreground group-hover:text-primary transition-colors">
+          <span className="text-[7px] md:text-[9px] font-black uppercase tracking-widest text-muted-foreground group-hover:text-primary transition-colors">
             {item.name}
           </span>
         </button>

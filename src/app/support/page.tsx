@@ -6,7 +6,6 @@ import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, query, where, orderBy, addDoc, serverTimestamp, limit } from 'firebase/firestore';
 import { 
   Bot, 
-  User, 
   Package, 
   CreditCard, 
   Truck, 
@@ -19,21 +18,17 @@ import {
   Phone,
   Mail,
   Clock,
-  LayoutDashboard,
-  CheckCircle2,
   X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ezzySupportAI } from '@/ai/flows/support-ai-flow';
-import Link from 'next/link';
 
 type Message = {
   id: string;
@@ -173,32 +168,32 @@ export default function SupportPage() {
         createdAt: serverTimestamp()
       });
       addMessage('assistant', '🎉 Thank you! Your feedback has been recorded in our logs.');
-      addMessage('assistant', 'Is there anything else I can help you with?', 'options');
+      addMessage('assistant', 'Is there anything else I can help with?', 'options');
     } catch (e) {
       toast({ variant: "destructive", title: "Feedback Sync Failed" });
     }
   };
 
-  if (userLoading) return <div className="h-screen flex items-center justify-center bg-background"><Loader2 className="w-10 h-10 animate-spin text-primary" /></div>;
+  if (userLoading) return <div className="h-screen flex items-center justify-center bg-background"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col">
       <Navbar />
       
-      <main className="flex-1 flex flex-col pt-20 md:pt-24 max-w-2xl mx-auto w-full px-4 pb-4">
+      <main className="flex-1 flex flex-col pt-14 md:pt-20 max-w-2xl mx-auto w-full px-4 pb-3">
         {/* CHAT AREA */}
-        <div className="flex-1 overflow-y-auto scrollbar-hide space-y-6 py-6 flex flex-col">
+        <div className="flex-1 overflow-y-auto scrollbar-hide space-y-4 py-4 flex flex-col">
           <AnimatePresence initial={false}>
             {messages.map((msg) => (
               <motion.div
                 key={msg.id}
                 initial={{ opacity: 0, y: 10, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                className={cn("flex flex-col max-w-[90%] space-y-2", msg.role === 'user' ? "items-end ml-auto" : "items-start")}
+                className={cn("flex flex-col max-w-[85%] space-y-1.5", msg.role === 'user' ? "items-end ml-auto" : "items-start")}
               >
                 {msg.content && (
                   <div className={cn(
-                    "p-4 rounded-[1.5rem] shadow-sm text-sm font-medium leading-relaxed",
+                    "p-3.5 rounded-2xl shadow-sm text-xs font-medium leading-relaxed",
                     msg.role === 'user' ? "bg-primary text-white rounded-tr-none" : "bg-white dark:bg-zinc-900 border rounded-tl-none"
                   )}>
                     {msg.content}
@@ -207,17 +202,17 @@ export default function SupportPage() {
 
                 {/* RENDER OPTIONS - Main Grid */}
                 {msg.type === 'options' && (
-                  <div className="grid grid-cols-2 gap-2 mt-2 w-full max-w-sm">
+                  <div className="grid grid-cols-2 gap-2 mt-1 w-full max-w-sm">
                     {supportCategories.map(cat => (
                       <button
                         key={cat.id}
                         onClick={() => handleCategoryClick(cat)}
-                        className="flex items-center gap-3 p-3 bg-white dark:bg-zinc-900 rounded-2xl border hover:border-primary transition-all text-left group shadow-sm"
+                        className="flex items-center gap-2.5 p-2.5 bg-white dark:bg-zinc-900 rounded-xl border hover:border-primary transition-all text-left group shadow-sm"
                       >
-                        <div className={cn("w-8 h-8 rounded-xl flex items-center justify-center shrink-0", cat.color)}>
-                          <cat.icon className="w-4 h-4" />
+                        <div className={cn("w-7 h-7 rounded-lg flex items-center justify-center shrink-0", cat.color)}>
+                          <cat.icon className="w-3.5 h-3.5" />
                         </div>
-                        <span className="text-[10px] font-black uppercase tracking-tight group-hover:text-primary">{cat.label}</span>
+                        <span className="text-[9px] font-black uppercase tracking-tight group-hover:text-primary truncate">{cat.label}</span>
                       </button>
                     ))}
                   </div>
@@ -225,12 +220,12 @@ export default function SupportPage() {
 
                 {/* RENDER CHIPS - Quick Replies */}
                 {msg.type === 'chips' && msg.options && (
-                  <div className="flex flex-wrap gap-2 pt-1">
+                  <div className="flex flex-wrap gap-1.5 pt-0.5">
                     {msg.options.map((opt, i) => (
                       <button
                         key={i}
                         onClick={() => handleSendMessage(opt)}
-                        className="px-4 py-2 bg-white dark:bg-zinc-900 rounded-full text-[10px] font-black uppercase tracking-tight border border-zinc-200 hover:border-primary hover:text-primary transition-all shadow-sm"
+                        className="px-3 py-1.5 bg-white dark:bg-zinc-900 rounded-full text-[8px] font-black uppercase tracking-tight border border-zinc-200 hover:border-primary hover:text-primary transition-all shadow-sm"
                       >
                         {opt}
                       </button>
@@ -240,25 +235,25 @@ export default function SupportPage() {
 
                 {/* RENDER ORDERS - Clickable Cards */}
                 {msg.type === 'orders' && (
-                  <div className="space-y-3 mt-2 w-full">
-                    {ordersLoading ? <Loader2 className="w-5 h-5 animate-spin opacity-20" /> : 
+                  <div className="space-y-2 mt-1 w-full">
+                    {ordersLoading ? <Loader2 className="w-4 h-4 animate-spin opacity-20" /> : 
                       (!recentOrders || recentOrders.length === 0) ? (
-                        <div className="p-4 bg-zinc-100 rounded-2xl text-center">
-                          <p className="text-[10px] font-black uppercase opacity-40">No recent orders found.</p>
+                        <div className="p-3 bg-zinc-100 dark:bg-zinc-800 rounded-xl text-center">
+                          <p className="text-[9px] font-black uppercase opacity-40">No recent orders found.</p>
                         </div>
                       ) :
                       recentOrders.map(o => (
-                        <button key={o.id} onClick={() => handleOrderSelect(o)} className="w-full p-4 bg-white dark:bg-zinc-900 rounded-2xl border flex items-center justify-between group hover:border-primary transition-all shadow-sm">
-                          <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 bg-primary/5 rounded-xl flex items-center justify-center text-primary">
-                              <Package className="w-5 h-5" />
+                        <button key={o.id} onClick={() => handleOrderSelect(o)} className="w-full p-3 bg-white dark:bg-zinc-900 rounded-xl border flex items-center justify-between group hover:border-primary transition-all shadow-sm">
+                          <div className="flex items-center gap-3">
+                            <div className="w-8 h-8 bg-primary/5 rounded-lg flex items-center justify-center text-primary">
+                              <Package className="w-4 h-4" />
                             </div>
                             <div className="text-left">
-                              <p className="text-[10px] font-black uppercase text-primary">Ticket #{o.orderId}</p>
-                              <p className="text-[9px] font-bold opacity-40 uppercase">₹{o.total} • {o.status.replace(/_/g, ' ')}</p>
+                              <p className="text-[9px] font-black uppercase text-primary leading-none mb-0.5">Ticket #{o.orderId}</p>
+                              <p className="text-[8px] font-bold opacity-40 uppercase">₹{o.total} • {o.status.replace(/_/g, ' ')}</p>
                             </div>
                           </div>
-                          <ChevronRight className="w-4 h-4 opacity-20 group-hover:translate-x-1 transition-all" />
+                          <ChevronRight className="w-3.5 h-3.5 opacity-20 group-hover:translate-x-1 transition-all" />
                         </button>
                       ))
                     }
@@ -270,18 +265,18 @@ export default function SupportPage() {
 
                 {/* RENDER CONTACT */}
                 {msg.type === 'contact' && (
-                  <div className="bg-white dark:bg-zinc-900 p-6 rounded-[2rem] border shadow-sm space-y-5 mt-2 w-full">
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary"><Phone className="w-5 h-5" /></div>
-                      <div><p className="text-[8px] font-black uppercase opacity-40">Hotline</p><p className="text-sm font-black">+91 8639366800</p></div>
+                  <div className="bg-white dark:bg-zinc-900 p-4 rounded-2xl border shadow-sm space-y-4 mt-1 w-full">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center text-primary"><Phone className="w-4 h-4" /></div>
+                      <div><p className="text-[7px] font-black uppercase opacity-40 leading-none mb-0.5">Hotline</p><p className="text-xs font-black">+91 8639366800</p></div>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center text-blue-600"><Mail className="w-5 h-5" /></div>
-                      <div><p className="text-[8px] font-black uppercase opacity-40">Email</p><p className="text-sm font-black">support@ezzybites.com</p></div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-blue-50 dark:bg-blue-900/10 rounded-lg flex items-center justify-center text-blue-600"><Mail className="w-4 h-4" /></div>
+                      <div><p className="text-[7px] font-black uppercase opacity-40 leading-none mb-0.5">Email</p><p className="text-xs font-black">support@ezzybites.com</p></div>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 bg-emerald-50 rounded-xl flex items-center justify-center text-emerald-600"><Clock className="w-5 h-5" /></div>
-                      <div><p className="text-[8px] font-black uppercase opacity-40">Hours</p><p className="text-sm font-black">08:00 AM - 10:00 PM</p></div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-emerald-50 dark:bg-emerald-900/10 rounded-lg flex items-center justify-center text-emerald-600"><Clock className="w-4 h-4" /></div>
+                      <div><p className="text-[7px] font-black uppercase opacity-40 leading-none mb-0.5">Hours</p><p className="text-xs font-black">08:00 AM - 10:00 PM</p></div>
                     </div>
                   </div>
                 )}
@@ -289,10 +284,10 @@ export default function SupportPage() {
             ))}
 
             {isTyping && (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-1 p-3 bg-white dark:bg-zinc-900 rounded-2xl rounded-tl-none border w-fit shadow-sm">
-                <span className="w-1.5 h-1.5 bg-primary/30 rounded-full animate-bounce" />
-                <span className="w-1.5 h-1.5 bg-primary/30 rounded-full animate-bounce [animation-delay:0.2s]" />
-                <span className="w-1.5 h-1.5 bg-primary/30 rounded-full animate-bounce [animation-delay:0.4s]" />
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-1 p-2 bg-white dark:bg-zinc-900 rounded-xl rounded-tl-none border w-fit shadow-sm">
+                <span className="w-1 h-1 bg-primary/30 rounded-full animate-bounce" />
+                <span className="w-1 h-1 bg-primary/30 rounded-full animate-bounce [animation-delay:0.2s]" />
+                <span className="w-1 h-1 bg-primary/30 rounded-full animate-bounce [animation-delay:0.4s]" />
               </motion.div>
             )}
           </AnimatePresence>
@@ -300,24 +295,24 @@ export default function SupportPage() {
         </div>
 
         {/* INPUT AREA */}
-        <div className="shrink-0 pt-4 border-t bg-zinc-50 dark:bg-zinc-950 pb-4">
-          <div className="flex gap-3 bg-white dark:bg-zinc-900 p-2 rounded-full border shadow-xl items-center ring-4 ring-primary/5">
+        <div className="shrink-0 pt-3 border-t bg-zinc-50 dark:bg-zinc-950 pb-3">
+          <div className="flex gap-2 bg-white dark:bg-zinc-900 p-1.5 rounded-full border shadow-lg items-center ring-2 ring-primary/5">
             <Input 
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               placeholder="Ask Ezzy AI anything..." 
-              className="flex-1 border-none bg-transparent focus-visible:ring-0 font-bold px-4 h-12 text-sm"
+              className="flex-1 border-none bg-transparent focus-visible:ring-0 font-bold px-4 h-10 text-xs"
               onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
             />
             <Button 
               onClick={() => handleSendMessage()}
               disabled={!inputText.trim() || isTyping}
-              className="w-12 h-12 rounded-full p-0 bg-primary text-white shadow-lg shrink-0 transition-transform active:scale-90"
+              className="w-10 h-10 rounded-full p-0 bg-primary text-white shadow-lg shrink-0 transition-transform active:scale-90"
             >
-              <Send className="w-5 h-5" />
+              <Send className="w-4 h-4" />
             </Button>
           </div>
-          <p className="text-[8px] font-black text-center mt-3 uppercase tracking-widest opacity-20">Ezzy AI Assistant • Secure Node 4.2</p>
+          <p className="text-[7px] font-black text-center mt-2.5 uppercase tracking-widest opacity-20">Ezzy AI Assistant • Secure Node 4.5</p>
         </div>
       </main>
     </div>
@@ -332,26 +327,26 @@ function FeedbackInput({ onComplete }: { onComplete: (r: number, c: string) => v
   if (submitted) return null;
 
   return (
-    <Card className="w-full mt-2 rounded-[2rem] border shadow-lg p-6 bg-white dark:bg-zinc-900 animate-in zoom-in">
-      <div className="space-y-6">
-        <div className="flex justify-center gap-3">
+    <Card className="w-full mt-1 rounded-2xl border shadow-md p-4 md:p-6 bg-white dark:bg-zinc-900 animate-in zoom-in-95">
+      <div className="space-y-4">
+        <div className="flex justify-center gap-2">
           {[1,2,3,4,5].map(s => (
-            <button key={s} onClick={() => setRating(s)} className="transition-transform active:scale-75">
-              <Star className={cn("w-8 h-8", s <= rating ? "fill-primary text-primary" : "text-zinc-200 dark:text-zinc-800")} />
+            <button key={s} onClick={() => setRating(s)} className="transition-transform active:scale-75 p-1">
+              <Star className={cn("w-6 h-6 md:w-7 md:h-7", s <= rating ? "fill-primary text-primary" : "text-zinc-200 dark:text-zinc-800")} />
             </button>
           ))}
         </div>
-        <div className="space-y-2">
-          <Label className="text-[9px] font-black uppercase opacity-40 ml-1">Optional Comments</Label>
+        <div className="space-y-1.5">
+          <Label className="text-[8px] font-black uppercase opacity-40 ml-1">Comments</Label>
           <Textarea 
             value={comment} 
             onChange={e => setComment(e.target.value)} 
-            placeholder="Help us improve our service..."
-            className="rounded-2xl bg-secondary/30 border-none min-h-[80px] font-medium text-sm"
+            placeholder="Help us improve..."
+            className="rounded-xl bg-secondary/30 border-none min-h-[70px] font-medium text-xs p-3"
           />
         </div>
         <Button 
-          className="w-full h-12 rounded-2xl bg-primary text-white font-black uppercase text-[10px] tracking-widest shadow-lg shadow-primary/20"
+          className="w-full h-10 rounded-xl bg-primary text-white font-black uppercase text-[8px] tracking-widest shadow-md"
           onClick={() => { setSubmitted(true); onComplete(rating, comment); }}
         >
           Submit Feedback
