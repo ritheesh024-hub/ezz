@@ -26,7 +26,7 @@ import {
   Truck,
   CheckCircle2
 } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
 import { useUser, useFirestore, useCollection } from '@/firebase';
 import { collection, query, limit, doc, updateDoc, orderBy, increment, serverTimestamp, addDoc } from 'firebase/firestore';
@@ -203,7 +203,6 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
       <NewOrderPopups pendingOrders={orderGroups.pending} onViewDetails={(order) => setSelectedOrderForView(order)} onUpdateStatus={handleUpdateStatus} />
       
       <Tabs defaultValue={availableTabs[0]} className="flex-1 flex flex-col lg:flex-row min-h-0">
-        {/* MOBILE STICKY NAV - TOP 70PX - Z-90 */}
         <div className="lg:hidden sticky top-[70px] z-[90] bg-white/95 dark:bg-zinc-950/95 backdrop-blur-3xl border-b shadow-sm w-full overflow-hidden">
            <TabsList className="bg-transparent h-auto flex flex-row flex-nowrap justify-start p-3 space-x-2 overflow-x-auto scrollbar-hide snap-x w-full border-none">
               {availableTabs.map((tab) => (
@@ -225,7 +224,6 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
            </TabsList>
         </div>
 
-        {/* DESKTOP SIDEBAR - Z-40 */}
         <aside className="hidden lg:flex flex-col w-[220px] bg-zinc-900/95 dark:bg-zinc-950/80 backdrop-blur-2xl border-r border-white/5 sticky top-[70px] h-[calc(100vh-70px)] shrink-0 z-40 overflow-y-auto scrollbar-hide">
           <div className="p-4 space-y-8 flex-1">
             <div className="space-y-1">
@@ -276,7 +274,6 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
           </div>
         </aside>
 
-        {/* MAIN CONTENT AREA - NO WRONG LAYERING */}
         <main className="flex-1 min-w-0 bg-zinc-50 dark:bg-zinc-950/50 overflow-y-auto scrollbar-hide relative z-0">
           <AnimatePresence mode="wait">
             {availableTabs.map((tab) => (
@@ -311,6 +308,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
         <DialogContent className="max-w-3xl rounded-[3rem] p-0 overflow-hidden border-none shadow-3xl bg-white dark:bg-zinc-950">
           <DialogHeader className="sr-only">
              <DialogTitle>Order Manifest: #{selectedOrderForView?.orderId}</DialogTitle>
+             <DialogDescription>Detailed itemized view and customer logistics for order #{selectedOrderForView?.orderId}</DialogDescription>
           </DialogHeader>
           
           {selectedOrderForView && (

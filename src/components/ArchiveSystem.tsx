@@ -28,7 +28,8 @@ import {
   DialogContent, 
   DialogHeader, 
   DialogTitle, 
-  DialogFooter 
+  DialogFooter,
+  DialogDescription 
 } from '@/components/ui/dialog';
 import { 
   Select, 
@@ -347,7 +348,9 @@ export const ArchiveSystem = ({ orders, onViewDetails }: ArchiveSystemProps) => 
                 <DialogTitle className="text-4xl font-black font-headline uppercase tracking-tighter leading-none italic">
                   Modify <span className="opacity-80">Ticket</span>
                 </DialogTitle>
-                <p className="text-white/70 font-medium text-[10px] uppercase tracking-widest mt-2">Syncing Metadata for #{editingOrder?.orderId}</p>
+                <DialogDescription className="text-white/70 font-medium text-[10px] uppercase tracking-widest mt-2">
+                  Syncing Metadata for #{editingOrder?.orderId}
+                </DialogDescription>
              </DialogHeader>
           </div>
 

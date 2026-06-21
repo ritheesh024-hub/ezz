@@ -176,7 +176,7 @@ export const ProductManagement = () => {
           <p className="text-muted-foreground text-sm font-medium tracking-tight">Provision menu items and optimize visibility parameters.</p>
         </div>
         <Button onClick={() => handleOpenModal()} className="h-16 px-10 rounded-2xl font-black uppercase text-[10px] tracking-widest gap-3 bg-primary text-white shadow-3xl hover:scale-[1.02] transition-all">
-          <Plus className="w-5 h-5" /> Add Coupon +
+          <Plus className="w-5 h-5" /> Add Product +
         </Button>
       </div>
 
@@ -236,7 +236,7 @@ export const ProductManagement = () => {
              <div className="absolute -right-20 -top-20 w-64 h-64 bg-white/10 rounded-full blur-3xl" />
              <DialogHeader className="relative z-10">
                 <DialogTitle className="text-4xl font-black font-headline uppercase tracking-tighter leading-none">{editingItem ? 'Edit Provision' : 'New Creation'}</DialogTitle>
-                <p className="text-white/70 font-medium text-xs uppercase tracking-widest mt-2">Syncing with Operational Registry</p>
+                <DialogDescription className="text-white/70 font-medium text-xs uppercase tracking-widest mt-2">Syncing with Operational Registry</DialogDescription>
              </DialogHeader>
           </div>
 

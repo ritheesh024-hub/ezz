@@ -5,7 +5,8 @@ import {
   Dialog, 
   DialogContent, 
   DialogHeader, 
-  DialogTitle 
+  DialogTitle,
+  DialogDescription
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -67,6 +68,7 @@ export const ProductDetails = ({ item, isOpen, onClose, onAddToCart }: ProductDe
       <DialogContent className="max-w-4xl h-[90vh] md:h-auto md:max-h-[85vh] rounded-[3rem] p-0 overflow-hidden border-none shadow-3xl bg-white dark:bg-zinc-950 flex flex-col md:flex-row">
         <DialogHeader className="sr-only">
           <DialogTitle>{item.name} Details & Customer Reviews</DialogTitle>
+          <DialogDescription>Overview of {item.name} with nutritional information and aggregated customer sentiment.</DialogDescription>
         </DialogHeader>
         
         {/* LEFT: IMAGE & PRIMARY INFO */}

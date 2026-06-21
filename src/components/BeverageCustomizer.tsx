@@ -1,8 +1,7 @@
-
 'use client';
 
 import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -53,7 +52,7 @@ export const BeverageCustomizer = ({ item, isOpen, onClose, onConfirm }: Beverag
               <Coffee className="w-8 h-8" />
               Customize
             </DialogTitle>
-            <p className="text-white/70 font-bold text-xs uppercase tracking-widest relative z-10 mt-1">{item.name}</p>
+            <DialogDescription className="text-white/70 font-bold text-xs uppercase tracking-widest relative z-10 mt-1">{item.name}</DialogDescription>
           </DialogHeader>
         </div>
 

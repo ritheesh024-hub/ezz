@@ -65,7 +65,6 @@ export const BillingSystem = ({ products, orders }: BillingSystemProps) => {
   };
 
   const subtotal = activeBill.reduce((acc, curr) => acc + (curr.price * curr.quantity), 0);
-  // Tax removed as requested
   const total = subtotal - discount;
 
   const generateBill = async () => {
@@ -306,6 +305,10 @@ export const BillingSystem = ({ products, orders }: BillingSystemProps) => {
       {/* SUCCESS & INVOICE MODAL */}
       <Dialog open={!!viewingInvoice} onOpenChange={(open) => !open && setViewingInvoice(null)}>
         <DialogContent className="max-w-md p-0 rounded-[3rem] overflow-hidden border-none shadow-3xl bg-white text-black">
+          <DialogHeader className="sr-only">
+             <DialogTitle>Bill Generated Successfully</DialogTitle>
+             <DialogDescription>Invoice preview for ticket #{viewingInvoice?.orderId}</DialogDescription>
+          </DialogHeader>
           <div className="bg-emerald-600 p-6 text-white flex items-center gap-3 no-print">
              <CheckCircle2 className="w-6 h-6" />
              <span className="font-black uppercase text-xs tracking-widest">Bill Generated Successfully</span>

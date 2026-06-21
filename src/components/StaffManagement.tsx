@@ -19,7 +19,8 @@ import {
   DialogContent, 
   DialogHeader, 
   DialogTitle, 
-  DialogFooter
+  DialogFooter,
+  DialogDescription
 } from '@/components/ui/dialog';
 import { 
   Select, 
@@ -33,7 +34,7 @@ import {
   DropdownMenuContent, 
   DropdownMenuItem, 
   DropdownMenuTrigger,
-  DropdownMenuSeparator,
+  DropdownMenuSeparator, 
   DropdownMenuLabel
 } from '@/components/ui/dropdown-menu';
 import { 
@@ -425,7 +426,7 @@ export const StaffManagement = () => {
              <div className="absolute -right-16 -top-16 w-56 h-56 bg-white/10 rounded-full blur-3xl" />
              <DialogHeader className="relative z-10">
                 <DialogTitle className="text-4xl font-black font-headline uppercase tracking-tighter leading-none">New <span className="italic opacity-80">Recruit</span></DialogTitle>
-                <p className="text-white/70 font-medium text-xs uppercase tracking-widest mt-2">Provisioning Operational Identity</p>
+                <DialogDescription className="text-white/70 font-medium text-xs uppercase tracking-widest mt-2">Provisioning Operational Identity</DialogDescription>
              </DialogHeader>
           </div>
           <div className="p-10 space-y-8">
@@ -470,7 +471,7 @@ export const StaffManagement = () => {
              <div className="absolute -right-16 -top-16 w-56 h-56 bg-white/10 rounded-full blur-3xl" />
              <DialogHeader className="relative z-10">
                 <DialogTitle className="text-4xl font-black font-headline uppercase tracking-tighter leading-none">Modify <span className="italic opacity-80">Profile</span></DialogTitle>
-                <p className="text-white/70 font-medium text-xs uppercase tracking-widest mt-2">Updating Operational Identity</p>
+                <DialogDescription className="text-white/70 font-medium text-xs uppercase tracking-widest mt-2">Updating Operational Identity</DialogDescription>
              </DialogHeader>
           </div>
           <div className="p-10 space-y-8">
@@ -499,7 +500,7 @@ export const StaffManagement = () => {
               <Label className="text-[10px] font-black uppercase opacity-40 ml-1">Avatar Asset URL</Label>
               <Input value={formData.photoUrl} onChange={(e) => setFormData({...formData, photoUrl: e.target.value})} className="h-14 rounded-2xl border-none bg-secondary/30 dark:bg-zinc-800 font-bold px-6" />
             </div>
-            <Button className="w-full h-16 rounded-2xl font-black uppercase text-[10px] tracking-widest bg-primary text-white shadow-2xl shadow-primary/30 hover:scale-[1.02] transition-all" onClick={handleUpdateStaff} disabled={submitting}>
+            <Button className="w-full h-16 rounded-2xl font-black uppercase text-[10px] tracking-widest bg-primary text-white shadow-2xl shadow-primary/20 hover:scale-[1.02] transition-all" onClick={handleUpdateStaff} disabled={submitting}>
               {submitting ? <Loader2 className="animate-spin w-5 h-5" /> : 'Save'}
             </Button>
           </div>
@@ -514,6 +515,7 @@ export const StaffManagement = () => {
         <DialogContent className="max-w-2xl rounded-[3.5rem] p-0 overflow-hidden border-none bg-white dark:bg-zinc-950 shadow-3xl">
           <DialogHeader className="sr-only">
             <DialogTitle>Staff Profile: {selectedStaff?.name || 'Details'}</DialogTitle>
+            <DialogDescription>Operational metrics and record details for staff member {selectedStaff?.name}</DialogDescription>
           </DialogHeader>
           {selectedStaff && (
             <div className="flex flex-col">

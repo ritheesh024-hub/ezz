@@ -49,6 +49,10 @@ export const SmartPermissionModal = ({ type, onClose, onConfirm }: SmartPermissi
   return (
     <Dialog open={!!type} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-md rounded-[3rem] p-0 overflow-hidden border-none shadow-3xl bg-white dark:bg-zinc-950">
+        <DialogHeader className="sr-only">
+           <DialogTitle>{active?.title || 'Permission Request'}</DialogTitle>
+           <DialogDescription>{active?.desc || 'Operational node access required'}</DialogDescription>
+        </DialogHeader>
         {active && (
           <div className="flex flex-col">
             <div className={cn("p-10 text-white relative overflow-hidden", active.color)}>
@@ -62,17 +66,17 @@ export const SmartPermissionModal = ({ type, onClose, onConfirm }: SmartPermissi
                        <ShieldCheck className="w-3 h-3 text-white" />
                        <span className="text-[8px] font-black uppercase tracking-[0.2em]">Secure Node Access</span>
                     </div>
-                    <DialogTitle className="text-3xl font-black font-headline uppercase tracking-tighter italic">
+                    <h2 className="text-3xl font-black font-headline uppercase tracking-tighter italic">
                       {active.title}
-                    </DialogTitle>
+                    </h2>
                  </div>
               </div>
             </div>
 
             <div className="p-10 text-center space-y-8">
-              <DialogDescription className="text-base font-medium leading-relaxed text-muted-foreground italic">
+              <p className="text-base font-medium leading-relaxed text-muted-foreground italic">
                 "{active.desc}"
-              </DialogDescription>
+              </p>
 
               <div className="flex items-center gap-4 p-4 bg-secondary/30 rounded-2xl border border-dashed">
                  <div className="w-10 h-10 bg-white dark:bg-zinc-800 rounded-xl flex items-center justify-center shrink-0 shadow-sm text-primary">
