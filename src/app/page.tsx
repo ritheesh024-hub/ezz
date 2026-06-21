@@ -91,7 +91,7 @@ export default function Home() {
 
               <div className="flex justify-start pt-4">
                 <Link href="/menu">
-                  <Button className="rounded-full h-16 px-12 text-lg font-black shadow-3xl bg-primary hover:bg-primary/90 text-white transform transition-all active:scale-95 uppercase tracking-tight gap-4">
+                  <Button className="rounded-full h-14 px-8 text-base font-black shadow-3xl bg-primary hover:bg-primary/90 text-white transform transition-all active:scale-95 uppercase tracking-tight gap-3">
                     Start Your Order
                     <ArrowRight className="w-5 h-5" />
                   </Button>
