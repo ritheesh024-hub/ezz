@@ -204,6 +204,50 @@
         "status"
       ]
     },
+    "SupportTicket": {
+      "title": "Support Ticket",
+      "description": "A customer support request",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "category": { "type": "string" },
+        "subCategory": { "type": "string" },
+        "orderId": { "type": "string" },
+        "message": { "type": "string" },
+        "status": { "type": "string", "enum": ["Open", "In Progress", "Resolved", "Closed"] },
+        "priority": { "type": "string", "enum": ["Low", "Medium", "High", "Urgent"] },
+        "replies": { 
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "senderId": { "type": "string" },
+              "senderName": { "type": "string" },
+              "isAdmin": { "type": "boolean" },
+              "message": { "type": "string" },
+              "createdAt": { "type": "string", "format": "date-time" }
+            }
+          }
+        },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "UserFeedback": {
+      "title": "User Feedback",
+      "description": "Platform-wide user satisfaction rating",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "rating": { "type": "number" },
+        "comment": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    },
     "FoodItem": {
       "title": "Food Item",
       "description": "A menu item available for purchase at Ezzy Bites",
@@ -303,6 +347,14 @@
     "/orders/{orderId}": {
       "schema": "#/backend/entities/Order",
       "description": "Collection of customer orders"
+    },
+    "/support_tickets/{ticketId}": {
+      "schema": "#/backend/entities/SupportTicket",
+      "description": "Support center tickets"
+    },
+    "/feedbacks/{id}": {
+      "schema": "#/backend/entities/UserFeedback",
+      "description": "General platform feedbacks"
     },
     "/products/{productId}": {
       "schema": "#/backend/entities/FoodItem",

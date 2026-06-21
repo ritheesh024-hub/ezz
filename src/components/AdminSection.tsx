@@ -22,7 +22,8 @@ import {
   LayoutDashboard,
   Truck,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  LifeBuoy
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
@@ -40,6 +41,7 @@ import { ProductManagement } from './ProductManagement';
 import { AdminNotificationManager } from './AdminNotificationManager';
 import { ReviewManager } from './ReviewManager';
 import { ArchiveSystem } from './ArchiveSystem';
+import { AdminSupportCenter } from './AdminSupportCenter';
 import { cn } from '@/lib/utils';
 import { useSound } from '@/hooks/use-sound';
 import { StaffRole } from '@/app/admin/dashboard/page';
@@ -149,7 +151,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
   const availableTabs = useMemo(() => {
     if (activeView === 'kitchen') return ['kitchen'];
     if (activeView === 'cashier') return ['overview', 'billing', 'orders', 'archive'];
-    return ['overview', 'users', 'billing', 'orders', 'products', 'staff', 'reviews', 'coupons', 'notifications', 'archive', 'settings'];
+    return ['overview', 'users', 'billing', 'orders', 'products', 'staff', 'support', 'reviews', 'coupons', 'notifications', 'archive', 'settings'];
   }, [activeView]);
 
   const getTabLabel = (tab: string) => {
@@ -160,6 +162,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
       case 'products': return 'Inventory';
       case 'notifications': return 'Broadcast';
       case 'coupons': return 'Coupons';
+      case 'support': return 'Support Hub';
       default: return tab.charAt(0).toUpperCase() + tab.slice(1);
     }
   };
@@ -178,6 +181,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
       case 'coupons': return <TicketPercent className={iconClass} />;
       case 'notifications': return <Megaphone className={iconClass} />;
       case 'staff': return <Fingerprint className={iconClass} />;
+      case 'support': return <LifeBuoy className={iconClass} />;
       case 'settings': return <Settings2 className={iconClass} />;
       default: return <BoxSelect className={iconClass} />;
     }
@@ -297,6 +301,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
                   {tab === 'kitchen' && <KitchenSystem orders={realOrders || []} onUpdateStatus={handleUpdateStatus} />}
                   {tab === 'products' && <ProductManagement />}
                   {tab === 'reviews' && <ReviewManager />}
+                  {tab === 'support' && <AdminSupportCenter />}
                   {tab === 'coupons' && <CouponManager />}
                   {tab === 'notifications' && <AdminNotificationManager />}
                   {tab === 'staff' && <StaffManagement />}

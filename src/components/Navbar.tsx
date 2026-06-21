@@ -1,3 +1,4 @@
+
 "use client"
 import React, { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
@@ -19,7 +20,8 @@ import {
   Bell,
   LogOut,
   ShoppingBag,
-  Menu
+  Menu,
+  LifeBuoy
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from './ThemeToggle';
@@ -101,6 +103,7 @@ export const Navbar = () => {
     { label: 'Home', href: '/', icon: Home },
     { label: 'Menu Selection', href: '/menu', icon: Utensils },
     { label: 'Live History', href: '/orders', icon: History, authRequired: true },
+    { label: 'Help & Support', href: '/support', icon: LifeBuoy, authRequired: true },
     { label: 'Favorites', href: '/favorites', icon: Heart, authRequired: true },
     { label: 'Saved Addresses', href: '/addresses', icon: MapPin, authRequired: true },
     { label: 'Coupons & Offers', href: '/coupons', icon: TicketPercent },
@@ -190,8 +193,10 @@ export const Navbar = () => {
                           <History className="w-5 h-5 text-primary" /> Tracking History
                         </Link>
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setIsEditProfileOpen(true)} className="rounded-[1.5rem] py-4 px-5 font-black uppercase text-[10px] tracking-widest cursor-pointer hover:bg-primary/5 transition-all gap-4">
-                        <User className="w-5 h-5 text-blue-500" /> Edit Profile
+                      <DropdownMenuItem asChild className="rounded-[1.5rem] py-4 px-5 font-black uppercase text-[10px] tracking-widest cursor-pointer hover:bg-primary/5 transition-all">
+                        <Link href="/support" className="flex items-center gap-4">
+                          <LifeBuoy className="w-5 h-5 text-blue-500" /> Help & Support
+                        </Link>
                       </DropdownMenuItem>
                       {isStaff && (
                         <DropdownMenuItem asChild className="rounded-[1.5rem] py-4 px-5 font-black uppercase text-[10px] tracking-widest cursor-pointer hover:bg-orange-50 dark:hover:bg-orange-950/20 text-orange-600 transition-all">
