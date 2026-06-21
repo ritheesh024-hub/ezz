@@ -20,7 +20,9 @@ import {
   Star,
   Gift,
   TicketPercent,
-  TrendingDown
+  TrendingDown,
+  ChefHat,
+  BellRing
 } from 'lucide-react';
 import {
   XAxis,
