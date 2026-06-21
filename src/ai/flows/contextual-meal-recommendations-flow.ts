@@ -54,9 +54,17 @@ const contextualMealRecommendationsFlow = ai.defineFlow(
       const { output } = await mealRecommendationPrompt(input);
       if (!output) throw new Error('Failed to get recommendations.');
       return output;
-    } catch (error) {
-      console.error('🔥 [Ezzy AI] Recommendation Flow Error:', error);
-      throw error;
+    } catch (error: any) {
+      console.error('🔥 [Ezzy AI] Recommendation Flow Error:', error?.message || error);
+      return {
+        recommendations: [
+          {
+            name: "Chef's Classic Biryani",
+            description: "Our signature Hyderabadi Chicken Biryani.",
+            reasoning: "AI is currently resting, but our bestseller never misses."
+          }
+        ]
+      };
     }
   }
 );

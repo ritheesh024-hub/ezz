@@ -10,8 +10,6 @@ const apiKey = process.env.GEMINI_API_KEY;
 
 if (!apiKey) {
   console.warn('⚠️ [Ezzy AI] Warning: GEMINI_API_KEY is missing from environment variables.');
-} else {
-  console.log('✅ [Ezzy AI] Initializing Gemini logic node with production credentials.');
 }
 
 export const ai = genkit({
@@ -20,6 +18,6 @@ export const ai = genkit({
       apiKey: apiKey,
     }),
   ],
-  // Use the fully qualified stable model identifier to prevent 404 mapping errors
+  // Standardized stable model identifier for Genkit 1.x to prevent 404 URL mapping errors
   model: 'googleai/gemini-1.5-flash',
 });

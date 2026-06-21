@@ -1,4 +1,3 @@
-
 'use server';
 /**
  * @fileOverview Automated Support Assistant for Ezzy Bites.
@@ -78,9 +77,12 @@ const supportAIFlow = ai.defineFlow(
       const { output } = await prompt(input);
       if (!output) throw new Error('AI failed to generate a response.');
       return output;
-    } catch (error) {
-      console.error('🔥 [Ezzy AI] Support Flow Execution Error:', error);
-      throw error;
+    } catch (error: any) {
+      console.error('🔥 [Ezzy AI] Support Flow Execution Error:', error?.message || error);
+      return {
+        reply: "Sorry, I'm currently unavailable. Please try again later.",
+        suggestedActions: ["Try again", "Call Station"]
+      };
     }
   }
 );
