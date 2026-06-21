@@ -28,7 +28,8 @@ import {
   CheckCircle2,
   X,
   ChefHat,
-  BellRing
+  BellRing,
+  RotateCcw
 } from 'lucide-react';
 import {
   XAxis,
@@ -62,6 +63,7 @@ import {
   isBefore
 } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
+import { DateRange } from 'react-day-picker';
 
 interface DashboardAnalysisProps {
   orders: any[];
@@ -78,11 +80,8 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
     to: endOfDay(new Date())
   });
 
-  // Temp state for custom range picker
-  const [tempRange, setTempRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
-    from: undefined,
-    to: undefined
-  });
+  // Staged state for custom range picker
+  const [tempRange, setTempRange] = useState<DateRange | undefined>(undefined);
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   useEffect(() => {
@@ -208,20 +207,19 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
   }, [orders, intervals]);
 
   const handleApplyCustomRange = () => {
-    if (!tempRange.from || !tempRange.to) {
-      toast({ variant: "destructive", title: "Incomplete Range", description: "Please select both start and end dates." });
-      return;
-    }
-    
-    if (isAfter(tempRange.from, tempRange.to)) {
-      toast({ variant: "destructive", title: "Invalid Range", description: "Start date cannot be after end date." });
+    if (!tempRange?.from || !tempRange?.to) {
+      toast({ variant: "destructive", title: "Incomplete Range", description: "Please select both From and To dates." });
       return;
     }
 
     setDateRange({ from: tempRange.from, to: tempRange.to });
     setRangeType('custom');
     setIsCalendarOpen(false);
-    toast({ title: "Filters Applied", description: `Viewing data from ${format(tempRange.from, 'dd MMM')} to ${format(tempRange.to, 'dd MMM')}` });
+    toast({ title: "Custom Filter Applied", description: `Viewing data from ${format(tempRange.from, 'dd MMM')} to ${format(tempRange.to, 'dd MMM')}` });
+  };
+
+  const handleClearCustomRange = () => {
+    setTempRange(undefined);
   };
 
   const handleExport = () => {
@@ -272,49 +270,62 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
                   )}
                 >
                   <CalendarIcon className="w-3 h-3" />
-                  Custom
+                  Custom Range
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 rounded-[2rem] border-none shadow-3xl z-[150] overflow-hidden" align="start">
+              <PopoverContent className="w-auto p-0 rounded-[2.5rem] border-none shadow-3xl z-[150] overflow-hidden" align="start">
                 <div className="p-6 bg-white dark:bg-zinc-950 space-y-6">
                   <div className="flex items-center justify-between border-b pb-4">
-                    <h4 className="font-black uppercase text-xs tracking-widest text-primary italic">Custom Node Range</h4>
+                    <div className="space-y-0.5">
+                      <h4 className="font-black uppercase text-xs tracking-widest text-primary italic leading-none">Custom Filter</h4>
+                      <p className="text-[8px] font-black uppercase opacity-40 tracking-widest">Select From and To nodes</p>
+                    </div>
                     <button onClick={() => setIsCalendarOpen(false)} className="text-muted-foreground hover:text-primary transition-colors"><X className="w-4 h-4" /></button>
                   </div>
                   
-                  <div className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-6">
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-1">
-                        <p className="text-[7px] font-black uppercase opacity-40 ml-1">From Epoch</p>
-                        <div className="h-10 px-3 bg-secondary/30 rounded-xl flex items-center justify-center font-bold text-[10px]">
-                          {tempRange.from ? format(tempRange.from, 'dd MMM yyyy') : 'Start Date'}
+                      <div className={cn("p-4 rounded-2xl border-2 transition-all", tempRange?.from ? "border-primary/20 bg-primary/5" : "border-muted bg-secondary/20")}>
+                        <p className="text-[7px] font-black uppercase opacity-40 mb-1">From Epoch</p>
+                        <div className="font-black text-xs uppercase tracking-tight">
+                          {tempRange?.from ? format(tempRange.from, 'dd MMM yyyy') : 'Select Start'}
                         </div>
                       </div>
-                      <div className="space-y-1">
-                        <p className="text-[7px] font-black uppercase opacity-40 ml-1">To Epoch</p>
-                        <div className="h-10 px-3 bg-secondary/30 rounded-xl flex items-center justify-center font-bold text-[10px]">
-                          {tempRange.to ? format(tempRange.to, 'dd MMM yyyy') : 'End Date'}
+                      <div className={cn("p-4 rounded-2xl border-2 transition-all", tempRange?.to ? "border-primary/20 bg-primary/5" : "border-muted bg-secondary/20")}>
+                        <p className="text-[7px] font-black uppercase opacity-40 mb-1">To Epoch</p>
+                        <div className="font-black text-xs uppercase tracking-tight">
+                          {tempRange?.to ? format(tempRange.to, 'dd MMM yyyy') : 'Select End'}
                         </div>
                       </div>
                     </div>
 
-                    <div className="border rounded-2xl bg-zinc-50 dark:bg-zinc-900/50">
+                    <div className="border rounded-2xl bg-zinc-50 dark:bg-zinc-900/50 p-2">
                       <Calendar
                         mode="range"
-                        selected={{ from: tempRange.from, to: tempRange.to }}
-                        onSelect={(range: any) => setTempRange({ from: range?.from, to: range?.to })}
+                        selected={tempRange}
+                        onSelect={setTempRange}
                         initialFocus
                         numberOfMonths={1}
                       />
                     </div>
                   </div>
 
-                  <Button 
-                    onClick={handleApplyCustomRange} 
-                    className="w-full h-12 rounded-xl font-black uppercase text-[10px] tracking-widest bg-primary shadow-xl shadow-primary/20"
-                  >
-                    Apply Temporal Filter
-                  </Button>
+                  <div className="flex gap-3">
+                    <Button 
+                      variant="outline"
+                      onClick={handleClearCustomRange}
+                      className="flex-1 h-12 rounded-xl font-black uppercase text-[9px] tracking-widest border-2 gap-2"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" /> Clear
+                    </Button>
+                    <Button 
+                      onClick={handleApplyCustomRange} 
+                      disabled={!tempRange?.from || !tempRange?.to}
+                      className="flex-[2] h-12 rounded-xl font-black uppercase text-[9px] tracking-widest bg-primary shadow-xl shadow-primary/20 gap-2"
+                    >
+                      Apply Date Range
+                    </Button>
+                  </div>
                 </div>
               </PopoverContent>
             </Popover>
@@ -330,11 +341,16 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
           </div>
         </div>
         
-        <div className="mt-3 flex items-center gap-2">
-           <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-           <span className="text-[7px] font-black uppercase tracking-widest opacity-40">
-             Audit Range: {format(intervals.current.from, 'dd MMM')} — {format(intervals.current.to, 'dd MMM yyyy')}
-           </span>
+        <div className="mt-3 flex items-center justify-between">
+           <div className="flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[7px] font-black uppercase tracking-widest opacity-40 italic">
+                {rangeType === 'custom' ? 'TEMPORAL OVERRIDE ACTIVE' : `AUDIT PERIOD: ${rangeType.toUpperCase()}`}
+              </span>
+           </div>
+           <div className="text-[7px] font-black uppercase tracking-[0.2em] opacity-30">
+              {format(intervals.current.from, 'dd MMM')} — {format(intervals.current.to, 'dd MMM yyyy')}
+           </div>
         </div>
       </div>
 
@@ -347,7 +363,6 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6 md:gap-8">
-        {/* REVENUE TREND CHART */}
         <Card className="lg:col-span-2 rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-zinc-900 overflow-hidden relative border">
           <CardHeader className="p-6 md:p-8 border-b border-dashed flex flex-row items-center justify-between">
             <div className="space-y-1">
@@ -383,7 +398,6 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
           </CardContent>
         </Card>
 
-        {/* STATUS DISTRIBUTION CHART */}
         <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-zinc-900 p-6 md:p-8 flex flex-col h-full border">
           <div className="space-y-1 mb-6 md:mb-8">
             <h4 className="text-lg md:text-xl font-black font-headline uppercase tracking-tighter italic">Status <span className="text-primary">Ledger</span></h4>
@@ -421,7 +435,6 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
         </Card>
       </div>
 
-      {/* RECENT ORDERS SNIPPET */}
       <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-zinc-900 overflow-hidden border">
         <CardHeader className="p-6 md:p-8 border-b border-dashed flex flex-row items-center justify-between">
            <div className="flex items-center gap-3">
@@ -491,7 +504,7 @@ const KPICard = ({ label, value, icon: Icon, trend, color, bg, period }: any) =>
       <div className="relative z-10 space-y-0.5 md:space-y-1">
         <p className="text-[8px] md:text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-40">{label}</p>
         <h3 className="text-2xl md:text-3xl font-black font-headline tracking-tighter italic leading-none">{value}</h3>
-        <p className="text-[6px] md:text-[7px] font-black uppercase opacity-30 tracking-widest pt-1">vs Previous {period}</p>
+        <p className="text-[6px] md:text-[7px] font-black uppercase opacity-30 tracking-widest pt-1">vs Previous {period.replace('_', ' ')}</p>
       </div>
     </Card>
   );
