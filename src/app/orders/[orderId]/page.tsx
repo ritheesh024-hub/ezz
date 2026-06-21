@@ -6,7 +6,7 @@ import {
   CheckCircle2, MapPin, Phone, MessageSquare, 
   Truck, ChefHat, PackageCheck, Loader2, 
   AlertCircle, Ban, Clock, ShoppingBag,
-  ArrowLeft, Info, HelpCircle, Star
+  ArrowLeft, Info, HelpCircle, Star, Bot
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -319,9 +319,11 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ orderI
                   )}
                 </div>
                 <div className="space-y-3">
-                  <Button className="w-full bg-primary text-white hover:bg-primary/90 rounded-2xl h-14 font-black uppercase text-[10px] tracking-widest gap-3 shadow-xl" onClick={() => window.open('https://wa.me/918639366800')}>
-                    <MessageSquare className="w-4 h-4" /> Live Chat Support
-                  </Button>
+                  <Link href="/support" className="block w-full">
+                    <Button className="w-full bg-primary text-white hover:bg-primary/90 rounded-2xl h-14 font-black uppercase text-[10px] tracking-widest gap-3 shadow-xl">
+                      <Bot className="w-4 h-4" /> Ezzy AI Support
+                    </Button>
+                  </Link>
                 </div>
               </CardContent>
             </Card>
