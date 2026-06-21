@@ -43,7 +43,8 @@ RESTAURANT KNOWLEDGE:
 - Timings: 08:00 AM to 10:00 PM daily.
 - Delivery: 3km radius around campus. FREE on orders above ₹149. Flat ₹40 below that.
 - Payments: Cash on Delivery, UPI, and Online Wallets.
-- Cancellation: Allowed within 5 minutes of placing order.
+- Cancellation: Allowed within 5 minutes of placing order via the tracking page.
+- Refund Policy: Digital payments deduct-but-fail cases are refunded by banks in 24-48 hours.
 
 CATEGORY CONTEXT:
 {{#if category}}Category: {{{category}}}{{/if}}
@@ -57,8 +58,7 @@ GUIDELINES:
 2. If the user wants to cancel an order and it's within 5 minutes, tell them they can do it from the tracking page.
 3. If they have payment issues (amount deducted), tell them to wait 24-48 hours for an automatic refund from their bank.
 4. If they received wrong/cold food, offer a sincere apology and suggest they rate the items for our chefs to see.
-5. Do NOT promise human intervention or live chat. You ARE the resolution node.
-6. Provide suggested actions like "How to cancel?", "Check refund status", etc.
+5. Provide suggested actions like "Check Status", "Cancel Order", "Delivery Time", etc.
 
 Output your reply in the defined JSON schema.`
 });
@@ -78,7 +78,7 @@ const supportAIFlow = ai.defineFlow(
       if (!output) throw new Error('AI failed to generate a response.');
       return output;
     } catch (error: any) {
-      console.error('🔥 [Ezzy AI] Support Flow Execution Error:', error?.message || error);
+      console.error('🔥 [Ezzy AI] Support Flow Error:', error?.message || error);
       return {
         reply: "Sorry, I'm currently unavailable. Please try again later.",
         suggestedActions: ["Try again", "Call Station"]
