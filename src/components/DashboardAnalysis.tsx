@@ -25,11 +25,11 @@ import {
   ShoppingBag,
   PieChart,
   Activity,
-  CheckCircle2,
   X,
   ChefHat,
   BellRing,
-  RotateCcw
+  RotateCcw,
+  ArrowRight
 } from 'lucide-react';
 import {
   XAxis,
@@ -58,12 +58,9 @@ import {
   eachHourOfInterval,
   isSameDay,
   isSameHour,
-  endOfMonth,
-  isAfter,
-  isBefore
+  endOfMonth
 } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
-import { DateRange } from 'react-day-picker';
 
 interface DashboardAnalysisProps {
   orders: any[];
@@ -80,9 +77,10 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
     to: endOfDay(new Date())
   });
 
-  // Staged state for custom range picker
-  const [tempRange, setTempRange] = useState<DateRange | undefined>(undefined);
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  // Staged state for individual date selection in Custom view
+  const [tempFrom, setTempFrom] = useState<Date | undefined>(undefined);
+  const [tempTo, setTempTo] = useState<Date | undefined>(undefined);
+  const [isMainPopoverOpen, setIsMainPopoverOpen] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -160,7 +158,6 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
     const diffInDays = Math.round((intervals.current.to.getTime() - intervals.current.from.getTime()) / (1000 * 3600 * 24));
 
     if (diffInDays <= 1) {
-      // Hourly view for short ranges
       const hours = eachHourOfInterval({ start: intervals.current.from, end: intervals.current.to });
       chartData = hours.map(h => {
         const val = currOrders
@@ -172,7 +169,6 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
         return { name: format(h, 'hh a'), val };
       });
     } else {
-      // Daily view
       const days = eachDayOfInterval({ start: intervals.current.from, end: intervals.current.to });
       chartData = days.map(d => {
         const val = currOrders
@@ -207,19 +203,25 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
   }, [orders, intervals]);
 
   const handleApplyCustomRange = () => {
-    if (!tempRange?.from || !tempRange?.to) {
-      toast({ variant: "destructive", title: "Incomplete Range", description: "Please select both From and To dates." });
+    if (!tempFrom || !tempTo) {
+      toast({ variant: "destructive", title: "Incomplete Range", description: "Select both From and To dates." });
       return;
     }
 
-    setDateRange({ from: tempRange.from, to: tempRange.to });
+    if (tempFrom > tempTo) {
+      toast({ variant: "destructive", title: "Invalid Logic", description: "End date must be after start date." });
+      return;
+    }
+
+    setDateRange({ from: tempFrom, to: tempTo });
     setRangeType('custom');
-    setIsCalendarOpen(false);
-    toast({ title: "Custom Filter Applied", description: `Viewing data from ${format(tempRange.from, 'dd MMM')} to ${format(tempRange.to, 'dd MMM')}` });
+    setIsMainPopoverOpen(false);
+    toast({ title: "Temporal Filter Applied", description: `Active: ${format(tempFrom, 'dd MMM')} to ${format(tempTo, 'dd MMM')}` });
   };
 
   const handleClearCustomRange = () => {
-    setTempRange(undefined);
+    setTempFrom(undefined);
+    setTempTo(undefined);
   };
 
   const handleExport = () => {
@@ -242,7 +244,7 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
 
   return (
     <div className="space-y-6 md:space-y-10 animate-in fade-in duration-700 pb-20 no-print">
-      {/* FILTER BAR */}
+      {/* COMPACT FILTER BAR */}
       <div className="bg-zinc-50/95 dark:bg-zinc-950/95 backdrop-blur-3xl lg:static -mx-4 md:-mx-10 px-4 md:px-10 py-4 border-b lg:border-none">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div className="flex flex-wrap gap-2 overflow-x-auto scrollbar-hide pb-1 w-full md:w-auto">
@@ -260,7 +262,7 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
               </Button>
             ))}
             
-            <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+            <Popover open={isMainPopoverOpen} onOpenChange={setIsMainPopoverOpen}>
               <PopoverTrigger asChild>
                 <Button
                   variant={rangeType === 'custom' ? 'default' : 'outline'}
@@ -270,61 +272,89 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
                   )}
                 >
                   <CalendarIcon className="w-3 h-3" />
-                  Custom Range
+                  Custom
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-auto p-0 rounded-[2.5rem] border-none shadow-3xl z-[150] overflow-hidden" align="start">
-                <div className="p-6 bg-white dark:bg-zinc-950 space-y-6">
+              <PopoverContent className="w-80 p-0 rounded-[2.5rem] border-none shadow-3xl z-[150] overflow-hidden" align="start">
+                <div className="p-8 bg-white dark:bg-zinc-950 space-y-8">
                   <div className="flex items-center justify-between border-b pb-4">
                     <div className="space-y-0.5">
                       <h4 className="font-black uppercase text-xs tracking-widest text-primary italic leading-none">Custom Filter</h4>
                       <p className="text-[8px] font-black uppercase opacity-40 tracking-widest">Select From and To nodes</p>
                     </div>
-                    <button onClick={() => setIsCalendarOpen(false)} className="text-muted-foreground hover:text-primary transition-colors"><X className="w-4 h-4" /></button>
+                    <button onClick={() => setIsMainPopoverOpen(false)} className="text-muted-foreground hover:text-primary transition-colors"><X className="w-4 h-4" /></button>
                   </div>
                   
-                  <div className="flex flex-col gap-6">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className={cn("p-4 rounded-2xl border-2 transition-all", tempRange?.from ? "border-primary/20 bg-primary/5" : "border-muted bg-secondary/20")}>
-                        <p className="text-[7px] font-black uppercase opacity-40 mb-1">From Epoch</p>
-                        <div className="font-black text-xs uppercase tracking-tight">
-                          {tempRange?.from ? format(tempRange.from, 'dd MMM yyyy') : 'Select Start'}
-                        </div>
-                      </div>
-                      <div className={cn("p-4 rounded-2xl border-2 transition-all", tempRange?.to ? "border-primary/20 bg-primary/5" : "border-muted bg-secondary/20")}>
-                        <p className="text-[7px] font-black uppercase opacity-40 mb-1">To Epoch</p>
-                        <div className="font-black text-xs uppercase tracking-tight">
-                          {tempRange?.to ? format(tempRange.to, 'dd MMM yyyy') : 'Select End'}
-                        </div>
-                      </div>
+                  <div className="flex flex-col gap-4">
+                    {/* FROM DATE FIELD */}
+                    <div className="space-y-2">
+                       <p className="text-[8px] font-black uppercase opacity-40 ml-1">From Epoch</p>
+                       <Popover>
+                          <PopoverTrigger asChild>
+                             <button className={cn(
+                               "w-full h-14 rounded-2xl border-2 flex items-center px-6 gap-3 transition-all",
+                               tempFrom ? "border-primary/20 bg-primary/5" : "border-muted bg-zinc-50 dark:bg-zinc-900"
+                             )}>
+                                <CalendarIcon className="w-4 h-4 text-primary" />
+                                <span className="font-black text-xs uppercase tracking-tight">
+                                  {tempFrom ? format(tempFrom, 'dd MMM yyyy') : 'Select Start'}
+                                </span>
+                             </button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0 rounded-3xl border-none shadow-4xl z-[200]">
+                             <Calendar
+                               mode="single"
+                               selected={tempFrom}
+                               onSelect={(date) => { setTempFrom(date); }}
+                               initialFocus
+                               className="bg-white dark:bg-zinc-900 rounded-3xl"
+                             />
+                          </PopoverContent>
+                       </Popover>
                     </div>
 
-                    <div className="border rounded-2xl bg-zinc-50 dark:bg-zinc-900/50 p-2">
-                      <Calendar
-                        mode="range"
-                        selected={tempRange}
-                        onSelect={setTempRange}
-                        initialFocus
-                        numberOfMonths={1}
-                      />
+                    {/* TO DATE FIELD */}
+                    <div className="space-y-2">
+                       <p className="text-[8px] font-black uppercase opacity-40 ml-1">To Epoch</p>
+                       <Popover>
+                          <PopoverTrigger asChild>
+                             <button className={cn(
+                               "w-full h-14 rounded-2xl border-2 flex items-center px-6 gap-3 transition-all",
+                               tempTo ? "border-primary/20 bg-primary/5" : "border-muted bg-zinc-50 dark:bg-zinc-900"
+                             )}>
+                                <CalendarIcon className="w-4 h-4 text-primary" />
+                                <span className="font-black text-xs uppercase tracking-tight">
+                                  {tempTo ? format(tempTo, 'dd MMM yyyy') : 'Select End'}
+                                </span>
+                             </button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0 rounded-3xl border-none shadow-4xl z-[200]">
+                             <Calendar
+                               mode="single"
+                               selected={tempTo}
+                               onSelect={(date) => { setTempTo(date); }}
+                               initialFocus
+                               className="bg-white dark:bg-zinc-900 rounded-3xl"
+                             />
+                          </PopoverContent>
+                       </Popover>
                     </div>
                   </div>
 
-                  <div className="flex gap-3">
-                    <Button 
-                      variant="outline"
-                      onClick={handleClearCustomRange}
-                      className="flex-1 h-12 rounded-xl font-black uppercase text-[9px] tracking-widest border-2 gap-2"
-                    >
-                      <RotateCcw className="w-3.5 h-3.5" /> Clear
-                    </Button>
+                  <div className="flex flex-col gap-3 pt-4">
                     <Button 
                       onClick={handleApplyCustomRange} 
-                      disabled={!tempRange?.from || !tempRange?.to}
-                      className="flex-[2] h-12 rounded-xl font-black uppercase text-[9px] tracking-widest bg-primary shadow-xl shadow-primary/20 gap-2"
+                      disabled={!tempFrom || !tempTo}
+                      className="w-full h-16 rounded-[1.5rem] font-black uppercase text-[10px] tracking-[0.2em] bg-primary shadow-2xl shadow-primary/30 gap-3"
                     >
-                      Apply Date Range
+                      Apply Filter <ArrowRight className="w-4 h-4" />
                     </Button>
+                    <button 
+                      onClick={handleClearCustomRange}
+                      className="text-[9px] font-black uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors flex items-center justify-center gap-2"
+                    >
+                      <RotateCcw className="w-3 h-3" /> Clear Selection
+                    </button>
                   </div>
                 </div>
               </PopoverContent>
@@ -341,11 +371,11 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
           </div>
         </div>
         
-        <div className="mt-3 flex items-center justify-between">
+        <div className="mt-3 flex items-center justify-between px-1">
            <div className="flex items-center gap-2">
               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               <span className="text-[7px] font-black uppercase tracking-widest opacity-40 italic">
-                {rangeType === 'custom' ? 'TEMPORAL OVERRIDE ACTIVE' : `AUDIT PERIOD: ${rangeType.toUpperCase()}`}
+                {rangeType === 'custom' ? 'CUSTOM AUDIT SPAN' : `REPORTING NODE: ${rangeType.toUpperCase()}`}
               </span>
            </div>
            <div className="text-[7px] font-black uppercase tracking-[0.2em] opacity-30">
@@ -372,7 +402,7 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
                </div>
                <p className="text-[8px] font-black uppercase text-muted-foreground opacity-40 tracking-widest">Performance Heatmap</p>
             </div>
-            <Badge className="bg-primary/5 text-primary border-none px-3 py-1 rounded-full font-black text-[8px] uppercase tracking-widest hidden sm:flex">LIVE DATA</Badge>
+            <Badge className="bg-primary/5 text-primary border-none px-3 py-1 rounded-full font-black text-[8px] uppercase tracking-widest hidden sm:flex">LIVE SIGNALS</Badge>
           </CardHeader>
           <CardContent className="p-4 md:p-8">
             <div className="h-[250px] md:h-[300px] w-full">
@@ -429,7 +459,7 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
                 </div>
               </>
             ) : (
-               <div className="py-12 md:py-20 text-center opacity-20"><PieChart className="w-10 h-10 mx-auto mb-3" /><p className="text-[8px] font-black uppercase">No Flow Detected</p></div>
+               <div className="py-12 md:py-20 text-center opacity-20"><PieChart className="w-10 h-10 mx-auto mb-3" /><p className="text-[8px] font-black uppercase">No Flow Recorded</p></div>
             )}
           </div>
         </Card>
@@ -439,17 +469,18 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
         <CardHeader className="p-6 md:p-8 border-b border-dashed flex flex-row items-center justify-between">
            <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-primary/10 rounded-xl flex items-center justify-center text-primary"><ShoppingBag className="w-5 h-5" /></div>
-              <CardTitle className="text-lg md:text-xl font-black font-headline uppercase tracking-tighter italic">Recent <span className="text-primary">Signals</span></CardTitle>
+              <CardTitle className="text-lg md:text-xl font-black font-headline uppercase tracking-tighter italic">Recent <span className="text-primary">Transactions</span></CardTitle>
            </div>
+           <Button variant="ghost" className="text-[8px] font-black uppercase tracking-widest text-primary gap-2">View Full Ledger <ChevronRight className="w-3 h-3" /></Button>
         </CardHeader>
         <div className="overflow-x-auto scrollbar-hide">
            <table className="w-full text-left">
               <thead className="bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-100 dark:border-zinc-800">
                  <tr className="text-[8px] font-black uppercase text-muted-foreground tracking-widest">
-                    <th className="px-6 py-4">Ticket</th>
-                    <th className="px-6 py-4">Identity</th>
-                    <th className="px-6 py-4">Gross</th>
-                    <th className="px-6 py-4">State</th>
+                    <th className="px-6 py-4">Ticket ID</th>
+                    <th className="px-6 py-4">Entity Identity</th>
+                    <th className="px-6 py-4">Gross Sum</th>
+                    <th className="px-6 py-4">Operational State</th>
                     <th className="px-6 py-4 text-right">Node</th>
                  </tr>
               </thead>
@@ -470,7 +501,7 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
                     </tr>
                  ))}
                  {metrics.recent.length === 0 && (
-                   <tr><td colSpan={5} className="py-8 text-center text-[8px] font-black uppercase opacity-20">No orders in this range</td></tr>
+                   <tr><td colSpan={5} className="py-8 text-center text-[8px] font-black uppercase opacity-20">No data signals in this temporal span</td></tr>
                  )}
               </tbody>
            </table>
@@ -478,7 +509,7 @@ export const DashboardAnalysis = ({ orders = [], products = [] }: DashboardAnaly
       </Card>
       
       <div className="pt-10 text-center">
-         <p className="text-[8px] font-black uppercase tracking-[0.4em] opacity-20">Ezzy Bites • Quantum Analytics Engine v3.0</p>
+         <p className="text-[8px] font-black uppercase tracking-[0.4em] opacity-20">Ezzy Bites • Quantum Analytics Engine v3.5</p>
       </div>
     </div>
   );
@@ -504,7 +535,7 @@ const KPICard = ({ label, value, icon: Icon, trend, color, bg, period }: any) =>
       <div className="relative z-10 space-y-0.5 md:space-y-1">
         <p className="text-[8px] md:text-[9px] font-black text-muted-foreground uppercase tracking-widest opacity-40">{label}</p>
         <h3 className="text-2xl md:text-3xl font-black font-headline tracking-tighter italic leading-none">{value}</h3>
-        <p className="text-[6px] md:text-[7px] font-black uppercase opacity-30 tracking-widest pt-1">vs Previous {period.replace('_', ' ')}</p>
+        <p className="text-[6px] md:text-[7px] font-black uppercase opacity-30 tracking-widest pt-1">vs Prior {period.replace('_', ' ')}</p>
       </div>
     </Card>
   );
