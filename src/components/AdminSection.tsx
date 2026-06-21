@@ -22,7 +22,9 @@ import {
   Truck,
   CheckCircle2,
   AlertCircle,
-  Star
+  Star,
+  Utensils,
+  Home
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { toast } from '@/hooks/use-toast';
@@ -210,7 +212,6 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
     <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-visible">
       <NewOrderPopups pendingOrders={orderGroups.pending} onViewDetails={(order) => setSelectedOrderForView(order)} onUpdateStatus={handleUpdateStatus} />
       
-      {/* KEY={activeView} ensures that switching roles re-initializes the Tabs component correctly */}
       <Tabs key={activeView} defaultValue={availableTabs[0]} className="flex-1 flex flex-col lg:flex-row min-h-0">
         <div className="lg:hidden sticky top-[70px] z-[90] bg-white/95 dark:bg-zinc-950/95 backdrop-blur-xl border-b shadow-sm w-full overflow-hidden shrink-0">
            <TabsList className="bg-transparent h-auto flex flex-row flex-nowrap justify-start p-2 space-x-1.5 overflow-x-auto scrollbar-hide snap-x w-full border-none">
@@ -312,7 +313,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
         <DialogContent className="max-w-2xl rounded-[2rem] p-0 overflow-hidden border-none shadow-3xl bg-white dark:bg-zinc-950">
           <DialogHeader className="p-5 md:p-6 border-b bg-muted/5">
              <DialogTitle className="text-lg font-black uppercase tracking-tight leading-none">Manifest: #{selectedOrderForView?.orderId}</DialogTitle>
-             <DialogDescription className="sr-only">Detailed view of order items, customer information, and delivery destination.</DialogDescription>
+             <DialogDescription className="sr-only">Detailed view of order items, customer information, and fulfillment type.</DialogDescription>
           </DialogHeader>
           
           {selectedOrderForView && (
@@ -320,7 +321,13 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
               <div className={cn("p-6 md:p-8 text-white relative overflow-hidden", selectedOrderForView.status === 'Cancelled' ? "bg-rose-600" : "bg-primary")}>
                 <div className="absolute inset-0 bg-black/5" />
                 <div className="relative z-10">
-                   <Badge className="bg-white/20 border-none font-black text-[7px] uppercase px-2 py-0.5 rounded-md mb-2">{selectedOrderForView.orderType || 'Online'}</Badge>
+                   <div className="flex items-center gap-3 mb-2">
+                     <Badge className="bg-white/20 border-none font-black text-[7px] uppercase px-2 py-0.5 rounded-md">{selectedOrderForView.orderType || 'Online'}</Badge>
+                     <Badge className="bg-white/10 border-none font-black text-[7px] uppercase px-2 py-0.5 rounded-md flex items-center gap-1">
+                       {selectedOrderForView.orderType === 'Dine-In' ? <Utensils className="w-2 h-2" /> : selectedOrderForView.orderType === 'Take Away' ? <Package className="w-2 h-2" /> : <Home className="w-2 h-2" />}
+                       Protocol Active
+                     </Badge>
+                   </div>
                    <h2 className="text-xl md:text-3xl font-black font-headline uppercase tracking-tighter italic leading-none">#{selectedOrderForView.orderId}</h2>
                 </div>
                 <div className="absolute bottom-6 right-6 md:bottom-8 md:right-8 text-right">
@@ -358,7 +365,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
                           </div>
                         </div>
                         <div className="pt-3 border-t border-dashed">
-                           <p className="text-[8px] font-black uppercase opacity-30 mb-1">Destination</p>
+                           <p className="text-[8px] font-black uppercase opacity-30 mb-1">Fulfillment Node</p>
                            <p className="text-10px font-medium leading-relaxed italic opacity-80">{selectedOrderForView.address}</p>
                         </div>
                     </div>
@@ -445,11 +452,17 @@ const OrderGrid = ({ orderGroups, onOrderClick, activeView, handleUpdateStatus }
                       </div>
                       
                       <div className="flex items-center justify-between pt-3 border-t border-dashed opacity-60">
-                         <Badge className={cn(
-                           "px-1.5 py-0.5 text-[6px] uppercase font-black border-none rounded-md",
-                           order.status === 'delivered' ? 'bg-emerald-100 text-emerald-700' : 
-                           order.status === 'Cancelled' ? 'bg-rose-100 text-rose-700' : 'bg-orange-100 text-orange-700'
-                         )}>{order.status.replace(/_/g, ' ')}</Badge>
+                         <div className="flex items-center gap-2">
+                           <Badge className={cn(
+                             "px-1.5 py-0.5 text-[6px] uppercase font-black border-none rounded-md",
+                             order.status === 'delivered' ? 'bg-emerald-100 text-emerald-700' : 
+                             order.status === 'Cancelled' ? 'bg-rose-100 text-rose-700' : 'bg-orange-100 text-orange-700'
+                           )}>{order.status.replace(/_/g, ' ')}</Badge>
+                           <Badge variant="outline" className="px-1.5 py-0.5 text-[6px] uppercase font-black rounded-md gap-1">
+                             {order.orderType === 'Dine-In' ? <Utensils className="w-2 h-2" /> : order.orderType === 'Take Away' ? <Package className="w-2 h-2" /> : <Home className="w-2 h-2" />}
+                             {order.orderType}
+                           </Badge>
+                         </div>
                         <div className="flex items-center gap-1.5 text-[8px] font-black uppercase tracking-widest">
                           <Clock className="w-2.5 h-2.5 text-primary opacity-40" />
                           {order.createdAt?.toDate ? order.createdAt.toDate().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) : 'Live'}

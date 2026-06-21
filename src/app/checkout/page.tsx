@@ -1,7 +1,7 @@
 "use client"
 import React, { useState, useEffect } from 'react';
 import { Navbar } from '@/components/Navbar';
-import { useStore } from '@/app/lib/store';
+import { useStore, OrderType } from '@/app/lib/store';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -23,7 +23,8 @@ import {
   PartyPopper,
   Utensils,
   Package,
-  Ban
+  Ban,
+  Home
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -71,9 +72,8 @@ export default function CheckoutPage() {
   }, []);
 
   const subtotal = getTotal();
-  const isDelivery = (selectedOrderType === 'Delivery') || (!selectedOrderType);
+  const isDelivery = selectedOrderType === 'Delivery' || (!selectedOrderType);
   
-  // Real-time Logistics calculation
   const deliveryFee = (isDelivery && subtotal < (settings?.freeDeliveryThreshold || 149)) ? (settings?.deliveryCharge || 40) : 0;
   const total = Math.max(0, subtotal - discount + deliveryFee);
 
@@ -145,7 +145,6 @@ export default function CheckoutPage() {
   const handleSubmit = async () => {
     if (!db || !user || !settings) return;
 
-    // Availability Check
     if (!settings.isOpen) {
       toast({ variant: "destructive", title: "Station Offline", description: "We are currently not accepting new orders. Please check timings." });
       return;
@@ -164,7 +163,7 @@ export default function CheckoutPage() {
       customerName: formData.name,
       customerPhone: formData.phone,
       customerEmail: user.email || '',
-      address: formData.address || (selectedOrderType === 'Dine-In' ? 'Dine-In Self Service' : 'Takeaway Counter'),
+      address: isDelivery ? formData.address : (selectedOrderType === 'Dine-In' ? 'Dine-In Table Service' : 'Takeaway Counter'),
       instructions: formData.instructions || '',
       items: cart.map(item => ({
         id: item.id,
@@ -194,7 +193,7 @@ export default function CheckoutPage() {
         await setDoc(userRef, {
           phone: formData.phone,
           name: formData.name,
-          address: formData.address || '',
+          address: isDelivery ? (formData.address || '') : '',
           lastOrderAt: serverTimestamp(),
           orderCount: increment(1)
         }, { merge: true });
@@ -207,7 +206,6 @@ export default function CheckoutPage() {
 
         trackOrderPlaced(orderData);
         clearCart();
-        setOrderType(null); // Reset after order
         setStep(4);
         toast({ title: "Order Placed Successfully! 🚀" });
       })
@@ -241,7 +239,6 @@ export default function CheckoutPage() {
     );
   }
 
-  // CLOSED STORE OVERLAY
   if (!settings?.isOpen && step < 4) {
     return (
       <div className="min-h-screen bg-background flex flex-col">
@@ -328,6 +325,30 @@ export default function CheckoutPage() {
             {step === 2 && (
               <div className="space-y-5 animate-in fade-in slide-in-from-left-2 duration-500">
                 <h2 className="text-2xl md:text-3xl font-headline font-black uppercase tracking-tighter">Identity <span className="text-primary italic">Node</span></h2>
+                
+                {/* ORDER TYPE SELECTOR */}
+                <div className="grid grid-cols-3 gap-3">
+                  {[
+                    { id: 'Dine-In' as OrderType, label: 'Dine In', icon: Utensils },
+                    { id: 'Take Away' as OrderType, label: 'Takeaway', icon: Package },
+                    { id: 'Delivery' as OrderType, label: 'Delivery', icon: Home }
+                  ].map((type) => (
+                    <button
+                      key={type.id}
+                      onClick={() => setOrderType(type.id)}
+                      className={cn(
+                        "flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all gap-2",
+                        selectedOrderType === type.id 
+                          ? "border-primary bg-primary/5 text-primary shadow-lg" 
+                          : "border-muted bg-white dark:bg-zinc-900 text-muted-foreground opacity-60 hover:border-primary/20"
+                      )}
+                    >
+                      <type.icon className="w-5 h-5" />
+                      <span className="text-[8px] font-black uppercase tracking-widest">{type.label}</span>
+                    </button>
+                  ))}
+                </div>
+
                 <Card className="rounded-[1.5rem] md:rounded-[2rem] border-none shadow-xl bg-white dark:bg-zinc-900">
                   <CardContent className="p-6 md:p-10 space-y-6">
                     <div className="grid md:grid-cols-2 gap-5 md:gap-8">
@@ -346,7 +367,7 @@ export default function CheckoutPage() {
                       </div>
                     </div>
                     {isDelivery && (
-                      <div className="space-y-1.5">
+                      <div className="space-y-1.5 animate-in fade-in slide-in-from-top-2">
                         <Label className="text-[8px] md:text-[10px] font-black uppercase tracking-widest opacity-60 ml-1">Sanctuary Address</Label>
                         <Textarea value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} className="rounded-xl min-h-[100px] md:min-h-[120px] font-medium bg-secondary/30 border-none px-5 py-4 text-sm" placeholder="Building, Street, Area..." suppressHydrationWarning />
                       </div>

@@ -3,10 +3,12 @@ import React, { useMemo, useState, useEffect, use } from 'react';
 import { Navbar } from '@/components/Navbar';
 import { useRouter } from 'next/navigation';
 import { 
-  CheckCircle2, MapPin, Phone, MessageSquare, 
-  Truck, ChefHat, PackageCheck, Loader2, 
-  AlertCircle, Ban, Clock, ShoppingBag,
-  ArrowLeft, Info, HelpCircle, Star, Bot, Package
+  CheckCircle2, MapPin, Phone, 
+  Truck, ChefHat, Loader2, 
+  AlertCircle, Ban, Clock,
+  ArrowLeft, Info, HelpCircle, Star, Bot, Package,
+  Utensils,
+  Home
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -160,6 +162,10 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ orderI
                <Badge className="bg-primary/10 text-primary border-primary/20 px-2 py-0.5 rounded-lg font-black uppercase text-[8px] tracking-widest">
                 #{order.orderId}
               </Badge>
+              <Badge variant="outline" className="px-2 py-0.5 rounded-lg font-black uppercase text-[8px] tracking-widest gap-1.5 bg-white">
+                {order.orderType === 'Dine-In' ? <Utensils className="w-2.5 h-2.5" /> : order.orderType === 'Take Away' ? <Package className="w-2.5 h-2.5" /> : <Home className="w-2.5 h-2.5" />}
+                {order.orderType}
+              </Badge>
             </div>
             <h1 className="text-2xl md:text-4xl font-black font-headline uppercase tracking-tighter">Live <span className="text-primary italic">Tracking.</span></h1>
             <p className="text-[10px] font-bold text-muted-foreground flex items-center gap-1.5 uppercase">
@@ -303,8 +309,8 @@ export default function OrderTrackingPage({ params }: { params: Promise<{ orderI
                     <MapPin className="w-6 h-6 text-primary" />
                   </div>
                   <div>
-                    <p className="text-[8px] font-black uppercase tracking-widest opacity-60">Logistics Node</p>
-                    <h4 className="text-lg font-black uppercase tracking-tighter leading-tight">Destination</h4>
+                    <p className="text-[8px] font-black uppercase tracking-widest opacity-60">Fulfillment Node</p>
+                    <h4 className="text-lg font-black uppercase tracking-tighter leading-tight">{order.orderType || 'Destination'}</h4>
                   </div>
                 </div>
                 <div className="p-4 bg-white/5 rounded-xl border border-white/10 space-y-3">

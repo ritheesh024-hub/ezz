@@ -13,8 +13,8 @@ import {
   AlertCircle,
   Flame,
   Activity,
-  CheckCircle2,
-  PackageCheck
+  PackageCheck,
+  Home
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -26,7 +26,6 @@ interface KitchenSystemProps {
 }
 
 export const KitchenSystem = ({ orders, onUpdateStatus, activeView }: KitchenSystemProps) => {
-  // Kitchen protocol: Pending (to accept), accepted (to prepare), or preparing (to dispatch)
   const kitchenOrders = (orders || []).filter(o => 
     ['pending', 'accepted', 'preparing'].includes(o.status)
   ).sort((a, b) => {
@@ -112,10 +111,10 @@ export const KitchenSystem = ({ orders, onUpdateStatus, activeView }: KitchenSys
               )}>
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center backdrop-blur-md border border-white/20">
-                    {order.orderType === 'Dine-In' ? <Utensils className="w-6 h-6" /> : <Package className="w-6 h-6" />}
+                    {order.orderType === 'Dine-In' ? <Utensils className="w-6 h-6" /> : order.orderType === 'Take Away' ? <Package className="w-6 h-6" /> : <Home className="w-6 h-6" />}
                   </div>
                   <div>
-                    <p className="text-[10px] font-black uppercase tracking-[0.15em] opacity-80">Ticket ID</p>
+                    <p className="text-[10px] font-black uppercase tracking-[0.15em] opacity-80">{order.orderType}</p>
                     <h4 className="font-black text-2xl uppercase tracking-tighter leading-none italic">#{order.orderId}</h4>
                   </div>
                 </div>
