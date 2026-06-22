@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -24,7 +23,9 @@ import {
   MapPin,
   MessageSquare,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  CalendarDays,
+  X
 } from 'lucide-react';
 import { 
   Dialog, 
@@ -41,7 +42,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select';
-import { format } from 'date-fns';
+import { format, isToday, isYesterday, parseISO, startOfDay } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useFirestore, useUser } from '@/firebase';
 import { doc, updateDoc, serverTimestamp, collection, addDoc } from 'firebase/firestore';
@@ -52,7 +53,7 @@ interface ArchiveSystemProps {
   onViewDetails: (order: any) => void;
 }
 
-const ITEMS_PER_PAGE = 20;
+const ITEMS_PER_PAGE = 30;
 
 export const ArchiveSystem = ({ orders, onViewDetails }: ArchiveSystemProps) => {
   const db = useFirestore();
@@ -97,23 +98,46 @@ export const ArchiveSystem = ({ orders, onViewDetails }: ArchiveSystemProps) => 
     return filteredOrders.slice(start, start + ITEMS_PER_PAGE);
   }, [filteredOrders, currentPage]);
 
+  const groupedOrders = useMemo(() => {
+    const groups: { [key: string]: { label: string, items: any[] } } = {};
+    
+    paginatedOrders.forEach(order => {
+      const date = order.createdAt?.toDate ? order.createdAt.toDate() : new Date(order.createdAt);
+      const dateKey = format(date, 'yyyy-MM-dd');
+      
+      if (!groups[dateKey]) {
+        let label = format(date, 'dd MMMM yyyy');
+        if (isToday(date)) label = 'Today';
+        else if (isYesterday(date)) label = 'Yesterday';
+        
+        groups[dateKey] = { label, items: [] };
+      }
+      groups[dateKey].items.push(order);
+    });
+
+    return Object.entries(groups).sort((a, b) => b[0].localeCompare(a[0]));
+  }, [paginatedOrders]);
+
   const getStatusBadge = (status: string) => {
     const s = (status || '').toLowerCase();
     switch(s) {
       case 'orderplaced':
-        return { label: 'PLACED', class: 'bg-blue-50 text-blue-600 border-blue-100' };
+      case 'pending':
+        return { label: 'PLACED', class: 'bg-blue-50 text-blue-600 border-blue-100 dark:bg-blue-900/20 dark:text-blue-400' };
       case 'confirmed':
-        return { label: 'CONFIRMED', class: 'bg-indigo-50 text-indigo-600 border-indigo-100' };
+      case 'accepted':
+        return { label: 'CONFIRMED', class: 'bg-indigo-50 text-indigo-600 border-indigo-100 dark:bg-indigo-900/20 dark:text-indigo-400' };
       case 'preparing':
-        return { label: 'PREPARING', class: 'bg-orange-50 text-orange-600 border-orange-100' };
+        return { label: 'PREPARING', class: 'bg-orange-50 text-orange-600 border-orange-100 dark:bg-orange-900/20 dark:text-orange-400' };
       case 'outfordelivery':
-        return { label: 'OUT FOR DELIVERY', class: 'bg-amber-50 text-amber-600 border-amber-100' };
+      case 'out_for_delivery':
+        return { label: 'OUT FOR DELIVERY', class: 'bg-amber-50 text-amber-600 border-amber-100 dark:bg-amber-900/20 dark:text-amber-400' };
       case 'delivered':
-        return { label: 'DELIVERED', class: 'bg-emerald-50 text-emerald-600 border-emerald-100' };
+        return { label: 'DELIVERED', class: 'bg-emerald-50 text-emerald-600 border-emerald-100 dark:bg-emerald-900/20 dark:text-emerald-400' };
       case 'cancelled':
-        return { label: 'CANCELLED', class: 'bg-rose-50 text-rose-600 border-rose-100' };
+        return { label: 'CANCELLED', class: 'bg-rose-50 text-rose-600 border-rose-100 dark:bg-rose-900/20 dark:text-rose-400' };
       default:
-        return { label: (status || 'UNKNOWN').toUpperCase(), class: 'bg-zinc-50 text-zinc-600 border-zinc-100' };
+        return { label: (status || 'UNKNOWN').toUpperCase(), class: 'bg-zinc-50 text-zinc-600 border-zinc-100 dark:bg-zinc-800 dark:text-zinc-400' };
     }
   };
 
@@ -184,136 +208,146 @@ export const ArchiveSystem = ({ orders, onViewDetails }: ArchiveSystemProps) => 
   };
 
   return (
-    <div className="space-y-10 animate-in fade-in duration-700">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
+    <div className="space-y-6 md:space-y-10 animate-in fade-in duration-700 pb-20">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div className="space-y-1">
-          <h2 className="text-4xl font-black font-headline uppercase tracking-tighter italic text-zinc-400">Order <span className="text-primary">Master Ledger</span></h2>
-          <p className="text-muted-foreground text-sm font-medium tracking-tight">Records: {filteredOrders.length}</p>
+          <h2 className="text-3xl md:text-4xl font-black font-headline uppercase tracking-tighter italic text-zinc-400">Order <span className="text-primary">Master Ledger</span></h2>
+          <p className="text-muted-foreground text-xs md:text-sm font-medium tracking-tight">System Records: {filteredOrders.length}</p>
         </div>
-        <Button onClick={handleExport} variant="outline" className="h-16 px-10 rounded-2xl font-black uppercase text-[10px] tracking-widest gap-3 border-2">
-          <Download className="w-5 h-5" /> Export Ledger
+        <Button onClick={handleExport} variant="outline" className="h-12 md:h-16 px-6 md:px-10 rounded-2xl font-black uppercase text-[9px] md:text-[10px] tracking-widest gap-3 border-2 w-full md:w-auto">
+          <Download className="w-4 h-4 md:w-5 md:h-5" /> Export Ledger
         </Button>
       </div>
 
-      <div className="bg-white dark:bg-zinc-900 p-6 rounded-[2.5rem] border shadow-sm space-y-6">
-        <div className="flex flex-col lg:flex-row gap-4 items-center">
-          <div className="relative flex-1 w-full">
-            <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground opacity-40" />
-            <Input 
-              placeholder="Search by Ticket ID, Customer or Mobile..." 
-              value={searchQuery} 
-              onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }} 
-              className="h-14 pl-14 rounded-2xl border-none bg-secondary/30 dark:bg-zinc-800 font-bold text-base" 
-            />
-          </div>
-          <div className="flex gap-3 w-full lg:w-auto">
-             <select 
-               value={statusFilter} 
-               onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
-               className="h-14 px-6 rounded-2xl bg-secondary/30 dark:bg-zinc-800 border-none font-black uppercase text-[9px] tracking-widest outline-none"
-             >
-               <option value="all">All States</option>
-               <option value="orderPlaced">Placed</option>
-               <option value="confirmed">Confirmed</option>
-               <option value="preparing">Preparing</option>
-               <option value="outForDelivery">Out for Delivery</option>
-               <option value="delivered">Delivered</option>
-               <option value="Cancelled">Cancelled</option>
-             </select>
+      <div className="sticky top-[118px] lg:top-[70px] z-30 bg-zinc-50 dark:bg-zinc-950 py-4 -mx-4 px-4">
+        <div className="bg-white dark:bg-zinc-900 p-4 rounded-[1.5rem] md:rounded-[2rem] border shadow-sm space-y-4">
+          <div className="flex flex-col lg:flex-row gap-3 items-center">
+            <div className="relative flex-1 w-full">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground opacity-40" />
+              <Input 
+                placeholder="Search by Ticket ID, Customer or Mobile..." 
+                value={searchQuery} 
+                onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }} 
+                className="h-11 md:h-14 pl-12 rounded-xl md:rounded-2xl border-none bg-secondary/30 dark:bg-zinc-800 font-bold text-sm md:text-base" 
+              />
+            </div>
+            <div className="flex gap-3 w-full lg:w-auto">
+               <select 
+                 value={statusFilter} 
+                 onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}
+                 className="h-11 md:h-14 px-4 md:px-6 rounded-xl md:rounded-2xl bg-secondary/30 dark:bg-zinc-800 border-none font-black uppercase text-[8px] md:text-[9px] tracking-widest outline-none flex-1"
+               >
+                 <option value="all">All States</option>
+                 <option value="pending">Placed</option>
+                 <option value="accepted">Confirmed</option>
+                 <option value="preparing">Preparing</option>
+                 <option value="out_for_delivery">Out for Delivery</option>
+                 <option value="delivered">Delivered</option>
+                 <option value="Cancelled">Cancelled</option>
+               </select>
+            </div>
           </div>
         </div>
       </div>
 
-      <Card className="rounded-[3rem] border-none shadow-2xl bg-white dark:bg-zinc-900 overflow-hidden">
-        <div className="overflow-x-auto scrollbar-hide">
-          <table className="w-full">
-            <thead className="bg-zinc-50 dark:bg-zinc-800/50 border-b border-zinc-100 dark:border-zinc-800">
-              <tr className="text-[10px] font-black uppercase text-muted-foreground text-left tracking-[0.2em]">
-                <th className="px-10 py-6">Identity Ticker</th>
-                <th className="px-10 py-6">Recipient Entity</th>
-                <th className="px-10 py-6">Fulfillment</th>
-                <th className="px-10 py-6">Gross Sum</th>
-                <th className="px-10 py-6 text-right">Ledger Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-50 dark:divide-zinc-800">
-              {paginatedOrders.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="py-32 text-center opacity-10">
-                    <History className="w-20 h-20 mx-auto mb-4" />
-                    <p className="font-black uppercase tracking-[0.4em] text-sm italic">No Records Match</p>
-                  </td>
-                </tr>
-              ) : (
-                paginatedOrders.map((order) => {
+      <div className="space-y-10">
+        {groupedOrders.length === 0 ? (
+          <Card className="rounded-[2.5rem] border-none shadow-xl bg-white dark:bg-zinc-900 p-20 text-center flex flex-col items-center justify-center gap-4 opacity-30">
+            <History className="w-16 h-16" />
+            <p className="font-black uppercase tracking-[0.4em] text-sm italic">No Records Match Nodes</p>
+          </Card>
+        ) : (
+          groupedOrders.map(([dateKey, group]) => (
+            <div key={dateKey} className="space-y-4">
+              <div className="sticky top-[210px] lg:top-[160px] z-20 flex items-center justify-between py-3 px-6 bg-zinc-50/80 dark:bg-zinc-950/80 backdrop-blur-md rounded-2xl border shadow-sm">
+                <div className="flex items-center gap-3">
+                  <CalendarDays className="w-4 h-4 text-primary" />
+                  <h3 className="font-black uppercase tracking-tighter text-sm italic">{group.label}</h3>
+                </div>
+                <Badge variant="secondary" className="rounded-lg h-6 px-2 font-black text-[9px] bg-white dark:bg-zinc-800">{group.items.length} Tickets</Badge>
+              </div>
+
+              <div className="grid gap-3">
+                {group.items.map((order) => {
                   const statusInfo = getStatusBadge(order.status);
                   return (
-                    <tr 
+                    <Card 
                       key={order.id} 
-                      className="hover:bg-primary/5 transition-all group cursor-pointer"
+                      className="rounded-[1.5rem] border-none shadow-sm hover:shadow-xl transition-all group cursor-pointer bg-white dark:bg-zinc-900 overflow-hidden"
                       onClick={() => onViewDetails(order)}
                     >
-                      <td className="px-10 py-6">
-                        <div className="flex flex-col">
-                          <span className="font-black text-primary italic">#{order.orderId}</span>
-                          <span className="text-[8px] font-bold opacity-40 uppercase">
-                            {order.createdAt?.toDate ? format(order.createdAt.toDate(), 'MMM dd, hh:mm a') : 'Legacy'}
-                          </span>
+                      <CardContent className="p-4 md:p-6 flex flex-col md:flex-row justify-between items-center gap-4">
+                        <div className="flex items-center gap-4 w-full md:w-auto">
+                          <div className="w-12 h-12 rounded-2xl bg-secondary/50 dark:bg-zinc-800 flex items-center justify-center shrink-0 text-primary">
+                            <ShoppingBag className="w-5 h-5" />
+                          </div>
+                          <div className="flex flex-col min-w-0">
+                            <div className="flex items-center gap-2">
+                               <span className="font-black text-primary italic text-sm md:text-base">#{order.orderId}</span>
+                               <Badge className={cn("border-none px-2 py-0.5 rounded-[4px] text-[7px] font-black uppercase", statusInfo.class)}>{statusInfo.label}</Badge>
+                            </div>
+                            <span className="text-[10px] md:text-xs font-black uppercase tracking-tight truncate max-w-[180px]">{order.customerName || 'Guest'}</span>
+                          </div>
                         </div>
-                      </td>
-                      <td className="px-10 py-6">
-                        <p className="font-black text-sm uppercase tracking-tighter truncate max-w-[150px]">{order.customerName || 'Anonymous'}</p>
-                        <p className="text-[9px] font-bold opacity-40">{order.customerPhone}</p>
-                      </td>
-                      <td className="px-10 py-6">
-                         <div className="flex flex-col gap-1.5">
-                            <span className="text-[9px] font-black uppercase tracking-widest">{order.orderType || 'Online'}</span>
-                            <Badge className={cn("border px-2 py-0.5 rounded text-[7px] font-black uppercase w-fit", statusInfo.class)}>{statusInfo.label}</Badge>
-                         </div>
-                      </td>
-                      <td className="px-10 py-6">
-                         <p className="font-black text-xl italic">₹{order.total}</p>
-                      </td>
-                      <td className="px-10 py-6 text-right">
-                         <div className="flex justify-end gap-2">
-                           <Button variant="ghost" size="sm" onClick={(e) => handleOpenEdit(e, order)} className="h-10 w-10 p-0 rounded-xl hover:bg-primary/10 transition-all"><Edit2 className="w-4 h-4" /></Button>
-                           <Button variant="ghost" size="sm" className="h-10 px-6 rounded-xl font-black uppercase text-[9px] tracking-widest gap-2 hover:bg-primary hover:text-white transition-all"><Eye className="w-4 h-4" /> Manifest</Button>
-                         </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
 
-        {totalPages > 1 && (
-          <div className="p-8 border-t flex items-center justify-between bg-zinc-50 dark:bg-zinc-800/30">
-            <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Page {currentPage} of {totalPages}</p>
-            <div className="flex gap-2">
-               <Button 
-                variant="outline" 
-                size="sm" 
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage(p => p - 1)}
-                className="rounded-xl h-10 w-10 p-0 border-2"
-               >
-                 <ChevronLeft className="w-4 h-4" />
-               </Button>
-               <Button 
-                variant="outline" 
-                size="sm" 
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage(p => p + 1)}
-                className="rounded-xl h-10 w-10 p-0 border-2"
-               >
-                 <ChevronRight className="w-4 h-4" />
-               </Button>
+                        <div className="flex items-center justify-between w-full md:w-auto md:gap-12 pt-3 md:pt-0 border-t md:border-none border-zinc-100 dark:border-zinc-800">
+                          <div className="flex flex-col items-start md:items-end">
+                            <span className="text-[8px] font-black uppercase opacity-30 tracking-widest">Gross</span>
+                            <span className="text-lg md:text-xl font-black text-primary italic leading-none">₹{order.total}</span>
+                          </div>
+                          <div className="flex flex-col items-start md:items-end">
+                            <span className="text-[8px] font-black uppercase opacity-30 tracking-widest">Protocol</span>
+                            <span className="text-[10px] font-bold uppercase">{order.orderType || 'Online'}</span>
+                          </div>
+                          <div className="flex gap-2">
+                             <Button 
+                               variant="ghost" 
+                               size="icon" 
+                               onClick={(e) => handleOpenEdit(e, order)} 
+                               className="h-10 w-10 rounded-xl hover:bg-primary/10 text-primary transition-all shrink-0"
+                             >
+                               <Edit2 className="w-4 h-4" />
+                             </Button>
+                             <div className="w-10 h-10 rounded-xl bg-secondary dark:bg-zinc-800 flex items-center justify-center opacity-40 group-hover:opacity-100 group-hover:bg-primary group-hover:text-white transition-all">
+                               <ChevronRight className="w-4 h-4" />
+                             </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          ))
         )}
-      </Card>
+      </div>
+
+      {totalPages > 1 && (
+        <div className="p-8 flex flex-col md:flex-row items-center justify-between gap-4">
+          <p className="text-[10px] font-black uppercase tracking-widest opacity-40">Epoch Node {currentPage} of {totalPages}</p>
+          <div className="flex gap-2 w-full md:w-auto">
+             <Button 
+              variant="outline" 
+              size="sm" 
+              disabled={currentPage === 1}
+              onClick={() => { setCurrentPage(p => p - 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+              className="flex-1 md:flex-none rounded-xl h-12 px-6 border-2 font-black uppercase text-[10px] tracking-widest gap-2"
+             >
+               <ChevronLeft className="w-4 h-4" /> Previous
+             </Button>
+             <Button 
+              variant="outline" 
+              size="sm" 
+              disabled={currentPage === totalPages}
+              onClick={() => { setCurrentPage(p => p + 1); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+              className="flex-1 md:flex-none rounded-xl h-12 px-6 border-2 font-black uppercase text-[10px] tracking-widest gap-2"
+             >
+               Next <ChevronRight className="w-4 h-4" />
+             </Button>
+          </div>
+        </div>
+      )}
 
       {/* EDIT ORDER DIALOG */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditProfileOpen}>
@@ -337,10 +371,10 @@ export const ArchiveSystem = ({ orders, onViewDetails }: ArchiveSystemProps) => 
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="rounded-2xl">
-                     <SelectItem value="orderPlaced" className="font-bold">PLACED</SelectItem>
-                     <SelectItem value="confirmed" className="font-bold">CONFIRMED</SelectItem>
+                     <SelectItem value="pending" className="font-bold">PLACED</SelectItem>
+                     <SelectItem value="accepted" className="font-bold">CONFIRMED</SelectItem>
                      <SelectItem value="preparing" className="font-bold">PREPARING</SelectItem>
-                     <SelectItem value="outForDelivery" className="font-bold">OUT FOR DELIVERY</SelectItem>
+                     <SelectItem value="out_for_delivery" className="font-bold">OUT FOR DELIVERY</SelectItem>
                      <SelectItem value="delivered" className="font-bold">DELIVERED</SelectItem>
                      <SelectItem value="Cancelled" className="font-bold">CANCELLED</SelectItem>
                   </SelectContent>
