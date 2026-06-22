@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, Suspense, useCallback } from 'react';
+import React, { useEffect, useState, Suspense, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useUser, useAuth, useFirestore } from '@/firebase';
 import { AdminSection } from '@/components/AdminSection';
@@ -34,6 +34,8 @@ function DashboardContent() {
   const [activeView, setActiveView] = useState<StaffRole | null>(null);
   const [checkingRole, setCheckingRole] = useState(true);
   const [mounted, setMounted] = useState(false);
+  
+  const isCheckingRef = useRef(false);
 
   const PRIMARY_ADMIN_EMAIL = "sunnyritheesh@gmail.com";
   const requestedView = searchParams.get('view') as StaffRole;
@@ -42,28 +44,39 @@ function DashboardContent() {
     setMounted(true);
   }, []);
 
-  // Central Identity & Role Sync Logic
+  // Optimized Identity & Role Sync Logic
   useEffect(() => {
     async function checkRole() {
-      if (userLoading || !mounted) return;
+      if (userLoading || !mounted || isCheckingRef.current) return;
 
       if (!user) {
         router.push('/admin/login');
         return;
       }
 
+      // If we already have an assigned role and it's Master Admin, 
+      // we can switch views instantly without re-checking Firestore
+      if (assignedRole === 'admin' && user.email?.toLowerCase() === PRIMARY_ADMIN_EMAIL.toLowerCase()) {
+        const view = ['admin', 'cashier', 'kitchen'].includes(requestedView) ? requestedView : 'admin';
+        if (activeView !== view) {
+          setActiveView(view);
+        }
+        setCheckingRole(false);
+        return;
+      }
+
       if (!db || !auth) return;
 
       try {
-        // 1. Master Admin Protocol
+        isCheckingRef.current = true;
+        
+        // 1. Master Admin Protocol (Exclusive bypass)
         if (user.email?.toLowerCase() === PRIMARY_ADMIN_EMAIL.toLowerCase()) {
           setAssignedRole('admin');
-          // Respect the URL view, fallback to 'admin'
-          const view = ['admin', 'cashier', 'kitchen'].includes(requestedView) 
-            ? requestedView 
-            : 'admin';
+          const view = ['admin', 'cashier', 'kitchen'].includes(requestedView) ? requestedView : 'admin';
           setActiveView(view);
           setCheckingRole(false);
+          isCheckingRef.current = false;
           return;
         }
 
@@ -83,8 +96,7 @@ function DashboardContent() {
           }
 
           setAssignedRole(role);
-          // Standard staff are locked to their assigned role view
-          setActiveView(role);
+          setActiveView(role); // Standard staff are locked to their role
           setCheckingRole(false);
         } else {
           toast({ variant: "destructive", title: "Access Restricted", description: "No staff record found." });
@@ -94,11 +106,13 @@ function DashboardContent() {
       } catch (e: any) {
         console.error("Hub role sync error:", e);
         setCheckingRole(false);
+      } finally {
+        isCheckingRef.current = false;
       }
     }
 
     checkRole();
-  }, [user, userLoading, db, router, auth, requestedView, mounted]);
+  }, [user, userLoading, db, router, auth, requestedView, mounted, assignedRole, activeView]);
 
   const handleLogout = async () => {
     if (auth) {
@@ -110,7 +124,7 @@ function DashboardContent() {
 
   const switchView = useCallback((role: StaffRole) => {
     if (assignedRole !== 'admin') return;
-    // Update URL - let the main useEffect handle the view state update
+    // URL-first state update. The useEffect will catch this and update activeView.
     router.push(`/admin/dashboard?view=${role}`);
   }, [assignedRole, router]);
 
@@ -159,7 +173,7 @@ function DashboardContent() {
         <div className="flex items-center gap-2 md:gap-4">
           <ThemeToggle className="h-9 w-9 bg-secondary/50 border-none" />
           
-          <DropdownMenu>
+          <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>
               <Button 
                 type="button"
@@ -177,7 +191,7 @@ function DashboardContent() {
                 </div>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-64 rounded-[2rem] p-3 shadow-3xl border-none mt-2 bg-white dark:bg-zinc-950">
+            <DropdownMenuContent align="end" className="w-64 rounded-[2rem] p-3 shadow-3xl border-none mt-2 bg-white dark:bg-zinc-950 z-[110]">
               <DropdownMenuLabel className="text-[9px] font-black uppercase opacity-40 px-3 py-2">Staff Terminal</DropdownMenuLabel>
               <div className="px-3 py-3 bg-secondary/30 rounded-2xl mb-2">
                 <p className="text-xs font-black truncate" suppressHydrationWarning>{user?.email}</p>
