@@ -15,7 +15,8 @@ import {
   ChevronRight,
   Search,
   Filter,
-  Layers
+  Layers,
+  Zap
 } from 'lucide-react';
 import { 
   Dialog, 
@@ -33,12 +34,12 @@ import {
   SelectValue 
 } from '@/components/ui/select';
 import { useFirestore, useCollection } from '@/firebase';
-import { collection, query, doc, setDoc, deleteDoc, serverTimestamp, orderBy } from 'firebase/firestore';
+import { collection, query, doc, setDoc, deleteDoc, serverTimestamp, orderBy, writeBatch } from 'firebase/firestore';
 import { toast } from '@/hooks/use-toast';
 import { FoodItem } from '@/app/lib/store';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
-import { CATEGORIES } from '@/app/lib/menu-data';
+import { CATEGORIES, MENU_ITEMS } from '@/app/lib/menu-data';
 
 const ITEMS_PER_PAGE = 20;
 
@@ -50,6 +51,7 @@ export const ProductManagement = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<FoodItem | null>(null);
   const [saveLoading, setSaveLoading] = useState(false);
+  const [seedLoading, setSeedLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -122,6 +124,28 @@ export const ProductManagement = () => {
       .finally(() => setSaveLoading(false));
   };
 
+  const handleSeedData = async () => {
+    if (!db) return;
+    setSeedLoading(true);
+    try {
+      const batch = writeBatch(db);
+      MENU_ITEMS.forEach((item) => {
+        const ref = doc(db, 'products', item.id);
+        batch.set(ref, {
+          ...item,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp()
+        });
+      });
+      await batch.commit();
+      toast({ title: "Inventory Seeded! 🚀", description: `${MENU_ITEMS.length} premium bites added to registry.` });
+    } catch (e: any) {
+      toast({ variant: "destructive", title: "Seeding Failed", description: e.message });
+    } finally {
+      setSeedLoading(false);
+    }
+  };
+
   const handleDelete = (id: string) => {
     if (!db || !window.confirm("Permanently purge this item?")) return;
     deleteDoc(doc(db, 'products', id)).then(() => toast({ title: "Purge Successful" }));
@@ -134,9 +158,19 @@ export const ProductManagement = () => {
           <h2 className="text-2xl font-black font-headline uppercase tracking-tighter italic">Stock <span className="text-primary">Registry</span></h2>
           <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">Inventory Node: {filteredProducts.length} Items</p>
         </div>
-        <Button onClick={() => handleOpenModal()} className="h-11 px-6 rounded-xl font-black uppercase text-[9px] tracking-widest gap-2 bg-primary shadow-lg w-full sm:w-auto">
-          <Plus className="w-4 h-4" /> Provision Item
-        </Button>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <Button 
+            variant="outline"
+            onClick={handleSeedData} 
+            disabled={seedLoading}
+            className="h-11 px-6 rounded-xl font-black uppercase text-[9px] tracking-widest gap-2 border-2 flex-1 sm:flex-none"
+          >
+            {seedLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />} Seed Sample
+          </Button>
+          <Button onClick={() => handleOpenModal()} className="h-11 px-6 rounded-xl font-black uppercase text-[9px] tracking-widest gap-2 bg-primary shadow-lg flex-1 sm:flex-none">
+            <Plus className="w-4 h-4" /> Provision Item
+          </Button>
+        </div>
       </div>
 
       <div className="bg-white dark:bg-zinc-900 p-4 rounded-2xl border shadow-sm flex flex-col sm:flex-row gap-3">
@@ -209,6 +243,7 @@ export const ProductManagement = () => {
           <div className="p-6 bg-primary text-white shrink-0">
              <DialogHeader>
                 <DialogTitle className="text-2xl font-black font-headline uppercase tracking-tighter italic leading-none">{editingItem ? 'Edit Protocol' : 'New Entry'}</DialogTitle>
+                <DialogDescription className="sr-only">Add or edit product inventory details.</DialogDescription>
              </DialogHeader>
           </div>
           <div className="p-6 space-y-6 max-h-[70vh] overflow-y-auto scrollbar-hide">

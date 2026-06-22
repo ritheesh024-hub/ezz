@@ -18,7 +18,9 @@ import {
   Loader2,
   Plus,
   Minus,
-  X
+  X,
+  Sparkles,
+  Bot
 } from 'lucide-react';
 import { FoodItem, useStore } from '@/app/lib/store';
 import { useFirestore, useCollection } from '@/firebase';
@@ -28,6 +30,7 @@ import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { toast } from '@/hooks/use-toast';
+import { reviewSummaryGenerator } from '@/ai/flows/review-summary-generator';
 
 interface ProductDetailsProps {
   item: FoodItem;
@@ -41,6 +44,8 @@ export const ProductDetails = ({ item, isOpen, onClose, onAddToCart }: ProductDe
   const { cart, addToCart, updateQuantity } = useStore();
   const [localQty, setLocalQty] = useState(1);
   const [filter, setFilter] = useState<'latest' | 'top'>('latest');
+  const [aiSummary, setAiSummary] = useState<string | null>(null);
+  const [summarizing, setSummarizing] = useState(false);
 
   // Sync local qty if item is already in cart
   const cartItem = useMemo(() => cart.find(i => i.id === item.id), [cart, item.id]);
@@ -48,6 +53,7 @@ export const ProductDetails = ({ item, isOpen, onClose, onAddToCart }: ProductDe
   useEffect(() => {
     if (isOpen) {
       setLocalQty(cartItem?.quantity || 1);
+      setAiSummary(null); // Reset summary on open
     }
   }, [isOpen, cartItem]);
 
@@ -75,12 +81,31 @@ export const ProductDetails = ({ item, isOpen, onClose, onAddToCart }: ProductDe
     };
   }, [reviews]);
 
+  const handleGenerateAISummary = async () => {
+    if (reviews.length < 2) return;
+    setSummarizing(true);
+    try {
+      const reviewTexts = reviews.map((r: any) => r.comment).filter(Boolean);
+      const result = await reviewSummaryGenerator({ reviews: reviewTexts });
+      setAiSummary(result.summary);
+    } catch (e) {
+      console.error("AI Summary Error:", e);
+      toast({ variant: "destructive", title: "AI Sync Interrupted" });
+    } finally {
+      setSummarizing(false);
+    }
+  };
+
+  useEffect(() => {
+    if (reviews.length >= 2 && !aiSummary && !summarizing) {
+       handleGenerateAISummary();
+    }
+  }, [reviews, aiSummary]);
+
   const handleAddToCartFinal = () => {
     if (cartItem) {
-      // If already in cart, just close since updates happen live via the Qty selector
       onClose();
     } else {
-      // Add initial selection
       for(let i = 0; i < localQty; i++) {
         addToCart(item);
       }
@@ -105,7 +130,6 @@ export const ProductDetails = ({ item, isOpen, onClose, onAddToCart }: ProductDe
           <DialogDescription>{item.description}</DialogDescription>
         </DialogHeader>
         
-        {/* TOP: COMPACT IMAGE */}
         <div className="relative aspect-video w-full overflow-hidden bg-secondary/30 shrink-0">
           <Image 
             src={item.imageUrl} 
@@ -123,7 +147,6 @@ export const ProductDetails = ({ item, isOpen, onClose, onAddToCart }: ProductDe
           </button>
         </div>
 
-        {/* MIDDLE: INFO & REVIEWS */}
         <div className="flex-1 overflow-y-auto scrollbar-hide">
           <div className="p-6 md:p-8 space-y-6">
             <div className="flex justify-between items-start gap-4">
@@ -143,7 +166,28 @@ export const ProductDetails = ({ item, isOpen, onClose, onAddToCart }: ProductDe
               {item.description}
             </p>
 
-            {/* REVIEW PREVIEW */}
+            {/* AI SUMMARY BOX */}
+            {(summarizing || aiSummary) && (
+              <div className="p-5 bg-primary/5 rounded-[1.5rem] border border-dashed border-primary/20 space-y-3 animate-in fade-in slide-in-from-top-2">
+                 <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-primary font-black uppercase text-[8px] tracking-widest">
+                       <Bot className="w-4 h-4" /> Ezzy AI Insight
+                    </div>
+                    {summarizing && <Loader2 className="w-3 h-3 animate-spin text-primary opacity-40" />}
+                 </div>
+                 {aiSummary ? (
+                   <p className="text-[11px] font-medium italic text-muted-foreground leading-relaxed">
+                     "{aiSummary}"
+                   </p>
+                 ) : (
+                   <div className="space-y-2">
+                      <div className="h-2 bg-primary/10 rounded-full w-full animate-pulse" />
+                      <div className="h-2 bg-primary/10 rounded-full w-3/4 animate-pulse" />
+                   </div>
+                 )}
+              </div>
+            )}
+
             <div className="pt-6 border-t border-dashed space-y-6">
                <div className="flex items-center justify-between">
                   <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2">
@@ -158,7 +202,7 @@ export const ProductDetails = ({ item, isOpen, onClose, onAddToCart }: ProductDe
                  <p className="text-[10px] font-black uppercase opacity-20 text-center py-4">No reviews yet for this node</p>
                ) : (
                  <div className="space-y-4">
-                    {reviews.slice(0, 2).map((rev: any, i: number) => (
+                    {reviews.slice(0, 3).map((rev: any, i: number) => (
                       <div key={i} className="bg-zinc-50 dark:bg-zinc-900/50 p-4 rounded-2xl border border-transparent hover:border-primary/5 transition-all">
                         <div className="flex justify-between items-start mb-2">
                            <div className="flex items-center gap-2">
@@ -179,7 +223,6 @@ export const ProductDetails = ({ item, isOpen, onClose, onAddToCart }: ProductDe
           </div>
         </div>
 
-        {/* BOTTOM: ACTIONS (QTY & ADD) */}
         <div className="p-6 md:p-8 bg-zinc-50 dark:bg-zinc-900/80 border-t flex items-center gap-4 shrink-0">
           <div className="flex items-center gap-3 bg-white dark:bg-zinc-800 rounded-xl p-1.5 shadow-sm border border-border/40">
             <button 
@@ -202,7 +245,7 @@ export const ProductDetails = ({ item, isOpen, onClose, onAddToCart }: ProductDe
             className="flex-1 h-14 rounded-2xl font-black uppercase tracking-widest text-[10px] bg-primary text-white shadow-xl shadow-primary/20 gap-3"
           >
             <ShoppingBag className="w-4 h-4" />
-            {cartItem ? 'Sync Selection' : `Add to Tray • ₹${item.price * localQty}`}
+            {cartItem ? 'Sync Selection' : `Add to Tray • ₹${item.price * (cartItem?.quantity || localQty)}`}
           </Button>
         </div>
       </DialogContent>

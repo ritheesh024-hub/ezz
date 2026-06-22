@@ -1,4 +1,3 @@
-
 {
   "entities": {
     "AdminProfile": {
@@ -6,329 +5,56 @@
       "description": "Restricted administrative records. Primary Admin (sunnyritheesh@gmail.com) has exclusive access to platform-wide configuration.",
       "type": "object",
       "properties": {
-        "email": {
-          "type": "string",
-          "format": "email",
-          "description": "The email address of the administrator"
-        },
-        "role": {
-          "type": "string",
-          "enum": [
-            "admin",
-            "cashier",
-            "kitchen"
-          ],
-          "description": "The user role defining workspace access"
-        },
-        "name": {
-          "type": "string"
-        },
-        "username": {
-          "type": "string"
-        },
-        "phone": {
-          "type": "string"
-        },
-        "gender": {
-          "type": "string",
-          "enum": ["Male", "Female", "Other"]
-        },
-        "dateOfBirth": {
-          "type": "string",
-          "format": "date"
-        },
-        "photoUrl": {
-          "type": "string"
-        },
-        "address": {
-          "type": "string"
-        },
-        "city": {
-          "type": "string"
-        },
-        "state": {
-          "type": "string"
-        },
-        "pincode": {
-          "type": "string"
-        },
-        "joiningDate": {
-          "type": "string",
-          "format": "date"
-        },
-        "status": {
-          "type": "string",
-          "enum": [
-            "active",
-            "disabled"
-          ]
-        },
-        "onlineStatus": {
-          "type": "string",
-          "enum": [
-            "online",
-            "offline",
-            "busy"
-          ]
-        },
-        "lastLoginAt": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "createdAt": {
-          "type": "string",
-          "format": "date-time"
-        },
+        "email": { "type": "string", "format": "email" },
+        "role": { "type": "string", "enum": ["admin", "cashier", "kitchen"] },
+        "name": { "type": "string" },
+        "username": { "type": "string" },
+        "phone": { "type": "string" },
+        "status": { "type": "string", "enum": ["active", "disabled"] },
+        "onlineStatus": { "type": "string", "enum": ["online", "offline", "busy"] },
         "stats": {
           "type": "object",
           "properties": {
-            "ordersHandled": {
-              "type": "number"
-            },
-            "billsGenerated": {
-              "type": "number"
-            },
-            "kitchenUpdates": {
-              "type": "number"
-            }
+            "ordersHandled": { "type": "number" },
+            "billsGenerated": { "type": "number" },
+            "kitchenUpdates": { "type": "number" }
           }
         }
       },
-      "required": [
-        "email",
-        "role"
-      ]
+      "required": ["email", "role"]
     },
     "UserProfile": {
       "title": "User Profile",
-      "description": "Customer profile for authenticated users. Note: Restricted admin emails (e.g., sunnyritheesh@gmail.com) are blocked from creating customer profiles.",
+      "description": "Customer profile for authenticated users.",
       "type": "object",
       "properties": {
-        "uid": {
-          "type": "string"
-        },
-        "email": {
-          "type": "string",
-          "format": "email"
-        },
-        "name": {
-          "type": "string"
-        },
-        "photoUrl": {
-          "type": "string"
-        },
-        "phone": {
-          "type": "string",
-          "description": "The verified mobile number"
-        },
-        "address": {
-          "type": "string"
-        },
-        "foodPreference": {
-          "type": "string",
-          "enum": ["Veg", "Non Veg", "Egg"]
-        },
-        "lastOrderAt": {
-          "type": "string",
-          "format": "date-time"
-        },
-        "orderCount": {
-          "type": "number"
-        },
-        "createdAt": {
-          "type": "string",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "uid",
-        "email"
-      ]
-    },
-    "Order": {
-      "title": "Order",
-      "description": "A customer order for Ezzy Bites food items",
-      "type": "object",
-      "properties": {
-        "orderId": {
-          "type": "string"
-        },
-        "userId": {
-          "type": "string"
-        },
-        "customerName": {
-          "type": "string"
-        },
-        "customerEmail": {
-          "type": "string"
-        },
-        "customerPhone": {
-          "type": "string"
-        },
-        "address": {
-          "type": "string"
-        },
-        "instructions": {
-          "type": "string"
-        },
-        "processedBy": {
-          "type": "string",
-          "description": "UID of the staff member who handled the order"
-        },
-        "items": {
-          "type": "array",
-          "items": {
-            "type": "object",
-            "properties": {
-              "id": {
-                "type": "string"
-              },
-              "name": {
-                "type": "string"
-              },
-              "price": {
-                "type": "number"
-              },
-              "quantity": {
-                "type": "number"
-              }
-            }
-          }
-        },
-        "subtotal": {
-          "type": "number"
-        },
-        "discount": {
-          "type": "number"
-        },
-        "total": {
-          "type": "number"
-        },
-        "status": {
-          "type": "string",
-          "enum": [
-            "orderPlaced",
-            "confirmed",
-            "preparing",
-            "outForDelivery",
-            "delivered",
-            "Cancelled"
-          ]
-        },
-        "isReviewed": {
-          "type": "boolean",
-          "description": "Whether the user has reviewed this order"
-        },
-        "createdAt": {
-          "type": "string",
-          "format": "date-time"
-        }
-      },
-      "required": [
-        "userId",
-        "items",
-        "total",
-        "status"
-      ]
-    },
-    "UserFeedback": {
-      "title": "User Feedback",
-      "description": "Platform-wide user satisfaction rating",
-      "type": "object",
-      "properties": {
-        "userId": { "type": "string" },
-        "userName": { "type": "string" },
-        "rating": { "type": "number" },
-        "comment": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" }
-      }
-    },
-    "FoodItem": {
-      "title": "Food Item",
-      "description": "A menu item available for purchase at Ezzy Bites",
-      "type": "object",
-      "properties": {
-        "name": {
-          "type": "string"
-        },
-        "description": {
-          "type": "string"
-        },
-        "price": {
-          "type": "number"
-        },
-        "category": {
-          "type": "string"
-        },
-        "imageUrl": {
-          "type": "string"
-        },
-        "rating": {
-          "type": "number"
-        },
-        "reviewCount": {
-          "type": "number"
-        },
-        "isAvailable": {
-          "type": "boolean"
-        }
-      }
-    },
-    "Review": {
-      "title": "Review",
-      "description": "User feedback for a food item or order experience",
-      "type": "object",
-      "properties": {
-        "orderId": { "type": "string" },
-        "productId": { "type": "string" },
-        "productName": { "type": "string" },
-        "userId": { "type": "string" },
-        "userName": { "type": "string" },
-        "userPhoto": { "type": "string" },
-        "rating": { "type": "number", "minimum": 1, "maximum": 5 },
-        "comment": { "type": "string" },
-        "photos": { "type": "array", "items": { "type": "string" } },
-        "isHidden": { "type": "boolean" },
-        "isFeatured": { "type": "boolean" },
+        "uid": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "name": { "type": "string" },
+        "photoUrl": { "type": "string" },
+        "phone": { "type": "string" },
+        "address": { "type": "string" },
+        "orderCount": { "type": "number" },
         "createdAt": { "type": "string", "format": "date-time" }
       },
-      "required": [
-        "orderId",
-        "productId",
-        "userId",
-        "rating"
-      ]
+      "required": ["uid", "email"]
     },
-    "GlobalNotification": {
-      "title": "Global Notification",
-      "description": "Record of a broadcast sent by admin",
+    "GlobalSettings": {
+      "title": "Global Settings",
+      "description": "Store-wide operational configuration.",
       "type": "object",
       "properties": {
-        "title": { "type": "string" },
-        "message": { "type": "string" },
-        "targetAudience": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" },
-        "createdBy": { "type": "string" },
-        "isActive": { "type": "boolean" }
-      }
-    },
-    "UserNotification": {
-      "title": "User Notification",
-      "description": "Individual notification in user's inbox",
-      "type": "object",
-      "properties": {
-        "title": { "type": "string" },
-        "message": { "type": "string" },
-        "read": { "type": "boolean" },
-        "createdAt": { "type": "string", "format": "date-time" }
+        "isOpen": { "type": "boolean" },
+        "deliveryActive": { "type": "boolean" },
+        "storeName": { "type": "string" },
+        "contactNumber": { "type": "string" },
+        "deliveryCharge": { "type": "number" },
+        "freeDeliveryThreshold": { "type": "number" }
       }
     }
   },
   "auth": {
-    "providers": [
-      "password",
-      "google.com"
-    ]
+    "providers": ["password", "google.com"]
   },
   "firestore": {
     "/admins/{userId}": {
@@ -339,29 +65,29 @@
       "schema": "#/backend/entities/UserProfile",
       "description": "Customer profiles keyed by Firebase UID"
     },
-    "/orders/{orderId}": {
-      "schema": "#/backend/entities/Order",
-      "description": "Collection of customer orders"
+    "/global_settings/config": {
+      "schema": "#/backend/entities/GlobalSettings",
+      "description": "Singleton configuration for the entire ecosystem"
     },
-    "/feedbacks/{id}": {
-      "schema": "#/backend/entities/UserFeedback",
-      "description": "General platform feedbacks"
+    "/orders/{orderId}": {
+      "schema": "Order",
+      "description": "Collection of customer and store orders"
     },
     "/products/{productId}": {
-      "schema": "#/backend/entities/FoodItem",
-      "description": "Collection of dynamic menu items"
+      "schema": "FoodItem",
+      "description": "Inventory management"
     },
     "/reviews/{reviewId}": {
-      "schema": "#/backend/entities/Review",
-      "description": "Public and audited user reviews"
+      "schema": "Review",
+      "description": "User generated food feedback"
     },
-    "/notifications/{id}": {
-      "schema": "#/backend/entities/GlobalNotification",
-      "description": "Admin broadcast logs"
+    "/favorites/{favId}": {
+      "schema": "object",
+      "description": "User wishlists"
     },
-    "/user_notifications/{userId}/{id}": {
-      "schema": "#/backend/entities/UserNotification",
-      "description": "User specific in-app notifications"
+    "/user_notifications/{userId}/items/{id}": {
+      "schema": "UserNotification",
+      "description": "Individual inbox items"
     }
   }
 }
