@@ -18,7 +18,7 @@ import {
   Phone,
   Mail,
   Clock,
-  X
+  RotateCcw
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -43,14 +43,14 @@ export default function SupportPage() {
   const db = useFirestore();
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const [messages, setMessages] = useState<Message[]>([
-    { 
-      id: 'welcome', 
-      role: 'assistant', 
-      content: '👋 Welcome to Ezzy Bites Support. How can we help you today?',
-      type: 'options' 
-    }
-  ]);
+  const initialMessage: Message = { 
+    id: 'welcome', 
+    role: 'assistant', 
+    content: '👋 Welcome to Ezzy Bites Support. How can we help you today?',
+    type: 'options' 
+  };
+
+  const [messages, setMessages] = useState<Message[]>([initialMessage]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -174,6 +174,12 @@ export default function SupportPage() {
     }
   };
 
+  const handleClearChat = () => {
+    setMessages([initialMessage]);
+    setActiveCategory(null);
+    toast({ title: "Session Cleared" });
+  };
+
   if (userLoading) return <div className="h-screen flex items-center justify-center bg-background"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>;
 
   return (
@@ -181,6 +187,24 @@ export default function SupportPage() {
       <Navbar />
       
       <main className="flex-1 flex flex-col pt-14 md:pt-20 max-w-2xl mx-auto w-full px-4 pb-3">
+        {/* CHAT HEADER / CONTROLS */}
+        <div className="flex justify-between items-center py-2 px-1 border-b border-zinc-200 dark:border-zinc-800 shrink-0">
+           <div className="flex items-center gap-2">
+              <div className="w-6 h-6 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Bot className="w-3.5 h-3.5 text-primary" />
+              </div>
+              <span className="text-[10px] font-black uppercase tracking-widest opacity-40">Active Support Node</span>
+           </div>
+           <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={handleClearChat}
+              className="h-8 rounded-lg font-black uppercase text-[8px] tracking-widest text-muted-foreground hover:text-primary hover:bg-primary/5 gap-2 transition-all"
+           >
+              <RotateCcw className="w-3 h-3" /> Clear History
+           </Button>
+        </div>
+
         {/* CHAT AREA */}
         <div className="flex-1 overflow-y-auto scrollbar-hide space-y-4 py-4 flex flex-col">
           <AnimatePresence initial={false}>
