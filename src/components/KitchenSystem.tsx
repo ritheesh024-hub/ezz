@@ -1,3 +1,4 @@
+
 "use client"
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
@@ -17,18 +18,19 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
+import { StaffRole } from '@/app/admin/dashboard/page';
 
 interface KitchenSystemProps {
   orders: any[];
   onUpdateStatus: (id: string, status: string) => void;
   activeView?: string;
+  assignedRole?: StaffRole;
 }
 
-export const KitchenSystem = ({ orders, onUpdateStatus, activeView }: KitchenSystemProps) => {
+export const KitchenSystem = ({ orders, onUpdateStatus, activeView, assignedRole }: KitchenSystemProps) => {
   const [now, setNow] = useState(new Date());
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Update "time ago" every minute without causing excessive re-renders
   useEffect(() => {
     timerRef.current = setInterval(() => setNow(new Date()), 60000);
     return () => {
@@ -98,6 +100,7 @@ export const KitchenSystem = ({ orders, onUpdateStatus, activeView }: KitchenSys
                 order={order} 
                 onUpdateStatus={onUpdateStatus}
                 now={now}
+                assignedRole={assignedRole}
               />
             ))
           )}
@@ -125,18 +128,19 @@ const MetricCard = ({ label, value, icon: Icon, color, description }: any) => (
   </Card>
 );
 
-const OrderCard = ({ order, onUpdateStatus, now }: any) => {
+const OrderCard = ({ order, onUpdateStatus, now, assignedRole }: any) => {
   const timeAgo = order.createdAt?.toDate 
     ? formatDistanceToNow(order.createdAt.toDate(), { addSuffix: false })
     : 'Now';
 
   const statusConfig = {
-    pending: { label: 'NEW', color: 'bg-yellow-400 text-black', action: 'Accept', next: 'accepted', icon: BellRing },
-    accepted: { label: 'HUB SYNC', color: 'bg-blue-600 text-white', action: 'Start Prep', next: 'preparing', icon: CheckCircle2 },
-    preparing: { label: 'COOKING', color: 'bg-orange-500 text-white', action: 'Ready', next: 'out_for_delivery', icon: Flame }
+    pending: { label: 'NEW', color: 'bg-yellow-400 text-black', action: 'Accept', next: 'accepted', icon: BellRing, allowedRoles: ['admin', 'kitchen'] },
+    accepted: { label: 'HUB SYNC', color: 'bg-blue-600 text-white', action: 'Start Prep', next: 'preparing', icon: CheckCircle2, allowedRoles: ['admin', 'kitchen'] },
+    preparing: { label: 'COOKING', color: 'bg-orange-500 text-white', action: 'Ready', next: 'out_for_delivery', icon: Flame, allowedRoles: ['admin', 'cashier'] }
   };
 
   const config = (statusConfig as any)[order.status] || statusConfig.pending;
+  const isActionAllowed = config.allowedRoles.includes(assignedRole);
 
   return (
     <Card className={cn(
@@ -168,16 +172,22 @@ const OrderCard = ({ order, onUpdateStatus, now }: any) => {
       </CardContent>
 
       <div className="p-2 pt-0 bg-white dark:bg-zinc-900">
-        <Button 
-          onClick={() => onUpdateStatus(order.id, config.next)}
-          className={cn(
-            "w-full h-10 rounded-xl font-black uppercase text-[8px] tracking-widest gap-2 shadow-sm transition-transform active:scale-95",
-            config.color
-          )}
-        >
-          {config.action}
-          <ChevronRight className="w-3 h-3" />
-        </Button>
+        {isActionAllowed ? (
+          <Button 
+            onClick={() => onUpdateStatus(order.id, config.next)}
+            className={cn(
+              "w-full h-10 rounded-xl font-black uppercase text-[8px] tracking-widest gap-2 shadow-sm transition-transform active:scale-95",
+              config.color
+            )}
+          >
+            {config.action}
+            <ChevronRight className="w-3 h-3" />
+          </Button>
+        ) : (
+          <div className="h-10 flex items-center justify-center bg-secondary/30 rounded-xl">
+             <span className="text-[7px] font-black uppercase tracking-widest opacity-40">Awaiting {config.allowedRoles.join('/')}</span>
+          </div>
+        )}
       </div>
     </Card>
   );

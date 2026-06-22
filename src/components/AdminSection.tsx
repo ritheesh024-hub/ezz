@@ -1,3 +1,4 @@
+
 "use client"
 import React, { useState, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
@@ -25,9 +26,21 @@ import {
   Star,
   Utensils,
   Home,
-  X
+  X,
+  ChevronRight,
+  ArrowRight
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from '@/hooks/use-toast';
 import { useUser, useAuth, useFirestore, useCollection } from '@/firebase';
 import { collection, query, limit, doc, updateDoc, orderBy, increment, serverTimestamp, addDoc } from 'firebase/firestore';
@@ -77,6 +90,8 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
   const { data: dbMenu } = useCollection<any>(menuQuery);
 
   const [selectedOrderForView, setSelectedOrderForView] = useState<any>(null);
+  const [isDeliveredConfirmOpen, setIsDeliveredConfirmOpen] = useState(false);
+  const [orderToDeliver, setOrderToDeliver] = useState<any>(null);
 
   const orderGroups = useMemo(() => {
     const groups = { pending: [] as any[], processing: [] as any[] };
@@ -89,6 +104,19 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
   }, [realOrders]);
 
   const handleUpdateStatus = (id: string, newStatus: string) => {
+    if (!db || !user) return;
+
+    if (newStatus === 'delivered') {
+      const order = realOrders?.find(o => o.id === id);
+      setOrderToDeliver(order);
+      setIsDeliveredConfirmOpen(true);
+      return;
+    }
+
+    executeStatusUpdate(id, newStatus);
+  };
+
+  const executeStatusUpdate = (id: string, newStatus: string) => {
     if (!db || !user) return;
     const orderRef = doc(db, 'orders', id);
     const updateData: any = { 
@@ -105,8 +133,10 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
         updateDoc(staffRef, { 'stats.ordersHandled': increment(1) }).catch(() => {});
         logStaffAction(user.uid, user.displayName || 'Staff', 'ORDER_STATUS_CHANGE', `Order #${id} changed to ${newStatus}`);
         playSound('success');
-        toast({ title: `Order Updated` });
+        toast({ title: `Order Updated`, description: `Status set to ${newStatus.replace(/_/g, ' ')}` });
         if (selectedOrderForView?.id === id) setSelectedOrderForView(null);
+        setIsDeliveredConfirmOpen(false);
+        setOrderToDeliver(null);
       });
   };
 
@@ -146,6 +176,23 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
       case 'settings': return <Settings2 className={iconClass} />;
       default: return <BoxSelect className={iconClass} />;
     }
+  };
+
+  const canAction = (status: string, targetStatus: string) => {
+    // Admin can do everything
+    if (assignedRole === 'admin') return true;
+    
+    // Kitchen Permissions: Accept, Preparing
+    if (assignedRole === 'kitchen') {
+      return ['accepted', 'preparing'].includes(targetStatus);
+    }
+
+    // Cashier Permissions: Out for delivery, Delivered
+    if (assignedRole === 'cashier') {
+      return ['out_for_delivery', 'delivered'].includes(targetStatus);
+    }
+
+    return false;
   };
 
   if (ordersError) {
@@ -197,7 +244,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
                   {tab === 'overview' && <DashboardAnalysis orders={realOrders || []} products={dbMenu || []} />}
                   {tab === 'users' && <UserManagement />}
                   {tab === 'billing' && <BillingSystem products={dbMenu || []} orders={realOrders || []} />}
-                  {tab === 'kitchen' && <KitchenSystem orders={realOrders || []} onUpdateStatus={handleUpdateStatus} activeView={activeView} />}
+                  {tab === 'kitchen' && <KitchenSystem orders={realOrders || []} onUpdateStatus={handleUpdateStatus} activeView={activeView} assignedRole={assignedRole} />}
                   {tab === 'products' && <ProductManagement />}
                   {tab === 'reviews' && <ReviewManager />}
                   {tab === 'coupons' && <CouponManager />}
@@ -213,6 +260,7 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
         </main>
       </Tabs>
 
+      {/* ORDER DETAIL DIALOG */}
       <Dialog open={!!selectedOrderForView} onOpenChange={(open) => !open && setSelectedOrderForView(null)}>
         <DialogContent className="max-w-2xl rounded-[2rem] p-0 overflow-hidden border-none shadow-3xl bg-white dark:bg-zinc-950">
           <DialogHeader className="p-5 md:p-6 border-b bg-muted/5 flex flex-row items-center justify-between">
@@ -246,18 +294,65 @@ export const AdminSection = ({ assignedRole, activeView }: AdminSectionProps) =>
                     <div className="bg-zinc-50 dark:bg-zinc-800/50 p-4 rounded-xl space-y-2">
                         <p className="text-[11px] font-black uppercase truncate">{selectedOrderForView.customerName}</p>
                         <p className="text-[9px] font-bold opacity-50">{selectedOrderForView.customerPhone}</p>
-                        <p className="text-10px font-medium leading-relaxed italic opacity-80 pt-2 border-t border-dashed mt-2">{selectedOrderForView.address}</p>
+                        <p className="text-[10px] font-medium leading-relaxed italic opacity-80 pt-2 border-t border-dashed mt-2">{selectedOrderForView.address}</p>
                     </div>
                   </div>
                 </div>
               </div>
-              <DialogFooter className="p-4 md:p-6 bg-zinc-50 dark:bg-zinc-900 border-t">
-                <Button variant="outline" className="w-full h-12 rounded-xl font-black uppercase text-[9px] tracking-widest border-2" onClick={() => setSelectedOrderForView(null)}>Close</Button>
+              <DialogFooter className="p-4 md:p-6 bg-zinc-50 dark:bg-zinc-900 border-t flex gap-3">
+                <div className="flex-1 flex gap-2">
+                   {selectedOrderForView.status === 'pending' && canAction('pending', 'accepted') && (
+                     <Button onClick={() => executeStatusUpdate(selectedOrderForView.id, 'accepted')} className="flex-1 rounded-xl h-12 font-black uppercase text-[9px] tracking-widest bg-emerald-600">Accept</Button>
+                   )}
+                   {selectedOrderForView.status === 'accepted' && canAction('accepted', 'preparing') && (
+                     <Button onClick={() => executeStatusUpdate(selectedOrderForView.id, 'preparing')} className="flex-1 rounded-xl h-12 font-black uppercase text-[9px] tracking-widest bg-orange-500">Start Cooking</Button>
+                   )}
+                   {selectedOrderForView.status === 'preparing' && canAction('preparing', 'out_for_delivery') && (
+                     <Button onClick={() => executeStatusUpdate(selectedOrderForView.id, 'out_for_delivery')} className="flex-1 rounded-xl h-12 font-black uppercase text-[9px] tracking-widest bg-blue-600">Dispatch</Button>
+                   )}
+                   {selectedOrderForView.status === 'out_for_delivery' && canAction('out_for_delivery', 'delivered') && (
+                     <Button onClick={() => handleUpdateStatus(selectedOrderForView.id, 'delivered')} className="flex-1 rounded-xl h-12 font-black uppercase text-[9px] tracking-widest bg-primary">Mark Delivered</Button>
+                   )}
+                   {['pending', 'accepted'].includes(selectedOrderForView.status) && assignedRole === 'admin' && (
+                     <Button onClick={() => executeStatusUpdate(selectedOrderForView.id, 'Cancelled')} variant="destructive" className="rounded-xl h-12 font-black uppercase text-[9px] tracking-widest">Cancel</Button>
+                   )}
+                </div>
+                <Button variant="outline" className="rounded-xl h-12 px-6 font-black uppercase text-[9px] tracking-widest border-2" onClick={() => setSelectedOrderForView(null)}>Close</Button>
               </DialogFooter>
             </div>
           )}
         </DialogContent>
       </Dialog>
+
+      {/* DELIVERED CONFIRMATION */}
+      <AlertDialog open={isDeliveredConfirmOpen} onOpenChange={setIsDeliveredConfirmOpen}>
+        <AlertDialogContent className="rounded-[2.5rem] p-10 border-none shadow-4xl bg-white dark:bg-zinc-950">
+           <AlertDialogHeader className="space-y-4">
+              <div className="w-16 h-16 bg-emerald-50 dark:bg-emerald-950/20 rounded-2xl flex items-center justify-center text-emerald-600 mx-auto md:mx-0 shadow-inner">
+                <CheckCircle2 className="w-8 h-8" />
+              </div>
+              <div className="space-y-2">
+                <AlertDialogTitle className="text-2xl font-black font-headline uppercase tracking-tighter">
+                  Mark as <span className="text-emerald-600 italic">Delivered?</span>
+                </AlertDialogTitle>
+                <AlertDialogDescription className="text-sm font-medium leading-relaxed italic text-muted-foreground">
+                  Confirm that ticket #{orderToDeliver?.orderId} has been successfully received by {orderToDeliver?.customerName}. This will close the live order node.
+                </AlertDialogDescription>
+              </div>
+           </AlertDialogHeader>
+           <AlertDialogFooter className="mt-8 flex flex-col sm:flex-row gap-3">
+              <AlertDialogCancel className="h-14 flex-1 rounded-2xl font-black uppercase text-[10px] tracking-widest border-2" onClick={() => { setIsDeliveredConfirmOpen(false); setOrderToDeliver(null); }}>
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={() => orderToDeliver && executeStatusUpdate(orderToDeliver.id, 'delivered')}
+                className="h-14 flex-[2] rounded-2xl font-black uppercase text-[10px] tracking-widest bg-emerald-600 text-white shadow-xl shadow-emerald-600/20 hover:bg-emerald-700 transition-all"
+              >
+                Confirm Delivery
+              </AlertDialogAction>
+           </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
