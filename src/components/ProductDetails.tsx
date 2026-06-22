@@ -59,6 +59,7 @@ export const ProductDetails = ({ item, isOpen, onClose, onAddToCart }: ProductDe
 
   const reviewsQuery = useMemo(() => {
     if (!db || !item.id) return null;
+    // Note: If this query fails due to missing index, useCollection will return error
     return query(
       collection(db, 'reviews'),
       where('productId', '==', item.id),
@@ -68,11 +69,11 @@ export const ProductDetails = ({ item, isOpen, onClose, onAddToCart }: ProductDe
     );
   }, [db, item.id, filter]);
 
-  const { data: reviews, loading } = useCollection<any>(reviewsQuery);
+  const { data: reviews, loading: reviewsLoading, error: reviewsError } = useCollection<any>(reviewsQuery);
 
   const stats = useMemo(() => {
+    if (!reviews || reviews.length === 0) return null;
     const total = reviews.length;
-    if (total === 0) return null;
     const counts = [0, 0, 0, 0, 0, 0];
     reviews.forEach(r => counts[r.rating]++);
     return {
@@ -82,7 +83,7 @@ export const ProductDetails = ({ item, isOpen, onClose, onAddToCart }: ProductDe
   }, [reviews]);
 
   const handleGenerateAISummary = async () => {
-    if (reviews.length < 2) return;
+    if (!reviews || reviews.length < 2) return;
     setSummarizing(true);
     try {
       const reviewTexts = reviews.map((r: any) => r.comment).filter(Boolean);
@@ -96,7 +97,7 @@ export const ProductDetails = ({ item, isOpen, onClose, onAddToCart }: ProductDe
   };
 
   useEffect(() => {
-    if (reviews.length >= 2 && !aiSummary && !summarizing) {
+    if (reviews && reviews.length >= 2 && !aiSummary && !summarizing) {
        handleGenerateAISummary();
     }
   }, [reviews, aiSummary]);
@@ -120,6 +121,10 @@ export const ProductDetails = ({ item, isOpen, onClose, onAddToCart }: ProductDe
       setLocalQty(prev => Math.max(1, prev + delta));
     }
   };
+
+  const displayRating = item.reviewCount 
+    ? (item.ratingSum! / item.reviewCount).toFixed(1) 
+    : (item.rating || '4.5');
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
@@ -191,13 +196,19 @@ export const ProductDetails = ({ item, isOpen, onClose, onAddToCart }: ProductDe
                   <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary flex items-center gap-2">
                     <Star className="w-3.5 h-3.5 fill-primary" /> Customer Pulse
                   </h4>
-                  {stats && <span className="text-[9px] font-bold opacity-40 uppercase">{stats.total} Verified Ratings</span>}
+                  <div className="flex items-center gap-2">
+                    <Star className="w-3 h-3 fill-primary text-primary" />
+                    <span className="text-[9px] font-black">{displayRating} Node Rating</span>
+                  </div>
                </div>
 
-               {loading ? (
+               {reviewsLoading ? (
                  <div className="py-10 text-center opacity-20"><Loader2 className="w-6 h-6 animate-spin mx-auto" /></div>
-               ) : reviews.length === 0 ? (
-                 <p className="text-[10px] font-black uppercase opacity-20 text-center py-4">No reviews yet for this node</p>
+               ) : (reviewsError || reviews.length === 0) ? (
+                 <div className="text-center py-6 space-y-1">
+                   <p className="text-[10px] font-black uppercase opacity-20">No detailed logs yet</p>
+                   {reviewsError && <p className="text-[7px] font-bold text-destructive/40 uppercase tracking-widest">Signal Error: Indices Pending</p>}
+                 </div>
                ) : (
                  <div className="space-y-4">
                     {reviews.slice(0, 3).map((rev: any, i: number) => (

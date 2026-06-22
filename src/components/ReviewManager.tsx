@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useMemo } from 'react';
@@ -32,18 +31,23 @@ export const ReviewManager = () => {
 
   const reviewsQuery = useMemo(() => {
     if (!db) return null;
-    return query(collection(db, 'reviews'), orderBy('createdAt', 'desc'), limit(100));
+    // Simple query to avoid index errors on first load
+    return query(collection(db, 'reviews'), limit(100));
   }, [db]);
 
-  const { data: reviews, loading } = useCollection<any>(reviewsQuery);
+  const { data: reviews, loading, error: reviewsError } = useCollection<any>(reviewsQuery);
 
   const filteredReviews = useMemo(() => {
     if (!reviews) return [];
     return reviews.filter(r => 
-      r.userName.toLowerCase().includes(search.toLowerCase()) || 
-      r.productName.toLowerCase().includes(search.toLowerCase()) ||
-      r.comment.toLowerCase().includes(search.toLowerCase())
-    );
+      (r.userName || '').toLowerCase().includes(search.toLowerCase()) || 
+      (r.productName || '').toLowerCase().includes(search.toLowerCase()) ||
+      (r.comment || '').toLowerCase().includes(search.toLowerCase())
+    ).sort((a, b) => {
+       const dateA = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : 0;
+       const dateB = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : 0;
+       return dateB - dateA;
+    });
   }, [reviews, search]);
 
   const toggleHideReview = async (id: string, currentHidden: boolean) => {
@@ -95,10 +99,13 @@ export const ReviewManager = () => {
            <Loader2 className="w-12 h-12 animate-spin text-primary opacity-20 mx-auto mb-6" />
            <p className="text-[10px] font-black uppercase tracking-[0.4em] opacity-40">Connecting Sentiment Node...</p>
         </div>
-      ) : filteredReviews.length === 0 ? (
+      ) : (reviewsError || filteredReviews.length === 0) ? (
         <div className="py-32 text-center bg-white dark:bg-zinc-900 rounded-[4rem] border-2 border-dashed flex flex-col items-center justify-center gap-6 opacity-30">
-           <MessageSquare className="w-20 h-20" />
-           <h3 className="text-2xl font-black uppercase tracking-widest">Feed Empty</h3>
+           {reviewsError ? <AlertCircle className="w-20 h-20 text-destructive" /> : <MessageSquare className="w-20 h-20" />}
+           <div className="space-y-1">
+             <h3 className="text-2xl font-black uppercase tracking-widest">{reviewsError ? 'Sync Error' : 'Feed Empty'}</h3>
+             {reviewsError && <p className="text-[10px] font-bold uppercase">Index registration required in console.</p>}
+           </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">

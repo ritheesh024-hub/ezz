@@ -12,7 +12,7 @@ import { FirestorePermissionError, type SecurityRuleContext } from '../errors';
 export function useDoc<T = DocumentData>(docRef: DocumentReference<T> | null) {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  const [error, setError] = useState<any>(null);
   
   const unsubscribeRef = useRef<(() => void) | null>(null);
   const lastPathRef = useRef<string | null>(null);
@@ -50,6 +50,12 @@ export function useDoc<T = DocumentData>(docRef: DocumentReference<T> | null) {
             setError(null);
           },
           async (serverError: any) => {
+            console.error("🔥 [Ezzy Flux] Firestore Doc Node Error:", {
+              code: serverError.code,
+              message: serverError.message,
+              path: docRef.path
+            });
+
             if (serverError.code === 'permission-denied') {
               const permissionError = new FirestorePermissionError({
                 path: docRef.path,
@@ -66,7 +72,6 @@ export function useDoc<T = DocumentData>(docRef: DocumentReference<T> | null) {
 
         unsubscribeRef.current = unsubscribe;
       } catch (err: any) {
-        console.warn("⚠️ Document Signal Interrupted:", err.message);
         setError(err);
         setLoading(false);
       }

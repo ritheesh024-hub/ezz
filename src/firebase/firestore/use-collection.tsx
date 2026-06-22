@@ -12,7 +12,7 @@ import { FirestorePermissionError, type SecurityRuleContext } from '../errors';
 export function useCollection<T = DocumentData>(query: Query<T> | null) {
   const [data, setData] = useState<T[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
+  const [error, setError] = useState<any>(null);
 
   useEffect(() => {
     if (!query) {
@@ -35,11 +35,16 @@ export function useCollection<T = DocumentData>(query: Query<T> | null) {
         setError(null);
       },
       (serverError: any) => {
-        console.error("🔥 [Ezzy Flux] Firestore Query Error:", serverError);
+        // Log error but allow UI to resolve
+        console.error("🔥 [Ezzy Flux] Firestore Query Node Error:", {
+          code: serverError.code,
+          message: serverError.message,
+          path: (query as any)._query?.path?.segments?.join('/') || 'unknown'
+        });
         
         if (serverError.code === 'permission-denied') {
           const permissionError = new FirestorePermissionError({
-            path: 'products_registry',
+            path: 'collection_registry',
             operation: 'list',
           } satisfies SecurityRuleContext);
           errorEmitter.emit('permission-error', permissionError);
