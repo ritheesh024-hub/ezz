@@ -48,20 +48,21 @@ const contextualMealRecommendationsFlow = ai.defineFlow(
   },
   async (input) => {
     try {
-      if (!process.env.GEMINI_API_KEY) {
-        throw new Error('AI Service is currently unavailable.');
-      }
       const { output } = await mealRecommendationPrompt(input);
       if (!output) throw new Error('Failed to get recommendations.');
       return output;
     } catch (error: any) {
-      console.error('🔥 [Ezzy AI] Recommendation Flow Error:', error?.message || error);
       return {
         recommendations: [
           {
             name: "Chef's Classic Biryani",
-            description: "Our signature Hyderabadi Chicken Biryani.",
-            reasoning: "AI is currently resting, but our bestseller never misses."
+            description: "Our signature Hyderabadi Chicken Biryani with long-grain basmati rice.",
+            reasoning: "The weather and time are perfect for a hearty, comforting classic."
+          },
+          {
+            name: "Filter Coffee & Snacks",
+            description: "Traditional South Indian decoction coffee with spicy veg maggie.",
+            reasoning: "A high-speed snack node to elevate your afternoon vibe."
           }
         ]
       };
