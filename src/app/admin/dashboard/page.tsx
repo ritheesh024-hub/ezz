@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, Suspense } from 'react';
+import React, { useEffect, useState, Suspense, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useUser, useAuth, useFirestore } from '@/firebase';
 import { AdminSection } from '@/components/AdminSection';
@@ -42,9 +42,10 @@ function DashboardContent() {
     setMounted(true);
   }, []);
 
+  // Central Identity & Role Sync Logic
   useEffect(() => {
     async function checkRole() {
-      if (userLoading) return;
+      if (userLoading || !mounted) return;
 
       if (!user) {
         router.push('/admin/login');
@@ -53,19 +54,20 @@ function DashboardContent() {
 
       if (!db || !auth) return;
 
-      // Master Admin Bypass
-      if (user.email?.toLowerCase() === PRIMARY_ADMIN_EMAIL.toLowerCase()) {
-        setAssignedRole('admin');
-        if (['admin', 'cashier', 'kitchen'].includes(requestedView)) {
-          setActiveView(requestedView);
-        } else {
-          setActiveView('admin');
-        }
-        setCheckingRole(false);
-        return;
-      }
-
       try {
+        // 1. Master Admin Protocol
+        if (user.email?.toLowerCase() === PRIMARY_ADMIN_EMAIL.toLowerCase()) {
+          setAssignedRole('admin');
+          // Respect the URL view, fallback to 'admin'
+          const view = ['admin', 'cashier', 'kitchen'].includes(requestedView) 
+            ? requestedView 
+            : 'admin';
+          setActiveView(view);
+          setCheckingRole(false);
+          return;
+        }
+
+        // 2. Standard Staff Protocol
         const adminRef = doc(db, 'admins', user.uid);
         const adminSnap = await getDoc(adminRef);
 
@@ -81,25 +83,22 @@ function DashboardContent() {
           }
 
           setAssignedRole(role);
+          // Standard staff are locked to their assigned role view
           setActiveView(role);
           setCheckingRole(false);
         } else {
-          toast({
-            variant: "destructive",
-            title: "Access Restricted",
-            description: "Staff record not found.",
-          });
+          toast({ variant: "destructive", title: "Access Restricted", description: "No staff record found." });
           await auth.signOut();
           router.push('/admin/login');
         }
       } catch (e: any) {
-        console.error("Dashboard role error:", e);
+        console.error("Hub role sync error:", e);
         setCheckingRole(false);
       }
     }
 
     checkRole();
-  }, [user, userLoading, db, router, auth, requestedView]);
+  }, [user, userLoading, db, router, auth, requestedView, mounted]);
 
   const handleLogout = async () => {
     if (auth) {
@@ -109,11 +108,11 @@ function DashboardContent() {
     }
   };
 
-  const switchView = (role: StaffRole) => {
+  const switchView = useCallback((role: StaffRole) => {
     if (assignedRole !== 'admin') return;
+    // Update URL - let the main useEffect handle the view state update
     router.push(`/admin/dashboard?view=${role}`);
-    setActiveView(role);
-  };
+  }, [assignedRole, router]);
 
   if (!mounted || userLoading || checkingRole || !activeView) {
     return (
@@ -137,7 +136,6 @@ function DashboardContent() {
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col overflow-x-hidden">
-      {/* FIXED TOP HEADER - 70px - Z-100 */}
       <header className="h-[70px] border-b bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md sticky top-0 z-[100] px-4 md:px-8 flex items-center justify-between shadow-sm shrink-0">
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center gap-3 group">
@@ -153,7 +151,7 @@ function DashboardContent() {
           <div className="hidden md:flex items-center gap-2 ml-4">
             <Badge variant="outline" className="px-3 py-1 rounded-full border-primary/20 bg-primary/5 text-primary font-black uppercase text-[8px] tracking-widest gap-2">
               <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-              {assignedRole} NODE
+              {assignedRole?.toUpperCase()} NODE
             </Badge>
           </div>
         </div>
@@ -164,15 +162,16 @@ function DashboardContent() {
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button 
+                type="button"
                 variant="ghost" 
-                className="rounded-xl h-11 px-3 md:px-4 gap-3 hover:bg-secondary/80 border border-transparent hover:border-zinc-200 dark:hover:border-zinc-700 transition-all focus-visible:ring-0 focus-visible:ring-offset-0"
+                className="rounded-xl h-11 px-3 md:px-4 gap-3 hover:bg-secondary/80 border border-transparent hover:border-zinc-200 dark:hover:border-zinc-700 transition-all focus-visible:ring-0 focus-visible:ring-offset-0 select-none"
               >
-                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary shrink-0 pointer-events-none">
                   <UserCog className="w-4 h-4" />
                 </div>
-                <div className="hidden md:flex flex-col items-start text-left mr-2">
+                <div className="hidden md:flex flex-col items-start text-left mr-2 pointer-events-none">
                    <p className="text-[10px] font-black uppercase tracking-tight leading-none mb-1">Identity</p>
-                   <p className="text-[9px] font-bold opacity-50 truncate max-w-[100px]">
+                   <p className="text-[9px] font-bold opacity-50 truncate max-w-[100px]" suppressHydrationWarning>
                      {user?.email?.split('@')[0] || 'Staff'}
                    </p>
                 </div>
@@ -181,7 +180,7 @@ function DashboardContent() {
             <DropdownMenuContent align="end" className="w-64 rounded-[2rem] p-3 shadow-3xl border-none mt-2 bg-white dark:bg-zinc-950">
               <DropdownMenuLabel className="text-[9px] font-black uppercase opacity-40 px-3 py-2">Staff Terminal</DropdownMenuLabel>
               <div className="px-3 py-3 bg-secondary/30 rounded-2xl mb-2">
-                <p className="text-xs font-black truncate">{user?.email}</p>
+                <p className="text-xs font-black truncate" suppressHydrationWarning>{user?.email}</p>
                 <p className="text-[8px] font-bold opacity-50 uppercase tracking-widest mt-1">Status: Operational</p>
               </div>
               
@@ -204,7 +203,6 @@ function DashboardContent() {
         </div>
       </header>
 
-      {/* DASHBOARD BODY */}
       <AdminSection assignedRole={assignedRole as StaffRole} activeView={activeView as StaffRole} />
     </div>
   );
