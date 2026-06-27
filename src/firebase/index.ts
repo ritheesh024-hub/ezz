@@ -1,14 +1,13 @@
 'use client';
 
 import { initializeApp, getApps, FirebaseApp } from 'firebase/app';
-import { getFirestore, Firestore } from 'firebase/firestore';
+import { getFirestore, Firestore, enableMultiTabIndexedDbPersistence } from 'firebase/firestore';
 import { getAuth, Auth } from 'firebase/auth';
 import { firebaseConfig } from './config';
 
 /**
- * HARDENED FIREBASE SINGLETON v5.0
- * Uses a global registry to survive HMR and prevent "Unexpected state (ID: ca9)" errors.
- * This is the critical stabilization node for Next.js development.
+ * HARDENED FIREBASE SINGLETON v6.0
+ * Includes Offline Persistence Registry.
  */
 
 interface FirebaseInstances {
@@ -33,20 +32,27 @@ export function initializeFirebase(): {
   }
 
   try {
-    // 1. Check for existing stable node in window registry
     if (window.__EZZY_FIREBASE_STATION__) {
       return window.__EZZY_FIREBASE_STATION__;
     }
 
-    // 2. Initialize exactly once per browser session
     const apps = getApps();
     const app = apps.length > 0 ? apps[0] : initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
     
+    // Enable Offline Persistence for a seamless PWA experience
+    if (typeof window !== 'undefined') {
+      enableMultiTabIndexedDbPersistence(db).catch((err) => {
+        if (err.code === 'failed-precondition') {
+          console.warn('⚠️ [Ezzy PWA] Multiple tabs open, persistence can only be enabled in one tab at a time.');
+        } else if (err.code === 'unimplemented') {
+          console.warn('⚠️ [Ezzy PWA] Browser does not support persistence.');
+        }
+      });
+    }
+
     const instances = { app, db, auth };
-    
-    // 3. Persist to window to neutralize HMR race conditions
     window.__EZZY_FIREBASE_STATION__ = instances;
     
     return instances;

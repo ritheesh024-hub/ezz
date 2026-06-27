@@ -6,6 +6,7 @@ import { FirebaseClientProvider } from '@/firebase/client-provider';
 import { BrandIntro } from '@/components/BrandIntro';
 import { SmartPermissionModal } from '@/components/SmartPermissionModal';
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
+import { OfflineBanner } from '@/components/OfflineBanner';
 import { useSmartPermissions } from '@/hooks/use-smart-permissions';
 import Script from 'next/script';
 import React, { useEffect } from 'react';
@@ -55,6 +56,25 @@ function PermissionController() {
   );
 }
 
+function ServiceWorkerRegistration() {
+  useEffect(() => {
+    if ('serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').then(
+          (registration) => {
+            console.log('✅ [Ezzy PWA] ServiceWorker registration successful');
+          },
+          (err) => {
+            console.warn('❌ [Ezzy PWA] ServiceWorker registration failed: ', err);
+          }
+        );
+      });
+    }
+  }, []);
+
+  return null;
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -75,15 +95,18 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="theme-color" content="#ff6600" />
         <link rel="apple-touch-icon" href="https://placehold.co/192x192/ff6600/ffffff?text=EB" />
+        <link rel="manifest" href="/manifest.json" />
         
         <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
       </head>
       <body className="font-body antialiased min-h-screen bg-background" suppressHydrationWarning>
         <FirebaseClientProvider>
+          <ServiceWorkerRegistration />
           <AnalyticsInitializer />
           <NotificationInitializer />
           <PermissionController />
           <PWAInstallPrompt />
+          <OfflineBanner />
           <BrandIntro />
           {children}
           <Toaster />

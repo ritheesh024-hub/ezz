@@ -24,7 +24,9 @@ import {
   Utensils,
   Package,
   Ban,
-  Home
+  Home,
+  WifiOff,
+  AlertCircle
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -38,6 +40,7 @@ import { AuthModal } from '@/components/AuthModal';
 import { useAnalytics } from '@/hooks/use-analytics';
 import { useSmartPermissions } from '@/hooks/use-smart-permissions';
 import { useGlobalSettings } from '@/hooks/use-global-settings';
+import { useOffline } from '@/hooks/use-offline';
 
 export default function CheckoutPage() {
   const { cart, getTotal, clearCart, removeFromCart, selectedOrderType, setOrderType } = useStore();
@@ -46,6 +49,7 @@ export default function CheckoutPage() {
   const { settings, loading: settingsLoading } = useGlobalSettings();
   const { trackOrderPlaced } = useAnalytics();
   const { requestSmartly } = useSmartPermissions();
+  const isOffline = useOffline();
   
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -78,6 +82,10 @@ export default function CheckoutPage() {
   const total = Math.max(0, subtotal - discount + deliveryFee);
 
   const handleApplyCoupon = async () => {
+    if (isOffline) {
+      toast({ variant: "destructive", title: "Offline Node", description: "Bounty verification requires a data signal." });
+      return;
+    }
     if (!db) return;
     const code = couponInput.trim().toUpperCase();
     if (!code) return;
@@ -143,6 +151,10 @@ export default function CheckoutPage() {
   const handleBack = () => setStep(step - 1);
 
   const handleSubmit = async () => {
+    if (isOffline) {
+      toast({ variant: "destructive", title: "Signal Lost", description: "Internet connection required to place an order." });
+      return;
+    }
     if (!db || !user || !settings) return;
 
     if (!settings.isOpen) {
@@ -261,6 +273,18 @@ export default function CheckoutPage() {
     <div className="min-h-screen bg-secondary/10 pb-10 overflow-x-hidden">
       <Navbar />
       <main className="container mx-auto px-4 pt-16 md:pt-20">
+        {isOffline && step < 4 && (
+          <Card className="mb-6 bg-zinc-950 border-none rounded-2xl p-4 flex items-center gap-4 animate-in slide-in-from-top-2">
+            <div className="w-10 h-10 bg-rose-600 rounded-xl flex items-center justify-center text-white shrink-0">
+              <WifiOff className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-[10px] font-black uppercase text-white tracking-widest leading-none mb-1">Signal Interrupted</p>
+              <p className="text-[9px] font-medium text-white/60 uppercase tracking-tight">Internet required for checkout and payment verification.</p>
+            </div>
+          </Card>
+        )}
+
         <div className="max-w-md mx-auto mb-10">
           <div className="flex items-center justify-between relative px-2">
             <div className="absolute top-1/2 left-0 w-full h-0.5 bg-muted -translate-y-1/2 z-0" />
@@ -369,7 +393,15 @@ export default function CheckoutPage() {
                     {isDelivery && (
                       <div className="space-y-1.5 animate-in fade-in slide-in-from-top-2">
                         <Label className="text-[8px] md:text-[10px] font-black uppercase tracking-widest opacity-60 ml-1">Sanctuary Address</Label>
-                        <Textarea value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} className="rounded-xl min-h-[100px] md:min-h-[120px] font-medium bg-secondary/30 border-none px-5 py-4 text-sm" placeholder="Building, Street, Area..." suppressHydrationWarning />
+                        <div className="relative">
+                          <Textarea value={formData.address} onChange={(e) => setFormData({...formData, address: e.target.value})} className="rounded-xl min-h-[100px] md:min-h-[120px] font-medium bg-secondary/30 border-none px-5 py-4 text-sm" placeholder="Building, Street, Area..." suppressHydrationWarning />
+                          {isOffline && (
+                            <div className="absolute top-2 right-2 flex items-center gap-1.5 bg-rose-600 text-white px-2 py-0.5 rounded-md">
+                               <WifiOff className="w-2.5 h-2.5" />
+                               <span className="text-[6px] font-black uppercase">Offline</span>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )}
                     <div className="space-y-1.5">
@@ -390,9 +422,17 @@ export default function CheckoutPage() {
             {step === 3 && (
               <div className="space-y-5 animate-in fade-in slide-in-from-left-2 duration-500">
                 <h2 className="text-2xl md:text-3xl font-headline font-black uppercase tracking-tighter">Payment <span className="text-primary italic">Methods</span></h2>
-                <RadioGroup value={formData.paymentMethod} onValueChange={(v) => setFormData({...formData, paymentMethod: v})} className="space-y-3">
+                
+                {isOffline && (
+                  <div className="p-6 bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30 rounded-2xl flex items-center gap-4">
+                     <AlertCircle className="w-6 h-6 text-rose-600" />
+                     <p className="text-[11px] font-bold text-rose-800 dark:text-rose-400 uppercase leading-relaxed">Payment verification nodes are dormant. Please establish a data signal to proceed with the transaction.</p>
+                  </div>
+                )}
+
+                <RadioGroup value={formData.paymentMethod} onValueChange={(v) => setFormData({...formData, paymentMethod: v})} className="space-y-3" disabled={isOffline}>
                   {settings?.codEnabled && (
-                    <Label htmlFor="cod" className={cn("flex items-center gap-4 p-5 md:p-8 rounded-[1.5rem] md:rounded-[2rem] border-4 cursor-pointer transition-all", formData.paymentMethod === 'cod' ? 'border-primary bg-primary/5' : 'bg-white dark:bg-zinc-900 border-transparent shadow-sm')}>
+                    <Label htmlFor="cod" className={cn("flex items-center gap-4 p-5 md:p-8 rounded-[1.5rem] md:rounded-[2rem] border-4 cursor-pointer transition-all", formData.paymentMethod === 'cod' ? 'border-primary bg-primary/5' : 'bg-white dark:bg-zinc-900 border-transparent shadow-sm', isOffline && "opacity-50 grayscale")}>
                       <RadioGroupItem value="cod" id="cod" className="sr-only" />
                       <Truck className={cn("w-6 h-6 md:w-8 md:h-8", formData.paymentMethod === 'cod' ? 'text-primary' : 'text-muted-foreground')} />
                       <div className="flex-1">
@@ -402,7 +442,7 @@ export default function CheckoutPage() {
                     </Label>
                   )}
                   {settings?.onlinePayEnabled && (
-                    <Label htmlFor="upi" className={cn("flex items-center gap-4 p-5 md:p-8 rounded-[1.5rem] md:rounded-[2rem] border-4 cursor-pointer transition-all", formData.paymentMethod === 'upi' ? 'border-primary bg-primary/5' : 'bg-white dark:bg-zinc-900 border-transparent shadow-sm')}>
+                    <Label htmlFor="upi" className={cn("flex items-center gap-4 p-5 md:p-8 rounded-[1.5rem] md:rounded-[2rem] border-4 cursor-pointer transition-all", formData.paymentMethod === 'upi' ? 'border-primary bg-primary/5' : 'bg-white dark:bg-zinc-900 border-transparent shadow-sm', isOffline && "opacity-50 grayscale")}>
                       <RadioGroupItem value="upi" id="upi" className="sr-only" />
                       <Smartphone className={cn("w-6 h-6 md:w-8 md:h-8", formData.paymentMethod === 'upi' ? 'text-primary' : 'text-muted-foreground')} />
                       <div className="flex-1">
@@ -413,7 +453,7 @@ export default function CheckoutPage() {
                   )}
                 </RadioGroup>
                 
-                {formData.paymentMethod === 'upi' && (
+                {formData.paymentMethod === 'upi' && !isOffline && (
                   <Card className="p-6 md:p-10 text-center animate-in zoom-in-95 rounded-[2rem] md:rounded-[3rem] border-dashed border-2 bg-white dark:bg-zinc-900">
                     <div className="w-48 h-48 md:w-56 md:h-56 mx-auto relative bg-white border-4 md:border-8 border-secondary rounded-[1.5rem] md:rounded-[2rem] overflow-hidden mb-5 p-2">
                       <Image src={qrImage} alt="QR Code" fill className="object-contain" priority unoptimized />
@@ -427,8 +467,8 @@ export default function CheckoutPage() {
 
                 <div className="flex gap-3">
                   <Button variant="outline" onClick={handleBack} className="h-14 md:h-16 rounded-2xl px-6 md:px-8 font-black border-2"><ChevronLeft className="w-5 h-5" /></Button>
-                  <Button onClick={handleSubmit} disabled={loading} className="flex-1 h-14 md:h-16 rounded-2xl text-sm md:text-base font-black uppercase tracking-widest bg-primary shadow-2xl shadow-primary/30">
-                    {loading ? <Loader2 className="animate-spin" /> : 'Settle Order'}
+                  <Button onClick={handleSubmit} disabled={loading || isOffline} className="flex-1 h-14 md:h-16 rounded-2xl text-sm md:text-base font-black uppercase tracking-widest bg-primary shadow-2xl shadow-primary/30">
+                    {loading ? <Loader2 className="animate-spin" /> : isOffline ? 'Signal Required' : 'Settle Order'}
                   </Button>
                 </div>
               </div>
@@ -487,8 +527,9 @@ export default function CheckoutPage() {
                             onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
                             className="rounded-xl h-11 uppercase font-black bg-secondary/30 border-none px-4 text-xs"
                             suppressHydrationWarning
+                            disabled={isOffline}
                           />
-                          <Button onClick={handleApplyCoupon} disabled={couponLoading || !couponInput} className="h-11 rounded-xl font-black text-[8px] uppercase px-5 bg-primary">Apply</Button>
+                          <Button onClick={handleApplyCoupon} disabled={couponLoading || !couponInput || isOffline} className="h-11 rounded-xl font-black text-[8px] uppercase px-5 bg-primary">Apply</Button>
                        </div>
                     </div>
                   )}
