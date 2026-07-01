@@ -1,8 +1,9 @@
+
 'use client';
 
 import React, { useMemo, useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/badge';
+import { Badge } from '@/components/ui/badge';
 import { 
   IndianRupee, Zap, Loader2, Users, Target, Activity, PieChart, Star,
   TrendingUp, TrendingDown, ShoppingBag, ChevronRight, ArrowUpRight, ArrowDownRight,
